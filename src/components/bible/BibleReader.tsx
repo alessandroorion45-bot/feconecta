@@ -227,19 +227,18 @@ export function BibleReader() {
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </CardFooter>
-        <CardFooter className="flex flex-col items-center border-t pt-4 text-xs text-muted-foreground space-y-1">
-          <p>Bíblia Almeida Corrigida e Fiel (ACF) — Domínio Público</p>
-          <p>
-            Dados:{' '}
-            <a
-              href="https://github.com/thiagobodruk/biblia"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary transition-colors"
-            >
-              github.com/thiagobodruk/biblia
-            </a>
-          </p>
+        <CardFooter className="flex flex-col items-center border-t pt-4 text-xs text-muted-foreground space-y-2">
+          <div className="text-center space-y-1">
+            <p className="font-semibold text-foreground">
+              Bíblia Almeida Corrigida e Fiel (ACF)
+            </p>
+            <p className="text-green-600 dark:text-green-400 font-medium">
+              ✓ Domínio Público — Livre para uso
+            </p>
+            <p className="text-xs">
+              Tradução de João Ferreira de Almeida (século XVII)
+            </p>
+          </div>
         </CardFooter>
       </Card>
     </div>
