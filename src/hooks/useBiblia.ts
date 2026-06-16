@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/integrations/supabase/client'
+import { createClient } from '@supabase/supabase-js'
+
+// Cliente Supabase sem tipagem (temporário até regenerar types.ts)
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+)
 
 export interface Livro {
   abbrev: string
