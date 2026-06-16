@@ -1,0 +1,213 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useNotifications } from "@/hooks/useNotifications";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import UserAvatar from "@/components/UserAvatar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { 
+  Bell, 
+  Check, 
+  UserPlus, 
+  MessageCircle, 
+  Heart, 
+  Users, 
+  Trophy,
+  Calendar,
+  Star,
+  ThumbsUp,
+  Sparkles
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+const NotificationPanel = () => {
+  const navigate = useNavigate();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const [open, setOpen] = useState(false);
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "friend_request":
+        return <UserPlus className="h-4 w-4 text-blue-500" />;
+      case "friend_accepted":
+        return <Users className="h-4 w-4 text-green-500" />;
+      case "message":
+        return <MessageCircle className="h-4 w-4 text-primary" />;
+      case "faith_post":
+        return <Heart className="h-4 w-4 text-pink-500" />;
+      case "follow":
+        return <UserPlus className="h-4 w-4 text-purple-500" />;
+      case "testimony_like":
+      case "post_like":
+        return <ThumbsUp className="h-4 w-4 text-red-500" />;
+      case "testimony_comment":
+      case "post_comment":
+        return <MessageCircle className="h-4 w-4 text-blue-500" />;
+      case "testimony_glory":
+        return <Sparkles className="h-4 w-4 text-yellow-500" />;
+      case "prayer_intercession":
+      case "prayer_interaction":
+        return <Heart className="h-4 w-4 text-purple-500" />;
+      case "prayer_comment":
+        return <MessageCircle className="h-4 w-4 text-purple-500" />;
+      case "event_join":
+        return <Calendar className="h-4 w-4 text-green-500" />;
+      case "achievement":
+        return <Trophy className="h-4 w-4 text-yellow-500" />;
+      case "friend_testimonial":
+      case "testimonial_approved":
+      case "testimonial_rejected":
+        return <Star className="h-4 w-4 text-orange-500" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+
+  const handleNotificationClick = (notification: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    markAsRead(notification.id);
+    
+    // Navegar baseado no tipo
+    switch (notification.type) {
+      case "friend_request":
+      case "friend_accepted":
+      case "follow":
+        navigate("/friends");
+        setOpen(false);
+        break;
+      case "message":
+        navigate("/friends");
+        setOpen(false);
+        break;
+      case "faith_post":
+      case "friend_testimonial":
+      case "testimonial_approved":
+      case "testimonial_rejected":
+        if (notification.actor_id) {
+          navigate(`/profile/${notification.actor_id}`);
+          setOpen(false);
+        }
+        break;
+      case "testimony_like":
+      case "testimony_comment":
+      case "testimony_glory":
+        navigate("/testimonies");
+        setOpen(false);
+        break;
+      case "post_like":
+      case "post_comment":
+        navigate("/feed");
+        setOpen(false);
+        break;
+      case "prayer_intercession":
+      case "prayer_interaction":
+      case "prayer_comment":
+        navigate("/prayers");
+        setOpen(false);
+        break;
+      case "event_join":
+        navigate("/events");
+        setOpen(false);
+        break;
+      case "achievement":
+        navigate("/achievements");
+        setOpen(false);
+        break;
+      default:
+        // Apenas marca como lida, não fecha o painel
+        break;
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="sm" className="gap-2 relative">
+          <Bell className="h-4 w-4" />
+          <span className="hidden md:inline">Notificações</span>
+          {unreadCount > 0 && (
+            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="font-semibold">Notificações</h3>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                markAllAsRead();
+              }}
+              className="text-xs"
+            >
+              <Check className="h-3 w-3 mr-1" />
+              Marcar todas como lidas
+            </Button>
+          )}
+        </div>
+        
+        <ScrollArea className="h-[300px]">
+          {notifications.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">
+              <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Nenhuma notificação</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  onClick={(e) => handleNotificationClick(notification, e)}
+                  className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
+                    !notification.is_read ? "bg-primary/5" : ""
+                  }`}
+                >
+                  <div className="flex gap-3">
+                    <UserAvatar
+                      src={notification.profiles?.avatar_url}
+                      fallback={notification.profiles?.username || "?"}
+                      size="xs"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2">
+                        {getNotificationIcon(notification.type)}
+                        <p className="text-sm">
+                          <span className="font-semibold">
+                            {notification.profiles?.username || "Alguém"}
+                          </span>{" "}
+                          {notification.content}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatDistanceToNow(new Date(notification.created_at), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
+                      </p>
+                    </div>
+                    {!notification.is_read && (
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+export default NotificationPanel;
