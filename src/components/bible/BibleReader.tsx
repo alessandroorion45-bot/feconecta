@@ -16,6 +16,15 @@ export function BibleReader() {
   const capituloAtual = livroAtual?.chapters[capituloIndex]
   const totalCapitulos = livroAtual?.chapters.length || 0
 
+  // Debug logs
+  useEffect(() => {
+    if (livros.length > 0) {
+      console.log('Bíblia carregada:', livros.length, 'livros')
+      console.log('Livro atual:', livroAtual?.book)
+      console.log('Capítulo atual:', capituloIndex + 1)
+    }
+  }, [livros, livroIndex, capituloIndex, livroAtual])
+
   // Reset chapter when book changes
   useEffect(() => {
     setCapituloIndex(0)
@@ -104,16 +113,20 @@ export function BibleReader() {
               <label className="text-sm font-medium">Livro</label>
               <Select
                 value={livroIndex.toString()}
-                onValueChange={(v) => setLivroIndex(parseInt(v))}
+                onValueChange={(v) => {
+                  const newIndex = parseInt(v)
+                  console.log('Mudando para livro:', newIndex, livros[newIndex]?.book)
+                  setLivroIndex(newIndex)
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um livro">
-                    {livroAtual?.book || 'Gênesis'}
+                    {livroAtual?.book || 'Carregando...'}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-96">
                   {livros.map((livro, index) => (
-                    <SelectItem key={livro.abbrev} value={index.toString()}>
+                    <SelectItem key={`${livro.abbrev}-${index}`} value={index.toString()}>
                       {livro.book}
                     </SelectItem>
                   ))}

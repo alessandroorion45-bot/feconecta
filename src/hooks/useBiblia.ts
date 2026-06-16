@@ -19,13 +19,17 @@ export function useBiblia() {
         if (!res.ok) {
           throw new Error('Erro ao carregar a Bíblia')
         }
-        return res.json()
+        return res.text()
       })
-      .then(data => {
+      .then(text => {
+        // Remove BOM (Byte Order Mark) se existir
+        const cleanText = text.replace(/^﻿/, '')
+        const data = JSON.parse(cleanText)
         setLivros(data)
         setLoading(false)
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Erro ao carregar Bíblia:', err)
         setError('Erro ao carregar a Bíblia. Tente novamente.')
         setLoading(false)
       })

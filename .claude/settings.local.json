@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(Start-Process \"http://localhost:8080\")",
-      "PowerShell(vercel --yes --scope alessandroorion45-6248s-projects)"
+      "PowerShell(vercel --yes --scope alessandroorion45-6248s-projects)",
+      "PowerShell(curl -s \"https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json\")"
     ]
   }
 }
