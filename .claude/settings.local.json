@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Start-Process \"http://localhost:8080\")"
+      "PowerShell(Start-Process \"http://localhost:8080\")",
+      "PowerShell(vercel --yes --scope alessandroorion45-6248s-projects)"
     ]
   }
 }
