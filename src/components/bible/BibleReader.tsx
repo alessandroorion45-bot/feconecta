@@ -107,7 +107,9 @@ export function BibleReader() {
                 onValueChange={(v) => setLivroIndex(parseInt(v))}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione um livro">
+                    {livroAtual?.book || 'Gênesis'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-96">
                   {livros.map((livro, index) => (
@@ -137,7 +139,9 @@ export function BibleReader() {
                   onValueChange={(v) => setCapituloIndex(parseInt(v))}
                 >
                   <SelectTrigger className="flex-1">
-                    <SelectValue />
+                    <SelectValue placeholder="Capítulo">
+                      Capítulo {capituloIndex + 1}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
                     {Array.from({ length: totalCapitulos }, (_, i) => (
