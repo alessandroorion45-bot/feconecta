@@ -22,15 +22,15 @@ const MenuItem = ({ path, icon, label, currentPath, onClick, iconColor }: MenuIt
   return (
     <Button
       variant="ghost"
-      className={`justify-start gap-3 h-11 text-base w-full transition-all duration-200 ${
+      className={`justify-start gap-3 h-11 text-base w-full transition-all duration-250 ease-out ${
         isActive
-          ? "bg-primary/10 text-primary font-semibold border-l-3 border-primary rounded-l-none"
-          : "hover:bg-muted/80 hover:translate-x-1"
+          ? "bg-primary/10 text-primary font-semibold border-l-3 border-primary rounded-l-none shadow-sm"
+          : "hover:bg-muted/80 hover:translate-x-1 hover:shadow-sm"
       }`}
       onClick={() => onClick(path)}
       aria-label={`Ir para ${label}`}
     >
-      <span className={`shrink-0 ${isActive ? "text-primary" : iconColor || ""}`}>{icon}</span>
+      <span className={`shrink-0 transition-transform duration-250 ${isActive ? "text-primary scale-110" : iconColor || ""} ${!isActive && "group-hover:scale-105"}`}>{icon}</span>
       <span className="leading-normal">{label}</span>
     </Button>
   );
@@ -101,7 +101,7 @@ const Header = () => {
                   <MenuItem path="/challenges" icon={<Target className="h-5 w-5" />} label="Desafios" currentPath={currentPath} onClick={handleNavClick} iconColor="text-orange-500" />
                   <MenuItem path="/achievements" icon={<Trophy className="h-5 w-5" />} label="Conquistas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
                   <MenuItem path="/ranking" icon={<TrendingUp className="h-5 w-5" />} label="Ranking" currentPath={currentPath} onClick={handleNavClick} iconColor="text-green-500" />
-                  <MenuItem path="/word-search" icon={<SearchIcon className="h-5 w-5" />} label="Caça-Palavras" currentPath={currentPath} onClick={handleNavClick} iconColor="text-purple-500" />
+                  <MenuItem path="/palavra-viva" icon={<SearchIcon className="h-5 w-5" />} label="Caça-Palavras" currentPath={currentPath} onClick={handleNavClick} iconColor="text-purple-500" />
 
                   <MenuSection title="Estudo & Louvor" />
                   <MenuItem path="/devotional" icon={<Sparkles className="h-5 w-5" />} label="Devocional Diário" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
@@ -169,10 +169,10 @@ const Header = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`inline-flex items-center gap-2 px-3 h-10 transition-all duration-200 ${
+                  className={`inline-flex items-center gap-2 px-3 h-10 transition-all duration-300 ease-out ${
                     currentPath === item.path
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "hover:scale-105"
+                      ? "bg-primary/10 text-primary font-semibold shadow-sm scale-105"
+                      : "hover:scale-110 hover:shadow-md hover:bg-muted/60"
                   }`}
                   aria-label={`Ir para ${item.label}`}
                 >
@@ -241,7 +241,7 @@ const Header = () => {
                     <MenuItem path="/mentoring" icon={<Users className="h-5 w-5" />} label="Mentoria Espiritual" currentPath={currentPath} onClick={handleNavClick} iconColor="text-cyan-500" />
                     <MenuItem path="/favorites" icon={<Star className="h-5 w-5" />} label="Meus Favoritos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
                     <MenuItem path="/nearby-churches" icon={<MapPin className="h-5 w-5" />} label="Igrejas Próximas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-emerald-500" />
-                    <MenuItem path="/word-search" icon={<SearchIcon className="h-5 w-5" />} label="Caça-Palavras" currentPath={currentPath} onClick={handleNavClick} iconColor="text-purple-500" />
+                    <MenuItem path="/palavra-viva" icon={<SearchIcon className="h-5 w-5" />} label="Caça-Palavras" currentPath={currentPath} onClick={handleNavClick} iconColor="text-purple-500" />
 
                     <div className="h-px bg-border my-2" />
                     <MenuItem path="/profile" icon={<UserIcon className="h-5 w-5" />} label="Perfil" currentPath={currentPath} onClick={handleNavClick} />

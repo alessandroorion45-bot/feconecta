@@ -87,3 +87,4 @@ AFTER:  <nav overflow-x-auto> ... links only ... </nav>
 2. `src/components/Header.tsx` -- fix notification clipping, remove duplicate hook, improve menu
 3. `src/pages/Friends.tsx` -- increase timeout, defer suggestions
 
+874305085520-6lkqp7m4jbn9u8m48b1e90v97nps3ca4.apps.googleusercontent.com

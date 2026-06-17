@@ -22,13 +22,27 @@ export function BibleReader() {
       console.log('Bíblia carregada:', livros.length, 'livros')
       console.log('Livro atual:', livroAtual?.book)
       console.log('Capítulo atual:', capituloIndex + 1)
+      console.log('Capítulos atuais:', totalCapitulos)
     }
-  }, [livros, livroIndex, capituloIndex, livroAtual])
+  }, [livros, livroIndex, capituloIndex, livroAtual, totalCapitulos])
 
   // Reset chapter when book changes
   useEffect(() => {
     setCapituloIndex(0)
   }, [livroIndex])
+
+  // Clamp indices when data changes to avoid invalid book/chapter state
+  useEffect(() => {
+    if (livroIndex >= livros.length) {
+      setLivroIndex(Math.max(0, livros.length - 1))
+    }
+  }, [livros.length, livroIndex])
+
+  useEffect(() => {
+    if (livroAtual && capituloIndex >= livroAtual.chapters.length) {
+      setCapituloIndex(Math.max(0, livroAtual.chapters.length - 1))
+    }
+  }, [livroAtual, capituloIndex])
 
   const proximoCapitulo = () => {
     if (capituloIndex < totalCapitulos - 1) {
@@ -89,6 +103,25 @@ export function BibleReader() {
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={() => window.location.reload()}>
               Tentar novamente
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!loading && livros.length === 0) {
+    return (
+      <Card className="shadow-divine border-warning">
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum conteúdo da Bíblia disponível</h3>
+            <p className="text-muted-foreground mb-4">
+              Os dados da Bíblia não foram carregados corretamente. Atualize a página ou confira a conexão.
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Recarregar Bíblia
             </Button>
           </div>
         </CardContent>
@@ -189,21 +222,28 @@ export function BibleReader() {
         <CardContent className="pt-6">
           <ScrollArea className="h-[600px] pr-4">
             <div className="space-y-4" aria-live="polite">
-              {capituloAtual?.map((versiculo, index) => (
-                <div
-                  key={index}
-                  className="group hover:bg-muted/50 p-3 rounded-lg transition-all"
-                >
-                  <div className="flex gap-3">
-                    <span className="text-sm font-bold text-primary mt-1 min-w-[2rem]">
-                      {index + 1}
-                    </span>
-                    <p className="text-base leading-relaxed flex-1">
-                      {versiculo}
-                    </p>
+              {capituloAtual && capituloAtual.length > 0 ? (
+                capituloAtual.map((versiculo, index) => (
+                  <div
+                    key={index}
+                    className="group hover:bg-muted/50 p-3 rounded-lg transition-all"
+                  >
+                    <div className="flex gap-3">
+                      <span className="text-sm font-bold text-primary mt-1 min-w-[2rem]">
+                        {index + 1}
+                      </span>
+                      <p className="text-base leading-relaxed flex-1">
+                        {versiculo}
+                      </p>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  <p className="font-semibold">Nenhum versículo disponível para este capítulo.</p>
+                  <p>Verifique se os dados da Bíblia foram carregados corretamente ou atualize a página.</p>
                 </div>
-              ))}
+              )}
             </div>
           </ScrollArea>
         </CardContent>

@@ -162,9 +162,15 @@ export const CoverImageUpload = ({
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: publicUrlData, error: publicUrlError } = await supabase.storage
         .from("covers")
         .getPublicUrl(fileName);
+
+      if (publicUrlError || !publicUrlData?.publicUrl) {
+        throw publicUrlError || new Error("Falha ao gerar URL pública da capa.");
+      }
+
+      const publicUrl = publicUrlData.publicUrl;
 
       // Save cover URL directly to database for persistence
       const { error: updateError } = await supabase

@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Church, AlertCircle, Globe, WifiOff } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { 
@@ -125,6 +126,7 @@ const useNetworkStatus = () => {
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, isLoading: authLoading } = useAuth();
   const { t, setLanguage, language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -146,11 +148,9 @@ const Auth = () => {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-          // Verificar se é um usuário do Google sem país configurado
           const provider = user.app_metadata?.provider;
 
           if (provider === 'google') {
-            // Verificar se o perfil já tem país
             const { data: profile } = await supabase
               .from('profiles')
               .select('country')
@@ -158,10 +158,8 @@ const Auth = () => {
               .maybeSingle();
 
             if (!profile?.country) {
-              // Mostrar modal de seleção de país
               setShowCountryModal(true);
             } else {
-              // Já tem país, redirecionar
               navigate('/');
             }
           }
@@ -171,12 +169,17 @@ const Auth = () => {
       }
     };
 
-    // Verificar se está retornando do OAuth
     const hash = window.location.hash;
     if (hash && hash.includes('access_token')) {
       checkGoogleAuthCallback();
     }
   }, [navigate]);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/feed');
+    }
+  }, [authLoading, user, navigate]);
   
   // Show detailed error messages based on error type
   const getErrorMessage = useCallback((
@@ -354,6 +357,10 @@ const Auth = () => {
 
       const preferredLanguage = getLanguageByCountry(selectedCountry);
 
+      const createTimeout = () => new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+      );
+
       const signUpPromise = supabase.auth.signUp({
         email,
         password,
@@ -369,11 +376,13 @@ const Auth = () => {
         },
       });
 
-      const { error } = await Promise.race([signUpPromise, timeoutPromise]) as { error: any };
+      const { data: signUpData, error: signUpError } = await Promise.race([
+        signUpPromise,
+        createTimeout(),
+      ]) as { data: any; error: any };
 
-      if (error) {
-        // Handle specific errors
-        if (error.message.includes("already registered")) {
+      if (signUpError) {
+        if (signUpError.message.includes("already registered")) {
           setErrors({ email: language === 'pt' ? "Este email já está cadastrado. Tente fazer login." :
                             language === 'es' ? "Este email ya está registrado. Intenta iniciar sesión." :
                             language === 'nl' ? "Dit e-mailadres is al geregistreerd. Probeer in te loggen." :
@@ -384,17 +393,40 @@ const Auth = () => {
                    language === 'es' ? "Error al crear cuenta" :
                    language === 'nl' ? "Fout bij het aanmaken van account" :
                    "Error creating account",
-            description: error.message,
+            description: signUpError.message,
             variant: "destructive",
           });
         }
       } else {
+        const signedInSession = signUpData?.session;
+
+        if (!signedInSession) {
+          const { error: signInError } = await Promise.race([
+            supabase.auth.signInWithPassword({ email, password }),
+            createTimeout(),
+          ]) as { data: any; error: any };
+
+          if (signInError) {
+            toast({
+              title: language === 'pt' ? "Conta criada" :
+                     language === 'es' ? "Cuenta creada" :
+                     language === 'nl' ? "Account aangemaakt" :
+                     "Account created",
+              description: language === 'pt' ? "Sua conta foi criada. Verifique seu e-mail para confirmar o acesso." :
+                           language === 'es' ? "Tu cuenta fue creada. Revisa tu correo para confirmar el acceso." :
+                           language === 'nl' ? "Je account is aangemaakt. Controleer je e-mail om toegang te bevestigen." :
+                           "Your account was created. Check your email to confirm access.",
+            });
+            navigate("/");
+            return;
+          }
+        }
+
         toast({
-          title: t('auth.accountCreated'),
-          description: language === 'pt' ? "Bem-vindo à Rede da Fé" :
-                       language === 'es' ? "Bienvenido a Red de Fe" :
-                       language === 'nl' ? "Welkom bij Geloofsnetwerk" :
-                       "Welcome to Faith Network",
+          title: "🙏 Seja bem-vindo à Rede da Fé!",
+          description: '"Porque para Deus nada é impossível." Lucas 1:37',
+          duration: 5000,
+          className: "bg-white/90 border border-white/20 shadow-glow text-foreground backdrop-blur-xl",
         });
         navigate("/");
       }
@@ -507,11 +539,10 @@ const Auth = () => {
         }
       } else {
         toast({
-          title: t('auth.welcomeBack'),
-          description: language === 'pt' ? "Login realizado com sucesso" :
-                       language === 'es' ? "Inicio de sesión exitoso" :
-                       language === 'nl' ? "Succesvol ingelogd" :
-                       "Successfully signed in",
+          title: "🙏 Seja bem-vindo à Rede da Fé!",
+          description: '"Porque para Deus nada é impossível." Lucas 1:37',
+          duration: 5000,
+          className: "bg-white/90 border border-white/20 shadow-glow text-foreground backdrop-blur-xl",
         });
         navigate("/");
       }

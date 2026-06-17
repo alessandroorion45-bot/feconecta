@@ -168,9 +168,15 @@ export const AvatarUpload = ({
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: publicUrlData, error: publicUrlError } = await supabase.storage
         .from("avatars")
         .getPublicUrl(fileName);
+
+      if (publicUrlError || !publicUrlData?.publicUrl) {
+        throw publicUrlError || new Error("Falha ao gerar URL pública do avatar.");
+      }
+
+      const publicUrl = publicUrlData.publicUrl;
 
       // Save avatar URL directly to database
       const { error: updateError } = await supabase

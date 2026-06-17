@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, RouteObject } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -64,6 +64,48 @@ const queryClient = new QueryClient({
   },
 });
 
+const routes: RouteObject[] = [
+  { path: "/", element: <Index /> },
+  { path: "/auth", element: <Auth /> },
+  { path: "/bible", element: <Bible /> },
+  { path: "/testimonies", element: <Testimonies /> },
+  { path: "/testemunho/:id", element: <TestimonyDetail /> },
+  { path: "/prayers", element: <ProtectedRoute><Prayers /></ProtectedRoute> },
+  { path: "/events", element: <ProtectedRoute><Events /></ProtectedRoute> },
+  { path: "/profile", element: <ProtectedRoute><Profile /></ProtectedRoute> },
+  { path: "/profile/:userId", element: <UserProfile /> },
+  { path: "/achievements", element: <ProtectedRoute><Achievements /></ProtectedRoute> },
+  { path: "/ranking", element: <Ranking /> },
+  { path: "/challenges", element: <ProtectedRoute><Challenges /></ProtectedRoute> },
+  { path: "/quiz", element: <ProtectedRoute><Quiz /></ProtectedRoute> },
+  { path: "/feed", element: <ProtectedRoute><Feed /></ProtectedRoute> },
+  { path: "/friends", element: <ProtectedRoute><Friends /></ProtectedRoute> },
+  { path: "/videos", element: <Videos /> },
+  { path: "/chat", element: <ProtectedRoute><Chat /></ProtectedRoute> },
+  { path: "/shared-reading", element: <ProtectedRoute><SharedReading /></ProtectedRoute> },
+  { path: "/church-community", element: <ProtectedRoute><ChurchCommunity /></ProtectedRoute> },
+  { path: "/palavra-viva", element: <WordSearch /> },
+  { path: "/devotional", element: <Devotional /> },
+  { path: "/dictionary", element: <BibleDictionary /> },
+  { path: "/questions", element: <ProtectedRoute><BibleQuestions /></ProtectedRoute> },
+  { path: "/worship", element: <ProtectedRoute><Worship /></ProtectedRoute> },
+  { path: "/studies", element: <BibleStudies /> },
+  { path: "/gratitude", element: <ProtectedRoute><GratitudeWall /></ProtectedRoute> },
+  { path: "/mentoring", element: <ProtectedRoute><SpiritualMentoring /></ProtectedRoute> },
+  { path: "/favorites", element: <ProtectedRoute><FavoritesHub /></ProtectedRoute> },
+  { path: "/nearby-churches", element: <ProtectedRoute><NearbyChurches /></ProtectedRoute> },
+  { path: "/user/:userId", element: <UserProfile /> },
+  { path: "/friend/:friendId", element: <FriendDetails /> },
+  { path: "*", element: <NotFound /> },
+];
+
+const router = createBrowserRouter(routes, {
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+  },
+});
+
 const App = () => (
   <ErrorBoundary>
     <HelmetProvider>
@@ -74,44 +116,9 @@ const App = () => (
               <Toaster />
               <Sonner />
               <NetworkStatusIndicator />
-              <BrowserRouter>
-                <Suspense fallback={<LoadingFallback />}>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/bible" element={<Bible />} />
-                    <Route path="/testimonies" element={<Testimonies />} />
-                    <Route path="/testemunho/:id" element={<TestimonyDetail />} />
-                    <Route path="/prayers" element={<ProtectedRoute><Prayers /></ProtectedRoute>} />
-                    <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-                    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                    <Route path="/profile/:userId" element={<UserProfile />} />
-                    <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-                    <Route path="/ranking" element={<Ranking />} />
-                    <Route path="/challenges" element={<ProtectedRoute><Challenges /></ProtectedRoute>} />
-                    <Route path="/quiz" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
-                    <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
-                    <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
-                    <Route path="/videos" element={<Videos />} />
-                    <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-                    <Route path="/shared-reading" element={<ProtectedRoute><SharedReading /></ProtectedRoute>} />
-                    <Route path="/church-community" element={<ProtectedRoute><ChurchCommunity /></ProtectedRoute>} />
-                    <Route path="/palavra-viva" element={<WordSearch />} />
-                    <Route path="/devotional" element={<Devotional />} />
-                    <Route path="/dictionary" element={<BibleDictionary />} />
-                    <Route path="/questions" element={<ProtectedRoute><BibleQuestions /></ProtectedRoute>} />
-                    <Route path="/worship" element={<ProtectedRoute><Worship /></ProtectedRoute>} />
-                    <Route path="/studies" element={<BibleStudies />} />
-                    <Route path="/gratitude" element={<ProtectedRoute><GratitudeWall /></ProtectedRoute>} />
-                    <Route path="/mentoring" element={<ProtectedRoute><SpiritualMentoring /></ProtectedRoute>} />
-                    <Route path="/favorites" element={<ProtectedRoute><FavoritesHub /></ProtectedRoute>} />
-                    <Route path="/nearby-churches" element={<ProtectedRoute><NearbyChurches /></ProtectedRoute>} />
-                    <Route path="/user/:userId" element={<UserProfile />} />
-                    <Route path="/friend/:friendId" element={<FriendDetails />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-              </BrowserRouter>
+              <Suspense fallback={<LoadingFallback />}>
+                <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
+              </Suspense>
             </TooltipProvider>
           </LanguageProvider>
         </AuthProvider>

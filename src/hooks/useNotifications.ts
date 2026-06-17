@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Notification {
   id: string;
@@ -17,6 +18,7 @@ interface Notification {
 }
 
 export const useNotifications = () => {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { toast } = useToast();
@@ -24,15 +26,23 @@ export const useNotifications = () => {
   toastRef.current = toast;
 
   const loadNotifications = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("notifications")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
+
+    if (error) {
+      console.error('[useNotifications] Error loading notifications:', error);
+      return;
+    }
 
     if (data) {
       const actorIds = data.map(n => n.actor_id).filter(Boolean);
@@ -55,15 +65,13 @@ export const useNotifications = () => {
       setNotifications(notificationsWithProfiles as Notification[]);
       setUnreadCount(data.filter((n) => !n.is_read).length);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    loadNotifications();
-
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let mounted = true;
 
-    const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+    const setupChannel = async () => {
       if (!user) return;
 
       channel = supabase
@@ -90,14 +98,16 @@ export const useNotifications = () => {
         .subscribe();
     };
 
-    setup();
+    loadNotifications();
+    setupChannel();
 
     return () => {
+      mounted = false;
       if (channel) {
         supabase.removeChannel(channel);
       }
     };
-  }, []); // No deps - run once on mount
+  }, [user?.id, loadNotifications]);
 
   const markAsRead = async (notificationId: string) => {
     await supabase
@@ -112,7 +122,6 @@ export const useNotifications = () => {
   };
 
   const markAllAsRead = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     await supabase

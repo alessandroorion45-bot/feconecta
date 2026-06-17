@@ -23,52 +23,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fast-path: Check localStorage for existing token
-  const hasValidLocalToken = useCallback((): boolean => {
-    try {
-      const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-      if (!storedToken) return false;
-      
-      const parsed = JSON.parse(storedToken);
-      if (!parsed?.expires_at) return false;
-      
-      // Check if token is not expired (with 60s buffer)
-      const expiresAt = parsed.expires_at * 1000;
-      return Date.now() < expiresAt - 60000;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  // Initialize auth state
+  // Initialize auth state with Supabase session and react to changes.
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
-        // Fast-path: If we have a valid local token, trust it initially
-        const hasLocalToken = hasValidLocalToken();
-        
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
+
         if (!mounted) return;
 
         if (error) {
           console.error('[AuthContext] Error getting session:', error.message);
-          if (!hasLocalToken) {
-            setSession(null);
-            setUser(null);
-          }
+          setSession(null);
+          setUser(null);
         } else {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
         }
       } catch (error) {
         console.error('[AuthContext] Unexpected error:', error);
-        if (!hasValidLocalToken()) {
-          setSession(null);
-          setUser(null);
-        }
+        setSession(null);
+        setUser(null);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -78,21 +54,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     initializeAuth();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
 
       console.log('[AuthContext] Auth state changed:', event);
 
-      // Only update state for meaningful events
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         setSession(newSession);
         setUser(newSession?.user ?? null);
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setUser(null);
-      } else if (event === 'INITIAL_SESSION') {
-        // Already handled in initializeAuth
       }
     });
 
@@ -100,7 +72,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [hasValidLocalToken]);
+  }, []);
 
   const signOut = useCallback(async () => {
     try {

@@ -1,15 +1,23 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import LoadingFallback from "@/components/LoadingFallback";
 import { Book, Heart, Church, Calendar, Sparkles, User, Gamepad2, MessageSquare, Music, BookOpen, HelpCircle, Search, MapPin, Star, Users, Brain, Smile, BookMarked } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/feed");
+    }
+  }, [authLoading, user, navigate]);
 
   useEffect(() => {
     if (!user) {
@@ -46,6 +54,10 @@ const Index = () => {
     { icon: Star, title: "Meus Favoritos", description: "Versículos, estudos e louvores salvos em um só lugar", link: "/favorites", gradient: "from-accent to-primary-glow" },
     { icon: Users, title: "Amigos", description: "Conecte-se com irmãos e fortaleça sua comunidade", link: "/friends", gradient: "from-secondary to-accent" },
   ];
+
+  if (authLoading) {
+    return <LoadingFallback />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero flex flex-col">
