@@ -145,17 +145,32 @@ const Auth = () => {
   useEffect(() => {
     const checkGoogleAuthCallback = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Add timeout
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), 5000)
+        );
+
+        const userPromise = supabase.auth.getUser();
+
+        const { data: { user } } = await Promise.race([
+          userPromise,
+          timeoutPromise
+        ]) as Awaited<ReturnType<typeof supabase.auth.getUser>>;
 
         if (user) {
           const provider = user.app_metadata?.provider;
 
           if (provider === 'google') {
-            const { data: profile } = await supabase
+            const profilePromise = supabase
               .from('profiles')
               .select('country')
               .eq('id', user.id)
               .maybeSingle();
+
+            const { data: profile } = await Promise.race([
+              profilePromise,
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 5000))
+            ]) as Awaited<ReturnType<typeof profilePromise>>;
 
             if (!profile?.country) {
               setShowCountryModal(true);
@@ -164,8 +179,12 @@ const Auth = () => {
             }
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error checking Google auth:', error);
+        // On timeout, just continue - don't block user
+        if (error?.message === 'TIMEOUT') {
+          console.warn('Google auth check timeout - continuing anyway');
+        }
       }
     };
 

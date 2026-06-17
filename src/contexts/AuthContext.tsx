@@ -29,7 +29,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 5000)
+        );
+
+        const sessionPromise = supabase.auth.getSession();
+
+        const { data: { session: currentSession }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as Awaited<ReturnType<typeof supabase.auth.getSession>>;
 
         if (!mounted) return;
 
@@ -41,8 +51,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('[AuthContext] Unexpected error:', error);
+
+        // If timeout, consider user as not authenticated and continue
+        if (error?.message === 'AUTH_TIMEOUT') {
+          console.warn('[AuthContext] Session check timeout - assuming no session');
+        }
+
         setSession(null);
         setUser(null);
       } finally {
