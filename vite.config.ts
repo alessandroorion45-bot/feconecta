@@ -55,32 +55,10 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Vendors principais
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@supabase')) {
-              return 'supabase-vendor';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            if (id.includes('date-fns') || id.includes('lucide-react')) {
-              return 'utils-vendor';
-            }
-            // Outros vendors
-            return 'vendor';
-          }
-
-          // Pages separadas para melhor cache
-          if (id.includes('src/pages/')) {
-            const page = id.split('src/pages/')[1].split('.')[0];
-            return `page-${page.toLowerCase()}`;
-          }
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'supabase-vendor': ['@supabase/supabase-js'],
         },
-        // Nomes com hash para cache infinito
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
