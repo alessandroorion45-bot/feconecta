@@ -73,14 +73,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
 
-      console.log('[AuthContext] Auth state changed:', event);
+      console.log('[AuthContext] Auth state changed:', event, 'Session:', newSession ? 'exists' : 'null');
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         setSession(newSession);
         setUser(newSession?.user ?? null);
       } else if (event === 'SIGNED_OUT') {
+        console.warn('[AuthContext] User signed out - event triggered');
         setSession(null);
         setUser(null);
+      } else if (event === 'TOKEN_EXPIRED') {
+        console.error('[AuthContext] Token expired - refreshing session');
+        // Don't sign out, just try to refresh
+        supabase.auth.refreshSession().then(({ data, error }) => {
+          if (error) {
+            console.error('[AuthContext] Failed to refresh token:', error);
+            setSession(null);
+            setUser(null);
+          } else {
+            console.log('[AuthContext] Token refreshed successfully');
+            setSession(data.session);
+            setUser(data.session?.user ?? null);
+          }
+        });
       }
     });
 
