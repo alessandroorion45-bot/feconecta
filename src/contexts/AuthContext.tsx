@@ -29,9 +29,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const initializeAuth = async () => {
       try {
-        // Add timeout to prevent infinite loading
+        console.log('[AuthContext] Initializing auth...');
+
+        // Try to get session from localStorage first (faster)
+        const storedSession = localStorage.getItem('sb-kfetvofrwtuduwmpvdlz-auth-token');
+        if (storedSession) {
+          try {
+            const parsed = JSON.parse(storedSession);
+            if (parsed?.access_token) {
+              console.log('[AuthContext] Found stored session, verifying...');
+            }
+          } catch (e) {
+            console.warn('[AuthContext] Invalid stored session');
+          }
+        }
+
+        // Get session with longer timeout (10s instead of 5s)
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 5000)
+          setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 10000)
         );
 
         const sessionPromise = supabase.auth.getSession();
@@ -47,20 +62,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.error('[AuthContext] Error getting session:', error.message);
           setSession(null);
           setUser(null);
-        } else {
+        } else if (currentSession) {
+          console.log('[AuthContext] Session found for user:', currentSession.user.email);
           setSession(currentSession);
-          setUser(currentSession?.user ?? null);
+          setUser(currentSession.user);
+        } else {
+          console.log('[AuthContext] No session found');
+          setSession(null);
+          setUser(null);
         }
       } catch (error: any) {
         console.error('[AuthContext] Unexpected error:', error);
 
-        // If timeout, consider user as not authenticated and continue
+        // If timeout, DON'T clear session - keep existing state
         if (error?.message === 'AUTH_TIMEOUT') {
-          console.warn('[AuthContext] Session check timeout - assuming no session');
+          console.warn('[AuthContext] Session check timeout - keeping existing state');
+          // Don't touch session/user state on timeout
+        } else {
+          setSession(null);
+          setUser(null);
         }
-
-        setSession(null);
-        setUser(null);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -76,26 +97,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log('[AuthContext] Auth state changed:', event, 'Session:', newSession ? 'exists' : 'null');
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        console.log('[AuthContext] Session updated:', event);
         setSession(newSession);
         setUser(newSession?.user ?? null);
       } else if (event === 'SIGNED_OUT') {
         console.warn('[AuthContext] User signed out - event triggered');
         setSession(null);
         setUser(null);
-      } else if (event === 'TOKEN_EXPIRED') {
-        console.error('[AuthContext] Token expired - refreshing session');
-        // Don't sign out, just try to refresh
-        supabase.auth.refreshSession().then(({ data, error }) => {
-          if (error) {
-            console.error('[AuthContext] Failed to refresh token:', error);
-            setSession(null);
-            setUser(null);
-          } else {
-            console.log('[AuthContext] Token refreshed successfully');
-            setSession(data.session);
-            setUser(data.session?.user ?? null);
-          }
-        });
+      } else if (event === 'INITIAL_SESSION') {
+        console.log('[AuthContext] Initial session loaded');
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
       }
     });
 
