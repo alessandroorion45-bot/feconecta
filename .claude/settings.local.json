@@ -5,7 +5,8 @@
       "PowerShell(vercel --yes --scope alessandroorion45-6248s-projects)",
       "PowerShell(curl -s \"https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json\")",
       "PowerShell(vercel env add VITE_SUPABASE_URL production)",
-      "PowerShell(vercel --prod --yes)"
+      "PowerShell(vercel --prod --yes)",
+      "Bash(npm run *)"
     ]
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -118,4 +118,4 @@ const ChurchCommunity = () => {
   );
 };
 
-export default ChurchCommunity;
+export default memo(ChurchCommunity);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,7 @@ const VISIBILITY_OPTIONS = [
   { value: 'private', label: 'Privado', icon: Lock, color: 'text-red-500' },
 ];
 
-export const ProfilePhotos = ({ userId, isOwner, isFriend = false }: ProfilePhotosProps) => {
+export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: ProfilePhotosProps) => {
   const { toast } = useToast();
   const geolocation = useGeolocation();
   const [photos, setPhotos] = useState<PhotoData[]>([]);
@@ -1666,4 +1666,6 @@ export const ProfilePhotos = ({ userId, isOwner, isFriend = false }: ProfilePhot
       />
     </Card>
   );
-};
+});
+
+ProfilePhotos.displayName = 'ProfilePhotos';

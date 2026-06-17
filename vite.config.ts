@@ -59,7 +59,6 @@ export default defineConfig(({ mode }) => ({
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'supabase-vendor': ['@supabase/supabase-js'],
           'ui-heavy': ['framer-motion', 'react-image-crop', 'recharts'],
-          'maps': ['mapbox-gl'],
           'radix-ui': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
