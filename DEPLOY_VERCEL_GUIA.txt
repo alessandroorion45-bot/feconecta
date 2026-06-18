@@ -1,0 +1,186 @@
+════════════════════════════════════════════════════════════
+  🚀 GUIA DE DEPLOY NA VERCEL - PASSO A PASSO
+════════════════════════════════════════════════════════════
+
+📌 ACABEI DE ABRIR A PÁGINA DA VERCEL NO SEU NAVEGADOR!
+
+Se não abriu, acesse manualmente:
+https://vercel.com/new
+
+
+════════════════════════════════════════════════════════════
+  PASSO 1: IMPORTAR REPOSITÓRIO
+════════════════════════════════════════════════════════════
+
+1. Na página da Vercel, procure por:
+   "Import Git Repository"
+
+2. Se pedir para conectar GitHub:
+   - Clique em "Continue with GitHub"
+   - Autorize a Vercel
+   - Selecione a conta: alessandroorion45-bot
+
+3. Procure o repositório:
+   "feconecta"
+
+4. Clique em "Import"
+
+
+════════════════════════════════════════════════════════════
+  PASSO 2: CONFIGURAR O PROJETO
+════════════════════════════════════════════════════════════
+
+Na tela de configuração, preencha:
+
+📁 PROJECT NAME:
+   feconecta
+   (ou deixe como está)
+
+⚙️ FRAMEWORK PRESET:
+   Vite
+   (a Vercel deve detectar automaticamente)
+
+📂 ROOT DIRECTORY:
+   ./
+   (deixe como está)
+
+🔨 BUILD COMMAND:
+   npm run build
+   (deixe como está - já vem preenchido)
+
+📦 OUTPUT DIRECTORY:
+   dist
+   (deixe como está - já vem preenchido)
+
+
+════════════════════════════════════════════════════════════
+  PASSO 3: ADICIONAR VARIÁVEIS DE AMBIENTE (IMPORTANTE!)
+════════════════════════════════════════════════════════════
+
+Clique em "Environment Variables" (ou "Add Environment Variables")
+
+Adicione estas 2 variáveis:
+
+┌─────────────────────────────────────────────────────────┐
+│ 1️⃣ VITE_SUPABASE_URL                                    │
+├─────────────────────────────────────────────────────────┤
+│ Name:  VITE_SUPABASE_URL                                │
+│ Value: https://kfetvofrwtuduwmpvdlz.supabase.co         │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│ 2️⃣ VITE_SUPABASE_PUBLISHABLE_KEY                        │
+├─────────────────────────────────────────────────────────┤
+│ Name:  VITE_SUPABASE_PUBLISHABLE_KEY                    │
+│ Value: sb_publishable_8-a3qVJjeLmRBhKui1rCvg_9hWQMqqR   │
+└─────────────────────────────────────────────────────────┘
+
+⚠️ COPIE E COLE EXATAMENTE COMO ESTÁ ACIMA!
+
+
+════════════════════════════════════════════════════════════
+  PASSO 4: FAZER O DEPLOY
+════════════════════════════════════════════════════════════
+
+1. Revise as configurações
+
+2. Clique no botão azul: "Deploy"
+
+3. Aguarde 2-3 minutos
+   (Você verá logs do build aparecendo)
+
+4. Quando aparecer: "🎉 Congratulations!"
+   - Seu app está no ar!
+
+
+════════════════════════════════════════════════════════════
+  PASSO 5: ACESSAR O APP
+════════════════════════════════════════════════════════════
+
+Após o deploy, você verá um link tipo:
+https://feconecta-xxxx.vercel.app
+
+Clique para abrir e testar!
+
+
+════════════════════════════════════════════════════════════
+  ✅ CHECKLIST
+════════════════════════════════════════════════════════════
+
+□ Conectou GitHub na Vercel
+□ Importou repositório "feconecta"
+□ Framework detectado: Vite
+□ Adicionou VITE_SUPABASE_URL
+□ Adicionou VITE_SUPABASE_PUBLISHABLE_KEY
+□ Clicou em "Deploy"
+□ Aguardou build completar
+□ App está no ar!
+
+
+════════════════════════════════════════════════════════════
+  🎯 TESTE DE PERFORMANCE
+════════════════════════════════════════════════════════════
+
+Depois que o deploy completar:
+
+1. Abra o app no link da Vercel
+
+2. Teste as páginas:
+   - /bible (deve carregar em 1-2s primeira vez)
+   - /bible (segunda vez: ~100ms - CACHE!)
+   - /profile (deve ser rápido: ~500ms)
+   - /feed (deve ser rápido: ~800ms)
+
+3. Abra F12 → Console
+   - Procure por: "📖 Bíblia carregada do cache!"
+   - Se aparecer = FUNCIONOU! ✅
+
+
+════════════════════════════════════════════════════════════
+  ⚠️ SE DER ERRO
+════════════════════════════════════════════════════════════
+
+Erros comuns:
+
+❌ "Build failed"
+   → Verifique se as variáveis de ambiente estão corretas
+
+❌ "Module not found"
+   → O Vercel está fazendo install automático, aguarde
+
+❌ Página em branco
+   → Abra F12 → Console e veja o erro
+   → Me mande o erro que eu ajudo!
+
+
+════════════════════════════════════════════════════════════
+  📞 ME AVISE QUANDO:
+════════════════════════════════════════════════════════════
+
+✅ Deploy completar (mostra o link do app)
+✅ App abrir no navegador
+✅ Ou se der algum erro
+
+Vou verificar se está tudo funcionando!
+
+
+════════════════════════════════════════════════════════════
+  🚀 GANHO ESPERADO APÓS DEPLOY:
+════════════════════════════════════════════════════════════
+
+ANTES:
+  /bible:   10s  ❌
+  /profile:  5s  ❌
+  /feed:     6s  ❌
+
+DEPOIS (com otimizações):
+  /bible:   2s (1ª) / 100ms (cache)  ✅
+  /profile: 500ms  ✅
+  /feed:    800ms  ✅
+
+GANHO: 5-10x MAIS RÁPIDO! 🚀
+
+
+════════════════════════════════════════════════════════════
+
+Siga os passos acima e me avise quando completar! 🎉
