@@ -1,0 +1,100 @@
+═══════════════════════════════════════════════════════════
+🎯 COMANDOS PARA EXECUTAR NO SUPABASE
+═══════════════════════════════════════════════════════════
+
+COPIE E COLE ESTES COMANDOS NO SEU TERMINAL:
+
+═══════════════════════════════════════════════════════════
+📌 PASSO 1: LOGIN NO SUPABASE (só 1 vez)
+═══════════════════════════════════════════════════════════
+
+npx supabase login
+
+→ Vai abrir o navegador
+→ Faça login
+→ Volte ao terminal
+
+═══════════════════════════════════════════════════════════
+📌 PASSO 2: LINKAR O PROJETO (só 1 vez)
+═══════════════════════════════════════════════════════════
+
+npx supabase link
+
+→ Selecione seu projeto na lista
+→ Digite a senha do banco (se pedir)
+
+═══════════════════════════════════════════════════════════
+📌 PASSO 3: APLICAR MIGRAÇÃO DO BANCO
+═══════════════════════════════════════════════════════════
+
+npx supabase db push
+
+→ Adiciona campos: thumbnail_url, medium_url, etc.
+→ Deve mostrar: "Migrations applied successfully"
+
+═══════════════════════════════════════════════════════════
+📌 PASSO 4: DEPLOY DA EDGE FUNCTION
+═══════════════════════════════════════════════════════════
+
+npx supabase functions deploy optimize-image
+
+→ Faz upload da função que otimiza imagens
+→ Deve mostrar: "Deployed successfully"
+
+═══════════════════════════════════════════════════════════
+✅ PRONTO! AGORA FAÇA O DEPLOY DO FRONTEND:
+═══════════════════════════════════════════════════════════
+
+git push origin main
+
+→ Vercel vai deployar automaticamente
+
+═══════════════════════════════════════════════════════════
+🧪 COMO TESTAR:
+═══════════════════════════════════════════════════════════
+
+1. Acesse seu app
+2. Vá no seu perfil
+3. Clique em "Nova Foto"
+4. Faça upload de uma imagem
+5. ✅ Deve aparecer: "Foto publicada! 📸✨ • Otimização: 85% menor • WebP"
+
+═══════════════════════════════════════════════════════════
+📊 VERIFICAR SE FUNCIONOU (SQL):
+═══════════════════════════════════════════════════════════
+
+Cole no Supabase Dashboard → SQL Editor:
+
+SELECT
+  photo_url,
+  thumbnail_url,
+  medium_url,
+  compression_ratio,
+  created_at
+FROM profile_photos
+ORDER BY created_at DESC
+LIMIT 3;
+
+✅ Deve mostrar URLs terminando em .webp
+✅ compression_ratio deve estar entre 70-95
+
+═══════════════════════════════════════════════════════════
+⚠️ SE DER ERRO:
+═══════════════════════════════════════════════════════════
+
+Ver logs:
+npx supabase functions logs optimize-image
+
+Atualizar CLI:
+npm install -g supabase@latest
+
+Re-fazer deploy:
+npx supabase functions deploy optimize-image
+
+═══════════════════════════════════════════════════════════
+📚 DOCUMENTAÇÃO:
+═══════════════════════════════════════════════════════════
+
+Guia completo: GUIA_SUPABASE_PASSO_A_PASSO.md
+
+═══════════════════════════════════════════════════════════
