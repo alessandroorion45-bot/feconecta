@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { optimizeImage } from "@/lib/imageOptimization";
 
 interface AvatarUploadProps {
   currentUrl?: string;
@@ -156,43 +157,39 @@ export const AvatarUpload = ({
     try {
       setUploading(true);
 
+      // Get cropped blob
       const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
-      const fileName = `${userId}/${Date.now()}.jpg`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, croppedBlob, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
+      // Convert blob to File for optimization
+      const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
 
-      if (uploadError) throw uploadError;
+      toast({
+        title: "Otimizando avatar... 🔄",
+        description: "Comprimindo e gerando versões WebP"
+      });
 
-      const { data: publicUrlData, error: publicUrlError } = await supabase.storage
-        .from("avatars")
-        .getPublicUrl(fileName);
+      // ✨ OTIMIZAÇÃO: Processar com Sharp
+      const optimized = await optimizeImage(file, 'avatar', userId);
 
-      if (publicUrlError || !publicUrlData?.publicUrl) {
-        throw publicUrlError || new Error("Falha ao gerar URL pública do avatar.");
-      }
-
-      const publicUrl = publicUrlData.publicUrl;
-
-      // Save avatar URL directly to database
+      // Save optimized URLs to database
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl })
+        .update({
+          avatar_url: optimized.photo_url,
+          avatar_thumbnail_url: optimized.thumbnail_url,
+          avatar_medium_url: optimized.medium_url
+        })
         .eq("id", userId);
 
       if (updateError) throw updateError;
 
-      onUploadComplete(publicUrl);
+      onUploadComplete(optimized.photo_url);
       setDialogOpen(false);
       setImgSrc("");
 
       toast({
-        title: "Avatar atualizado!",
-        description: "Sua foto de perfil foi atualizada com sucesso.",
+        title: "Avatar atualizado! ✨",
+        description: `${optimized.compression_ratio}% menor • WebP`,
       });
     } catch (error: any) {
       toast({

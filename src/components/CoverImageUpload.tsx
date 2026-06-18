@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { optimizeImage } from "@/lib/imageOptimization";
 
 interface CoverImageUploadProps {
   currentUrl?: string;
@@ -151,42 +152,35 @@ export const CoverImageUpload = ({
       setUploading(true);
 
       const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
-      const fileName = `${userId}/${Date.now()}.jpg`;
+      const file = new File([croppedBlob], 'cover.jpg', { type: 'image/jpeg' });
 
-      const { error: uploadError } = await supabase.storage
-        .from("covers")
-        .upload(fileName, croppedBlob, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
+      toast({
+        title: "Otimizando capa... 🔄",
+        description: "Comprimindo e gerando versões WebP"
+      });
 
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData, error: publicUrlError } = await supabase.storage
-        .from("covers")
-        .getPublicUrl(fileName);
-
-      if (publicUrlError || !publicUrlData?.publicUrl) {
-        throw publicUrlError || new Error("Falha ao gerar URL pública da capa.");
-      }
-
-      const publicUrl = publicUrlData.publicUrl;
+      // ✨ OTIMIZAÇÃO: Processar com Sharp
+      const optimized = await optimizeImage(file, 'cover', userId);
 
       // Save cover URL directly to database for persistence
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ cover_image_url: publicUrl })
+        .update({
+          cover_image_url: optimized.photo_url,
+          cover_thumbnail_url: optimized.thumbnail_url,
+          cover_medium_url: optimized.medium_url
+        })
         .eq("id", userId);
 
       if (updateError) throw updateError;
 
-      onUploadComplete(publicUrl);
+      onUploadComplete(optimized.photo_url);
       setDialogOpen(false);
       setImgSrc("");
 
       toast({
-        title: "Capa atualizada com sucesso!",
-        description: "Sua imagem de capa foi salva.",
+        title: "Capa atualizada! ✨",
+        description: `${optimized.compression_ratio}% menor • WebP`,
       });
     } catch (error: any) {
       toast({

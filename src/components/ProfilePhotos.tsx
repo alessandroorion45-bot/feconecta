@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { optimizeImage, getResponsiveImageUrl } from "@/lib/imageOptimization";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -62,12 +63,15 @@ interface PhotoData {
   id: string;
   user_id: string;
   photo_url: string;
+  thumbnail_url?: string;
+  medium_url?: string;
   caption: string | null;
   visibility: 'public' | 'private' | 'friends';
   likes_count: number;
   created_at: string;
   location: string | null;
   album_id: string | null;
+  compression_ratio?: number;
 }
 
 interface Album {
@@ -509,24 +513,25 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      const fileExt = photoFile.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('photos')
-        .upload(fileName, photoFile);
+      // ✨ OTIMIZAÇÃO: Processar imagem com Sharp via Edge Function
+      toast({
+        title: "Otimizando imagem... 🔄",
+        description: "Comprimindo e gerando versões otimizadas"
+      });
 
-      if (uploadError) throw uploadError;
+      const optimized = await optimizeImage(photoFile, 'photo', user.id);
 
-      const { data: urlData } = supabase.storage
-        .from('photos')
-        .getPublicUrl(fileName);
-
+      // Inserir no banco com URLs otimizadas
       const { error: insertError } = await supabase
         .from('profile_photos')
         .insert({
           user_id: user.id,
-          photo_url: urlData.publicUrl,
+          photo_url: optimized.photo_url,
+          thumbnail_url: optimized.thumbnail_url,
+          medium_url: optimized.medium_url,
+          original_size: optimized.original_size,
+          optimized_size: optimized.optimized_size,
+          compression_ratio: optimized.compression_ratio,
           caption: formData.caption.trim() || null,
           visibility: formData.visibility,
           location: formData.location.trim() || null,
@@ -536,8 +541,8 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
       if (insertError) throw insertError;
 
       toast({
-        title: "Foto publicada! 📸",
-        description: "Sua foto foi publicada com sucesso."
+        title: "Foto publicada! 📸✨",
+        description: `Otimização: ${optimized.compression_ratio}% menor • WebP`
       });
 
       setPhotoFile(null);
@@ -947,7 +952,7 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
                         onClick={() => openPhotoDetail(photo)}
                       >
                         <img
-                          src={photo.photo_url}
+                          src={getResponsiveImageUrl(photo, 'medium')}
                           alt={photo.caption || "Foto"}
                           className="w-full h-auto object-contain max-h-[500px] transition-transform duration-500 group-hover:scale-[1.02]"
                           loading="lazy"
@@ -1085,7 +1090,7 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
               {/* Photo with preserved aspect ratio using padding trick */}
               <div className="relative">
                 <img
-                  src={photo.photo_url}
+                  src={getResponsiveImageUrl(photo, 'thumbnail')}
                   alt={photo.caption || "Foto"}
                   className="w-full h-auto object-contain max-h-[300px] transition-transform group-hover:scale-105"
                   loading="lazy"
@@ -1315,7 +1320,7 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
               {/* Photo - preserving original aspect ratio */}
               <div className="bg-black flex items-center justify-center min-h-[300px] lg:min-h-[500px] lg:flex-1">
                 <img
-                  src={selectedPhoto.photo_url}
+                  src={getResponsiveImageUrl(selectedPhoto, 'full')}
                   alt={selectedPhoto.caption || "Foto"}
                   className="max-w-full max-h-[70vh] lg:max-h-[80vh] object-contain"
                 />
@@ -1669,3 +1674,6 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
 });
 
 ProfilePhotos.displayName = 'ProfilePhotos';
+
+// Export as default for lazy loading
+export default ProfilePhotos;
