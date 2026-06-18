@@ -52,8 +52,23 @@ const Header = () => {
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    await signOut();
-    navigate("/auth");
+    try {
+      // Fechar menus primeiro
+      setIsOpen(false);
+      setIsDesktopMenuOpen(false);
+
+      // Fazer logout
+      await signOut();
+
+      // Aguardar um pouco e navegar (replace: true para não voltar)
+      setTimeout(() => {
+        navigate("/auth", { replace: true });
+      }, 100);
+    } catch (error) {
+      console.error('Erro ao sair:', error);
+      // Mesmo com erro, tentar navegar
+      navigate("/auth", { replace: true });
+    }
   };
 
   const handleNavClick = (path: string) => {

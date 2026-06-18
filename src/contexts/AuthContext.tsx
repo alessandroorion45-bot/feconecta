@@ -44,9 +44,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         }
 
-        // Get session with optimized timeout (800ms - fast initial load)
+        // Get session with optimized timeout (1500ms - balanced speed + reliability)
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 800)
+          setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 1500)
         );
 
         const sessionPromise = supabase.auth.getSession();
@@ -119,12 +119,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signOut = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      console.log('[AuthContext] Iniciando logout...');
+
+      // Limpar estado PRIMEIRO (para UI responder rápido)
       setSession(null);
       setUser(null);
+
+      // Fazer logout no Supabase
+      await supabase.auth.signOut();
+
+      // Limpar TODO o localStorage (incluindo cache)
+      localStorage.clear();
+
+      console.log('[AuthContext] Logout completo!');
     } catch (error) {
-      console.error('[AuthContext] Error signing out:', error);
+      console.error('[AuthContext] Erro no logout:', error);
+      // Mesmo com erro, garantir que estado local está limpo
+      setSession(null);
+      setUser(null);
+      localStorage.clear();
     }
   }, []);
 
