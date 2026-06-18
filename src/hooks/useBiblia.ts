@@ -13,6 +13,14 @@ export interface Livro {
   chapters: string[][]
 }
 
+const CACHE_KEY = 'biblia_supabase_cache_v1';
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+interface CachedData {
+  data: Livro[];
+  timestamp: number;
+}
+
 export function useBiblia() {
   const [livros, setLivros] = useState<Livro[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,6 +29,23 @@ export function useBiblia() {
   useEffect(() => {
     async function loadBiblia() {
       try {
+        // ✅ OTIMIZAÇÃO: Tentar cache primeiro
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const { data, timestamp }: CachedData = JSON.parse(cached);
+
+            if (Date.now() - timestamp < CACHE_TTL && data.length > 0) {
+              console.log('📖 Bíblia carregada do cache! (instantâneo)');
+              setLivros(data);
+              setLoading(false);
+              return; // ✅ Retorna IMEDIATAMENTE!
+            }
+          } catch (e) {
+            console.warn('Cache inválido, recarregando...');
+          }
+        }
+
         console.log('🔄 Iniciando carregamento da Bíblia do Supabase...')
 
         // Buscar todos os livros ordenados por ID (ordem bíblica)
@@ -30,9 +55,6 @@ export function useBiblia() {
           .order('id', { ascending: true })
 
         console.log('📚 Livros retornados:', books?.length, 'livros')
-        if (books && books.length > 0) {
-          console.log('📖 Primeiro livro:', books[0])
-        }
 
         if (booksError) {
           console.error('❌ Erro ao buscar livros:', booksError)
@@ -79,11 +101,12 @@ export function useBiblia() {
         }
 
         console.log('✅ Bíblia carregada com sucesso! Total de livros:', livrosCompletos.length)
-        console.log('📖 Estrutura do primeiro livro:', {
-          abbrev: livrosCompletos[0]?.abbrev,
-          book: livrosCompletos[0]?.book,
-          chapters: livrosCompletos[0]?.chapters?.length
-        })
+
+        // ✅ OTIMIZAÇÃO: Salvar no cache
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: livrosCompletos,
+          timestamp: Date.now()
+        }));
 
         setLivros(livrosCompletos)
         setLoading(false)

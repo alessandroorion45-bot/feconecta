@@ -944,3 +944,6 @@ export const ProfileVideos = ({ userId, isOwner, isFriend = false }: ProfileVide
     </Card>
   );
 };
+
+// Export as default for lazy loading
+export default ProfileVideos;

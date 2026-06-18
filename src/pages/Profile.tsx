@@ -1,14 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import Header from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { FriendTestimonials } from "@/components/FriendTestimonials";
 import { ProfilePublicView } from "@/components/ProfilePublicView";
 import { ProfileEditSheet } from "@/components/ProfileEditSheet";
 import { ProfileSettingsSheet } from "@/components/ProfileSettingsSheet";
-import { ProfileVideos } from "@/components/ProfileVideos";
-import { ProfilePhotos } from "@/components/ProfilePhotos";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+
+// Lazy load heavy components to improve initial page load
+const ProfilePhotos = lazy(() => import("@/components/ProfilePhotos"));
+const ProfileVideos = lazy(() => import("@/components/ProfileVideos"));
+const FriendTestimonials = lazy(() => import("@/components/FriendTestimonials"));
 
 interface Badge {
   badge_name: string;
@@ -149,36 +153,65 @@ const Profile = () => {
           onCoverUpdate={handleCoverUpdate}
         />
 
-        {/* Photos Section */}
+        {/* Photos Section - Lazy loaded with Suspense */}
         {user && !loading && (
           <div className="mt-6 px-4 sm:px-0">
-            <ProfilePhotos
-              userId={user.id}
-              isOwner={true}
-            />
+            <Suspense fallback={
+              <Card className="p-6">
+                <Skeleton className="h-8 w-48 mb-4" />
+                <div className="grid grid-cols-3 gap-2">
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+              </Card>
+            }>
+              <ProfilePhotos
+                userId={user.id}
+                isOwner={true}
+              />
+            </Suspense>
           </div>
         )}
 
-        {/* Videos Section */}
+        {/* Videos Section - Lazy loaded with Suspense */}
         {user && !loading && (
           <div className="mt-6 px-4 sm:px-0">
-            <ProfileVideos
-              userId={user.id}
-              isOwner={true}
-            />
+            <Suspense fallback={
+              <Card className="p-6">
+                <Skeleton className="h-8 w-48 mb-4" />
+                <div className="grid grid-cols-2 gap-4">
+                  <Skeleton className="h-40 w-full" />
+                  <Skeleton className="h-40 w-full" />
+                </div>
+              </Card>
+            }>
+              <ProfileVideos
+                userId={user.id}
+                isOwner={true}
+              />
+            </Suspense>
           </div>
         )}
 
-        {/* Friend Testimonials Section */}
+        {/* Friend Testimonials Section - Lazy loaded with Suspense */}
         {user && !loading && (
           <div className="mt-6 px-4 sm:px-0">
-            <FriendTestimonials
-              profileId={user.id}
-              profileName={profile.full_name || "Usuário"}
-              isOwnProfile={true}
-              isFriend={false}
-              currentUserId={user.id}
-            />
+            <Suspense fallback={
+              <Card className="p-6">
+                <Skeleton className="h-8 w-64 mb-4" />
+                <Skeleton className="h-24 w-full mb-3" />
+                <Skeleton className="h-24 w-full" />
+              </Card>
+            }>
+              <FriendTestimonials
+                profileId={user.id}
+                profileName={profile.full_name || "Usuário"}
+                isOwnProfile={true}
+                isFriend={false}
+                currentUserId={user.id}
+              />
+            </Suspense>
           </div>
         )}
 

@@ -362,3 +362,6 @@ export const FriendTestimonials = ({
     </div>
   );
 };
+
+// Export as default for lazy loading
+export default FriendTestimonials;
