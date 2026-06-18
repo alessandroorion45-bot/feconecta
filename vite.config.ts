@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
+// import { componentTagger } from "lovable-tagger"; // REMOVIDO - causava lentidão
 import viteCompression from 'vite-plugin-compression';
 
 // https://vitejs.dev/config/
@@ -12,7 +12,6 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
     // Gzip compression
     mode === "production" && viteCompression({
       algorithm: 'gzip',

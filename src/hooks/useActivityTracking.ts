@@ -44,8 +44,13 @@ export const useActivityTracking = () => {
   };
 
   const checkNewAchievements = async (userId: string) => {
+    // OTIMIZADO: Desabilitado temporariamente para melhorar performance
+    // Query a cada ação estava deixando o app lento
+    // TODO: Implementar WebSocket realtime para conquistas
+    return;
+
+    /* CÓDIGO ORIGINAL (causava lentidão):
     try {
-      // Get newly earned achievements (within last 5 seconds)
       const { data: newAchievements, error } = await supabase
         .from("user_achievements")
         .select(`
@@ -64,7 +69,6 @@ export const useActivityTracking = () => {
         return;
       }
 
-      // Show toast for each new achievement
       newAchievements.forEach((achievement: any) => {
         const ach = achievement.achievements;
         toast({
@@ -75,6 +79,7 @@ export const useActivityTracking = () => {
     } catch (error) {
       console.error("Error checking achievements:", error);
     }
+    */
   };
 
   return { trackActivity };
