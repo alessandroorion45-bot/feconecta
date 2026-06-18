@@ -9,6 +9,7 @@ import { ProfileSettingsSheet } from "@/components/ProfileSettingsSheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { pageCache, CACHE_TTL } from "@/lib/pageCache";
+import { ImageKitUploadTest } from "@/components/ImageKitUploadTest";
 
 // Lazy load heavy components to improve initial page load
 const ProfilePhotos = lazy(() => import("@/components/ProfilePhotos"));
@@ -229,6 +230,13 @@ const Profile = () => {
                 isOwner={true}
               />
             </Suspense>
+          </div>
+        )}
+
+        {/* ImageKit Upload Test - REMOVER DEPOIS DO TESTE */}
+        {user && !loading && (
+          <div className="px-4 sm:px-0">
+            <ImageKitUploadTest />
           </div>
         )}
 
