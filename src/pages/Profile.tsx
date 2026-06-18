@@ -8,6 +8,7 @@ import { ProfileEditSheet } from "@/components/ProfileEditSheet";
 import { ProfileSettingsSheet } from "@/components/ProfileSettingsSheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
+import { pageCache, CACHE_TTL } from "@/lib/pageCache";
 
 // Lazy load heavy components to improve initial page load
 const ProfilePhotos = lazy(() => import("@/components/ProfilePhotos"));
@@ -66,6 +67,20 @@ const Profile = () => {
   const loadProfile = async (userId: string) => {
     setLoading(true);
     try {
+      // OTIMIZAÇÃO: Tentar cache primeiro
+      const cacheKey = `profile_${userId}`;
+      const cached = pageCache.get<{ profile: ProfileData; badges: Badge[] }>(cacheKey);
+
+      if (cached) {
+        console.log('✅ Perfil carregado do cache!');
+        setProfile(cached.profile);
+        setBadges(cached.badges);
+        setLoading(false);
+        return;
+      }
+
+      console.log('📥 Carregando perfil do Supabase...');
+
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -100,6 +115,29 @@ const Profile = () => {
       if (badgesData) {
         setBadges(badgesData);
       }
+
+      // OTIMIZAÇÃO: Salvar no cache
+      const profileData = {
+        username: data?.username || "",
+        full_name: data?.full_name || "",
+        church_name: data?.church_name || "",
+        bio: data?.bio || "",
+        city: data?.city || "",
+        avatar_url: data?.avatar_url || "",
+        cover_image_url: data?.cover_image_url || "",
+        marital_status: data?.marital_status || "",
+        is_private: data?.is_private || false,
+        profile_quote: data?.profile_quote || "",
+        church_role: (data as any)?.church_role || null,
+        ministries: (data as any)?.ministries || [],
+      };
+
+      pageCache.set(cacheKey, {
+        profile: profileData,
+        badges: badgesData || []
+      }, CACHE_TTL.PROFILE);
+
+      console.log('✅ Perfil salvo no cache!');
     } catch (error) {
       toast({
         title: "Erro",
