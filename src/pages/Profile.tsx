@@ -94,11 +94,21 @@ const Profile = () => {
 
       console.log('📥 Carregando perfil do Supabase...');
 
-      const { data, error } = await supabase
+      // TIMEOUT de 10 segundos para evitar travamento
+      const profilePromise = supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
         .single();
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('PROFILE_TIMEOUT')), 10000)
+      );
+
+      const { data, error } = await Promise.race([
+        profilePromise,
+        timeoutPromise
+      ]) as Awaited<ReturnType<typeof profilePromise>>;
 
       if (!error && data) {
         setProfile({
@@ -151,13 +161,20 @@ const Profile = () => {
       }, CACHE_TTL.PROFILE);
 
       console.log('✅ Perfil salvo no cache!');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Erro ao carregar perfil:', error);
+
+      const errorMessage = error?.message === 'PROFILE_TIMEOUT'
+        ? 'Tempo esgotado ao carregar perfil. Verifique sua conexão.'
+        : error?.message || 'Não foi possível carregar o perfil.';
+
       toast({
         title: "Erro",
-        description: "Não foi possível carregar o perfil.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
+      console.log('✅ Finalizando carregamento do perfil');
       setLoading(false);
     }
   };
