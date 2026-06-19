@@ -9,7 +9,7 @@ import { ProfileSettingsSheet } from "@/components/ProfileSettingsSheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { pageCache, CACHE_TTL } from "@/lib/pageCache";
-import { ImageKitUploadTest } from "@/components/ImageKitUploadTest";
+// import { ImageKitUploadTest } from "@/components/ImageKitUploadTest"; // Desabilitado temporariamente
 
 // Lazy load heavy components to improve initial page load
 const ProfilePhotos = lazy(() => import("@/components/ProfilePhotos"));
