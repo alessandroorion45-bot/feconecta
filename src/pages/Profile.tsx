@@ -95,11 +95,13 @@ const Profile = () => {
       console.log('📥 Carregando perfil do Supabase...');
 
       // TIMEOUT de 10 segundos para evitar travamento
-      const profilePromise = supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
+      const profilePromise = (async () => {
+        return await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
+      })();
 
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('PROFILE_TIMEOUT')), 10000)
@@ -108,7 +110,7 @@ const Profile = () => {
       const { data, error } = await Promise.race([
         profilePromise,
         timeoutPromise
-      ]) as Awaited<ReturnType<typeof profilePromise>>;
+      ]) as Awaited<typeof profilePromise>;
 
       if (!error && data) {
         setProfile({
