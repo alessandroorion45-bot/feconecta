@@ -233,12 +233,12 @@ const Profile = () => {
           </div>
         )}
 
-        {/* ImageKit Upload Test - REMOVER DEPOIS DO TESTE */}
-        {user && !loading && (
+        {/* ImageKit Upload Test - TEMPORARIAMENTE DESABILITADO */}
+        {/* {user && !loading && (
           <div className="px-4 sm:px-0">
             <ImageKitUploadTest />
           </div>
-        )}
+        )} */}
 
         {/* Friend Testimonials Section - Lazy loaded with Suspense */}
         {user && !loading && (
