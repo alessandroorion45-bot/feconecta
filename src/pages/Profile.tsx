@@ -39,6 +39,12 @@ interface ProfileData {
 
 const Profile = () => {
   console.log('[Profile] Componente iniciado');
+
+  // TESTE: Se isso aparecer, o código está rodando!
+  if (typeof window !== 'undefined' && window.location.pathname === '/profile') {
+    console.warn('🔴 PROFILE CARREGADO! Se você vê isso, o código está funcionando!');
+  }
+
   const { toast } = useToast();
   const { user } = useAuth();
   console.log('[Profile] User:', user?.email || 'não autenticado');
