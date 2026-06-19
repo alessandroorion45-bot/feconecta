@@ -38,8 +38,10 @@ interface ProfileData {
 }
 
 const Profile = () => {
+  console.log('[Profile] Componente iniciado');
   const { toast } = useToast();
   const { user } = useAuth();
+  console.log('[Profile] User:', user?.email || 'não autenticado');
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData>({
     username: "",
