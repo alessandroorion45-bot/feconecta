@@ -40,9 +40,11 @@ interface ProfileData {
 const Profile = () => {
   console.log('[Profile] Componente iniciado');
 
-  // TESTE: Se isso aparecer, o código está rodando!
+  // TESTE DEFINITIVO: Alert que SEMPRE aparece
   if (typeof window !== 'undefined' && window.location.pathname === '/profile') {
     console.warn('🔴 PROFILE CARREGADO! Se você vê isso, o código está funcionando!');
+    console.error('🚨 TESTE: Este erro DEVE aparecer em vermelho!');
+    // Descomentar para testar: alert('✅ Profile carregado com sucesso!');
   }
 
   const { toast } = useToast();
