@@ -44,7 +44,9 @@ const Profile = () => {
   if (typeof window !== 'undefined' && window.location.pathname === '/profile') {
     console.warn('🔴 PROFILE CARREGADO! Se você vê isso, o código está funcionando!');
     console.error('🚨 TESTE: Este erro DEVE aparecer em vermelho!');
-    // Descomentar para testar: alert('✅ Profile carregado com sucesso!');
+
+    // ALERT FORÇADO - Vai aparecer como POPUP!
+    alert('✅ CÓDIGO FUNCIONANDO! Se vê este popup, o JavaScript está rodando! Deploy atualizado em ' + new Date().toLocaleTimeString());
   }
 
   const { toast } = useToast();
