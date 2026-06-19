@@ -145,6 +145,8 @@ const Auth = () => {
   useEffect(() => {
     const checkGoogleAuthCallback = async () => {
       try {
+        console.log('[Auth] Processando OAuth callback...');
+
         // Add timeout
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('TIMEOUT')), 5000)
@@ -158,6 +160,7 @@ const Auth = () => {
         ]) as Awaited<ReturnType<typeof supabase.auth.getUser>>;
 
         if (user) {
+          console.log('[Auth] Usuário autenticado via OAuth:', user.email);
           const provider = user.app_metadata?.provider;
 
           if (provider === 'google') {
@@ -173,11 +176,18 @@ const Auth = () => {
             ]) as Awaited<ReturnType<typeof profilePromise>>;
 
             if (!profile?.country) {
+              console.log('[Auth] País não definido, mostrando modal');
               setShowCountryModal(true);
             } else {
-              navigate('/');
+              console.log('[Auth] Redirecionando para /feed');
+              navigate('/feed', { replace: true });
             }
+          } else {
+            console.log('[Auth] Redirecionando para /feed (não-Google)');
+            navigate('/feed', { replace: true });
           }
+        } else {
+          console.log('[Auth] Nenhum usuário encontrado após OAuth callback');
         }
       } catch (error: any) {
         console.error('Error checking Google auth:', error);
@@ -188,9 +198,18 @@ const Auth = () => {
       }
     };
 
+    // Detectar AMBOS: hash (#access_token) E query parameter (?code=)
     const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      checkGoogleAuthCallback();
+    const search = window.location.search;
+    const hasAccessToken = hash && hash.includes('access_token');
+    const hasCode = search && search.includes('code=');
+
+    if (hasAccessToken || hasCode) {
+      console.log('[Auth] OAuth callback detectado:', hasAccessToken ? 'access_token' : 'code');
+      // Dar tempo para o Supabase processar o code automaticamente
+      setTimeout(() => {
+        checkGoogleAuthCallback();
+      }, 500);
     }
   }, [navigate]);
 
