@@ -79,6 +79,8 @@ const Profile = () => {
 
   const loadProfile = async (userId: string) => {
     setLoading(true);
+    let startTime = performance.now(); // let para poder usar no finally
+
     try {
       // OTIMIZAÇÃO: Tentar cache primeiro
       const cacheKey = `profile_${userId}`;
@@ -92,27 +94,64 @@ const Profile = () => {
         return;
       }
 
-      console.log('📥 Carregando perfil do Supabase...');
+      // 🔍 DEBUG DETALHADO - Reiniciar timer após cache check
+      startTime = performance.now();
+      console.log('═══════════════════════════════════════');
+      console.log('🚀 INICIANDO CARREGAMENTO DO PERFIL');
+      console.log('📋 User ID:', userId);
+      console.log('⏰ Timestamp:', new Date().toISOString());
+      console.log('═══════════════════════════════════════');
 
-      // TIMEOUT de 10 segundos para evitar travamento
       const profilePromise = (async () => {
-        return await supabase
+        console.log('📡 Enviando requisição para Supabase...');
+        const result = await supabase
           .from("profiles")
           .select("*")
           .eq("id", userId)
           .single();
+
+        const endTime = performance.now();
+        const duration = ((endTime - startTime) / 1000).toFixed(2);
+        console.log(`⏱️ Query completou em ${duration}s`);
+        console.log('📦 Dados recebidos:', result.data ? 'SIM' : 'NÃO');
+        console.log('❌ Erro recebido:', result.error ? result.error.message : 'NÃO');
+
+        return result;
       })();
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('PROFILE_TIMEOUT')), 10000)
+        setTimeout(() => {
+          const timeoutDuration = ((performance.now() - startTime) / 1000).toFixed(2);
+          console.error(`⏰ TIMEOUT após ${timeoutDuration}s`);
+          reject(new Error('PROFILE_TIMEOUT'));
+        }, 30000) // 30 segundos
       );
 
+      console.log('⏳ Aguardando resposta (timeout: 30s)...');
       const { data, error } = await Promise.race([
         profilePromise,
         timeoutPromise
       ]) as Awaited<typeof profilePromise>;
 
-      if (!error && data) {
+      if (error) {
+        console.error('═══════════════════════════════════════');
+        console.error('❌ ERRO NA QUERY DO PERFIL:');
+        console.error('Código:', error.code);
+        console.error('Mensagem:', error.message);
+        console.error('Detalhes:', error.details);
+        console.error('Hint:', error.hint);
+        console.error('═══════════════════════════════════════');
+        throw error;
+      }
+
+      if (!data) {
+        console.warn('⚠️ Query completou mas SEM DADOS retornados!');
+        console.warn('Isso pode significar que RLS bloqueou ou perfil não existe');
+      } else {
+        console.log('✅ PERFIL CARREGADO COM SUCESSO!');
+        console.log('👤 Username:', data.username);
+        console.log('📧 Full name:', data.full_name);
+
         setProfile({
           username: data.username || "",
           full_name: data.full_name || "",
@@ -130,15 +169,25 @@ const Profile = () => {
       }
 
       // Load user badges
-      const { data: badgesData } = await supabase
+      console.log('🏅 Carregando badges...');
+      const badgesStart = performance.now();
+      const { data: badgesData, error: badgesError } = await supabase
         .from("user_badges")
         .select("badge_name, badge_icon, badge_color")
         .eq("user_id", userId)
         .order("display_order", { ascending: true })
         .limit(5);
 
-      if (badgesData) {
+      const badgesDuration = ((performance.now() - badgesStart) / 1000).toFixed(2);
+      console.log(`⏱️ Badges query completou em ${badgesDuration}s`);
+
+      if (badgesError) {
+        console.warn('⚠️ Erro ao carregar badges:', badgesError.message);
+      } else if (badgesData) {
+        console.log(`✅ ${badgesData.length} badges carregados`);
         setBadges(badgesData);
+      } else {
+        console.log('ℹ️ Nenhum badge encontrado');
       }
 
       // OTIMIZAÇÃO: Salvar no cache
@@ -164,19 +213,37 @@ const Profile = () => {
 
       console.log('✅ Perfil salvo no cache!');
     } catch (error: any) {
-      console.error('❌ Erro ao carregar perfil:', error);
+      console.error('═══════════════════════════════════════');
+      console.error('💥 EXCEÇÃO CAPTURADA:');
+      console.error('Tipo:', error?.constructor?.name);
+      console.error('Mensagem:', error?.message);
+      console.error('Stack:', error?.stack);
+      console.error('═══════════════════════════════════════');
 
-      const errorMessage = error?.message === 'PROFILE_TIMEOUT'
-        ? 'Tempo esgotado ao carregar perfil. Verifique sua conexão.'
-        : error?.message || 'Não foi possível carregar o perfil.';
+      let errorMessage = 'Não foi possível carregar o perfil.';
+      let errorTitle = 'Erro';
+
+      if (error?.message === 'PROFILE_TIMEOUT') {
+        errorMessage = '⏰ Timeout após 30 segundos. A conexão com o Supabase está muito lenta ou a query está bloqueada.';
+        errorTitle = 'Tempo Esgotado';
+      } else if (error?.code === 'PGRST116') {
+        errorMessage = 'Perfil não encontrado no banco de dados.';
+      } else if (error?.message?.includes('JWT')) {
+        errorMessage = 'Sessão expirada. Faça login novamente.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
 
       toast({
-        title: "Erro",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      console.log('✅ Finalizando carregamento do perfil');
+      const totalTime = ((performance.now() - startTime) / 1000).toFixed(2);
+      console.log('═══════════════════════════════════════');
+      console.log(`🏁 FINALIZANDO (tempo total: ${totalTime}s)`);
+      console.log('═══════════════════════════════════════');
       setLoading(false);
     }
   };
