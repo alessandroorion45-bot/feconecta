@@ -103,7 +103,7 @@ const Profile = () => {
       console.log('═══════════════════════════════════════');
 
       const profilePromise = (async () => {
-        console.log('📡 Enviando requisição para Supabase...');
+        console.log('📡 Enviando requisição para Supabase (PROFILE)...');
         const result = await supabase
           .from("profiles")
           .select("*")
@@ -112,26 +112,42 @@ const Profile = () => {
 
         const endTime = performance.now();
         const duration = ((endTime - startTime) / 1000).toFixed(2);
-        console.log(`⏱️ Query completou em ${duration}s`);
+        console.log(`⏱️ Profile query completou em ${duration}s`);
         console.log('📦 Dados recebidos:', result.data ? 'SIM' : 'NÃO');
         console.log('❌ Erro recebido:', result.error ? result.error.message : 'NÃO');
 
         return result;
       })();
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
+      // 🚀 OTIMIZAÇÃO: Carregar PROFILE e BADGES em PARALELO
+      console.log('⏳ Aguardando resposta em paralelo (timeout: 10s)...');
+
+      const badgesPromise = (async () => {
+        console.log('🏅 Carregando badges em paralelo...');
+        return await supabase
+          .from("user_badges")
+          .select("badge_name, badge_icon, badge_color")
+          .eq("user_id", userId)
+          .order("display_order", { ascending: true })
+          .limit(5);
+      })();
+
+      const timeoutPromise10s = new Promise<never>((_, reject) =>
         setTimeout(() => {
           const timeoutDuration = ((performance.now() - startTime) / 1000).toFixed(2);
           console.error(`⏰ TIMEOUT após ${timeoutDuration}s`);
           reject(new Error('PROFILE_TIMEOUT'));
-        }, 30000) // 30 segundos
+        }, 10000) // 10 segundos (era 30s)
       );
 
-      console.log('⏳ Aguardando resposta (timeout: 30s)...');
-      const { data, error } = await Promise.race([
-        profilePromise,
-        timeoutPromise
-      ]) as Awaited<typeof profilePromise>;
+      // Executar AMBAS as queries em PARALELO
+      const [profileResult, badgesResult] = await Promise.race([
+        Promise.all([profilePromise, badgesPromise]),
+        timeoutPromise10s
+      ]) as [Awaited<typeof profilePromise>, Awaited<typeof badgesPromise>];
+
+      const { data, error } = profileResult;
+      const { data: badgesData, error: badgesError } = badgesResult;
 
       if (error) {
         console.error('═══════════════════════════════════════');
@@ -168,23 +184,11 @@ const Profile = () => {
         });
       }
 
-      // Load user badges
-      console.log('🏅 Carregando badges...');
-      const badgesStart = performance.now();
-      const { data: badgesData, error: badgesError } = await supabase
-        .from("user_badges")
-        .select("badge_name, badge_icon, badge_color")
-        .eq("user_id", userId)
-        .order("display_order", { ascending: true })
-        .limit(5);
-
-      const badgesDuration = ((performance.now() - badgesStart) / 1000).toFixed(2);
-      console.log(`⏱️ Badges query completou em ${badgesDuration}s`);
-
+      // Processar badges (já carregados em paralelo)
       if (badgesError) {
         console.warn('⚠️ Erro ao carregar badges:', badgesError.message);
       } else if (badgesData) {
-        console.log(`✅ ${badgesData.length} badges carregados`);
+        console.log(`✅ ${badgesData.length} badges carregados em paralelo`);
         setBadges(badgesData);
       } else {
         console.log('ℹ️ Nenhum badge encontrado');
