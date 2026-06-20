@@ -228,7 +228,7 @@ const Profile = () => {
       let errorTitle = 'Erro';
 
       if (error?.message === 'PROFILE_TIMEOUT') {
-        errorMessage = '⏰ Timeout após 30 segundos. A conexão com o Supabase está muito lenta ou a query está bloqueada.';
+        errorMessage = '⏰ Timeout após 10 segundos. A query do perfil está demorando muito. Verifique o console (F12) para detalhes.';
         errorTitle = 'Tempo Esgotado';
       } else if (error?.code === 'PGRST116') {
         errorMessage = 'Perfil não encontrado no banco de dados.';

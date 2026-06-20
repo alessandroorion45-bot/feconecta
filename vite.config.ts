@@ -40,9 +40,9 @@ export default defineConfig(({ mode }) => ({
     cssMinify: true,
     terserOptions: {
       compress: {
-        drop_console: mode === 'production',
+        drop_console: false, // MANTER LOGS EM PRODUÇÃO (para debugging)
         drop_debugger: true,
-        pure_funcs: mode === 'production' ? ['console.log', 'console.info', 'console.debug', 'console.warn'] : [],
+        pure_funcs: [], // NÃO REMOVER nenhum console.* (debugging necessário)
         passes: 2,
       },
       mangle: {
