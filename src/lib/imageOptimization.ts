@@ -52,12 +52,33 @@ export const optimizeImage = async (
       throw new Error(`Imagem muito grande. Máximo: ${maxSizes[type] / 1024 / 1024}MB`);
     }
 
-    console.log(`📸 Otimizando ${type}:`, {
+    console.log(`📸 Fazendo upload ${type}:`, {
       nome: file.name,
       tamanho: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
       tipo: file.type
     });
 
+    // TEMPORÁRIO: Usar upload direto ao invés de Edge Function
+    // (Edge Function precisa ser deployada separadamente no Supabase)
+    console.log('⚡ Usando upload direto (Edge Function não disponível)');
+
+    const bucket = type === 'avatar' || type === 'cover' ? 'avatars' : 'photos';
+    const photoUrl = await uploadImageDirect(file, userId, bucket);
+
+    console.log(`✅ Upload direto concluído!`, { url: photoUrl });
+
+    // Retornar no formato esperado (todas URLs apontam para mesma imagem)
+    return {
+      photo_url: photoUrl,
+      thumbnail_url: photoUrl,
+      medium_url: photoUrl,
+      full_url: photoUrl,
+      original_size: file.size,
+      optimized_size: file.size, // Sem otimização
+      compression_ratio: 0 // Sem compressão
+    } as OptimizedImageResult;
+
+    /* CÓDIGO ORIGINAL (Edge Function) - Desabilitado temporariamente
     // Converter para base64
     const base64 = await fileToBase64(file);
 
@@ -87,10 +108,11 @@ export const optimizeImage = async (
     });
 
     return data as OptimizedImageResult;
+    */
 
   } catch (error: any) {
-    console.error('❌ Erro ao otimizar imagem:', error);
-    throw new Error(error.message || 'Erro ao otimizar imagem');
+    console.error('❌ Erro ao fazer upload:', error);
+    throw new Error(error.message || 'Erro ao fazer upload da imagem');
   }
 };
 
