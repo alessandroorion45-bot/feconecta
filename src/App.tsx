@@ -49,6 +49,12 @@ const SpiritualMentoring = lazy(() => import("./pages/SpiritualMentoring"));
 const FavoritesHub = lazy(() => import("./pages/FavoritesHub"));
 const NearbyChurches = lazy(() => import("./pages/NearbyChurches"));
 const ThemesGallery = lazy(() => import("./pages/ThemesGallery"));
+
+// Admin Pages
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminReports = lazy(() => import("./pages/admin/Reports"));
+
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Configure QueryClient with optimized settings for high traffic
@@ -99,6 +105,12 @@ const routes: RouteObject[] = [
   { path: "/favorites", element: <ProtectedRoute><FavoritesHub /></ProtectedRoute> },
   { path: "/nearby-churches", element: <ProtectedRoute><NearbyChurches /></ProtectedRoute> },
   { path: "/themes", element: <ProtectedRoute><ThemesGallery /></ProtectedRoute> },
+
+  // Admin Routes
+  { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
+  { path: "/admin/users", element: <ProtectedRoute><AdminUsers /></ProtectedRoute> },
+  { path: "/admin/reports", element: <ProtectedRoute><AdminReports /></ProtectedRoute> },
+
   { path: "/user/:userId", element: <UserProfile /> },
   { path: "/friend/:friendId", element: <FriendDetails /> },
   { path: "*", element: <NotFound /> },
