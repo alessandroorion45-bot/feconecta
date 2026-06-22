@@ -32,7 +32,7 @@ export function useGamification(userId?: string) {
   const [loading, setLoading] = useState(false);
 
   // ============================================
-  // FUNÇÃO CENTRAL: AWARD XP
+  // FUNÇÃO CENTRAL: AWARD XP (COM MULTIPLICADOR VIP)
   // ============================================
   const awardXP = useCallback(async (
     action: GameAction,
@@ -44,7 +44,14 @@ export function useGamification(userId?: string) {
     }
 
     try {
-      console.log(`[Gamification] Concedendo XP: ${action} (+${XP_VALUES[action]} XP)`);
+      // Buscar multiplicador VIP do usuário
+      const { data: multiplierData } = await supabase.rpc('get_xp_multiplier', { user_id: userId });
+      const vipMultiplier = multiplierData || 1;
+
+      const baseXP = XP_VALUES[action];
+      const finalXP = Math.floor(baseXP * vipMultiplier);
+
+      console.log(`[Gamification] Concedendo XP: ${action} (+${baseXP} XP base × ${vipMultiplier} = ${finalXP} XP final)`);
 
       // Chamar função do banco de dados
       const { data, error } = await supabase.rpc('award_xp', {
