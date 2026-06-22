@@ -12,6 +12,7 @@ import { Music, Heart, MessageCircle, Send, Plus, ChevronLeft, Play, Pause, Mic,
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useGamification } from "@/hooks/useGamification";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface WorshipPost {
@@ -43,6 +44,7 @@ const CATEGORIES = ["Louvor", "Adoração", "Gratidão", "Hino", "Salmo", "Espon
 const Worship = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { awardXP } = useGamification(user?.id);
   const [posts, setPosts] = useState<WorshipPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -111,6 +113,9 @@ const Worship = () => {
       await supabase.from("worship_likes").insert({ user_id: user.id, post_id: postId });
       setUserLikes(prev => new Set(prev).add(postId));
       setPosts(p => p.map(post => post.id === postId ? { ...post, likes_count: post.likes_count + 1 } : post));
+
+      // Conceder XP por favoritar louvor
+      await awardXP('worship_favorited');
     }
   };
 

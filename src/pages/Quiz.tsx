@@ -37,21 +37,20 @@ interface RankingUser {
 
 const CATEGORIES = [
   { value: "all", label: "Todos os temas" },
-  { value: "personagens", label: "Personagens" },
-  { value: "milagres", label: "Milagres" },
-  { value: "profetas", label: "Profetas" },
+  { value: "jesus", label: "Jesus Cristo" },
   { value: "evangelhos", label: "Evangelhos" },
-  { value: "cartas", label: "Cartas" },
-  { value: "apocalipse", label: "Apocalipse" },
-  { value: "vida_crista", label: "Vida Cristã" },
-  { value: "batalha_espiritual", label: "Batalha Espiritual" },
-  { value: "louvor", label: "Louvor" },
+  { value: "antigo_testamento", label: "Antigo Testamento" },
+  { value: "novo_testamento", label: "Novo Testamento" },
+  { value: "profetas", label: "Profetas" },
 ];
+
+const TIMER_SECONDS = 30;
 
 const Quiz = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { awardXP } = useGamification(user?.id);
+
   const [selectedDifficulty, setSelectedDifficulty] = useState("iniciante");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -64,10 +63,31 @@ const Quiz = () => {
   const [quizFinished, setQuizFinished] = useState(false);
   const [ranking, setRanking] = useState<RankingUser[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Gamificação
   const [combo, setCombo] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
+  const [timerActive, setTimerActive] = useState(false);
 
   useEffect(() => { loadRanking(); }, []);
+
+  // Timer countdown
+  useEffect(() => {
+    if (!timerActive || showResult) return;
+
+    if (timeLeft <= 0) {
+      // Tempo esgotado - marcar como errado
+      handleTimeout();
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft(t => t - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timerActive, timeLeft, showResult]);
 
   const loadRanking = async () => {
     const { data } = await supabase
@@ -79,15 +99,38 @@ const Quiz = () => {
   };
 
   const startQuiz = async () => {
+    if (!user) {
+      toast({
+        title: "Login necessário",
+        description: "Faça login para jogar o quiz",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     let query = supabase.from("quiz_questions").select("*").eq("difficulty", selectedDifficulty);
     if (selectedCategory !== "all") query = query.eq("category", selectedCategory);
 
-    const { data } = await query;
+    const { data, error } = await query;
     setLoading(false);
 
+    if (error) {
+      console.error('[Quiz] Erro ao buscar perguntas:', error);
+      toast({
+        title: "Erro ao carregar",
+        description: "Não foi possível carregar as perguntas. Tente novamente.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!data || data.length === 0) {
-      toast({ title: "Sem perguntas disponíveis", description: "Tente outro nível ou tema.", variant: "destructive" });
+      toast({
+        title: "Sem perguntas disponíveis",
+        description: "Tente outro nível ou tema.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -96,10 +139,35 @@ const Quiz = () => {
     setQuestions(shuffled);
     setCurrentQuestionIndex(0);
     setScore({ points: 0, correct: 0, total: 0 });
+    setCombo(0);
+    setMaxCombo(0);
     setQuizStarted(true);
     setQuizFinished(false);
     setShowResult(false);
     setSelectedAnswer(null);
+    setTimeLeft(TIMER_SECONDS);
+    setTimerActive(true);
+  };
+
+  const handleTimeout = () => {
+    if (showResult) return;
+
+    setIsCorrect(false);
+    setShowResult(true);
+    setTimerActive(false);
+    setCombo(0); // Perde combo no timeout
+
+    const newScore = {
+      ...score,
+      total: score.total + 1,
+    };
+    setScore(newScore);
+
+    toast({
+      title: "⏰ Tempo esgotado!",
+      description: "Você não respondeu a tempo.",
+      variant: "destructive"
+    });
   };
 
   const handleAnswerSelect = (answer: string) => {
@@ -109,13 +177,37 @@ const Quiz = () => {
 
   const submitAnswer = async () => {
     if (!selectedAnswer || !user) return;
+
+    setTimerActive(false);
     const currentQuestion = questions[currentQuestionIndex];
     const correct = selectedAnswer === currentQuestion.correct_answer;
     setIsCorrect(correct);
     setShowResult(true);
 
+    // Calcular pontos com multiplicador de combo
+    let pointsEarned = 0;
+    let newCombo = combo;
+
+    if (correct) {
+      newCombo = combo + 1;
+      setCombo(newCombo);
+      if (newCombo > maxCombo) setMaxCombo(newCombo);
+
+      // Multiplicador de combo: +10% por combo (máximo 3x)
+      const comboMultiplier = Math.min(1 + (newCombo * 0.1), 3);
+      pointsEarned = Math.floor(currentQuestion.points * comboMultiplier);
+
+      // Bônus de tempo: resposta rápida (+20% se sobrar >20s)
+      if (timeLeft > 20) {
+        pointsEarned = Math.floor(pointsEarned * 1.2);
+      }
+    } else {
+      newCombo = 0;
+      setCombo(0);
+    }
+
     const newScore = {
-      points: score.points + (correct ? currentQuestion.points : 0),
+      points: score.points + pointsEarned,
       correct: score.correct + (correct ? 1 : 0),
       total: score.total + 1,
     };
@@ -123,15 +215,28 @@ const Quiz = () => {
 
     // Save answer
     await supabase.from("quiz_user_answers").insert({
-      user_id: user.id, question_id: currentQuestion.id,
-      user_answer: selectedAnswer, is_correct: correct,
-      points_earned: correct ? currentQuestion.points : 0,
+      user_id: user.id,
+      question_id: currentQuestion.id,
+      user_answer: selectedAnswer,
+      is_correct: correct,
+      points_earned: pointsEarned,
     });
 
+    // Conceder XP pela resposta correta
     if (correct) {
-      toast({ title: "🎉 Correto!", description: `+${currentQuestion.points} pontos` });
+      await awardXP('bible_question_answered');
+
+      let message = `+${pointsEarned} pontos`;
+      if (newCombo > 1) message += ` | 🔥 ${newCombo}x combo!`;
+      if (timeLeft > 20) message += ` | ⚡ Bônus de velocidade!`;
+
+      toast({ title: "🎉 Correto!", description: message });
     } else {
-      toast({ title: "❌ Incorreto", description: `Resposta: ${currentQuestion.correct_answer}`, variant: "destructive" });
+      toast({
+        title: "❌ Incorreto",
+        description: `Resposta correta: ${currentQuestion.correct_answer}`,
+        variant: "destructive"
+      });
     }
   };
 
@@ -140,12 +245,24 @@ const Quiz = () => {
       setCurrentQuestionIndex(i => i + 1);
       setSelectedAnswer(null);
       setShowResult(false);
+      setTimeLeft(TIMER_SECONDS);
+      setTimerActive(true);
     } else {
       // Quiz finished - save score
       setQuizFinished(true);
       setQuizStarted(false);
+      setTimerActive(false);
 
+      // Conceder XP final
       if (user) {
+        // XP por completar quiz
+        await awardXP('quiz_completed');
+
+        // XP bônus se acertou 100%
+        if (score.correct === questions.length) {
+          await awardXP('quiz_perfect');
+        }
+
         const { data: existing } = await supabase.from("quiz_scores").select("*").eq("user_id", user.id).single();
         if (existing) {
           await supabase.from("quiz_scores").update({
@@ -156,8 +273,10 @@ const Quiz = () => {
           }).eq("user_id", user.id);
         } else {
           await supabase.from("quiz_scores").insert({
-            user_id: user.id, total_points: score.points,
-            total_correct: score.correct, total_answered: score.total,
+            user_id: user.id,
+            total_points: score.points,
+            total_correct: score.correct,
+            total_answered: score.total,
             current_level: selectedDifficulty,
           });
         }
@@ -183,7 +302,9 @@ const Quiz = () => {
       <Header />
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-divine bg-clip-text text-transparent mb-2">Quiz Bíblico 📖</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-divine bg-clip-text text-transparent mb-2">
+            Quiz Bíblico 📖
+          </h1>
           <p className="text-muted-foreground">Teste seus conhecimentos sobre a Palavra de Deus</p>
         </div>
 
@@ -201,12 +322,28 @@ const Quiz = () => {
                   <CardTitle className="text-2xl">Quiz Concluído! 🎊</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 text-center space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div><p className="text-3xl font-bold text-primary">{score.correct}</p><p className="text-sm text-muted-foreground">Acertos</p></div>
-                    <div><p className="text-3xl font-bold">{score.total}</p><p className="text-sm text-muted-foreground">Total</p></div>
-                    <div><p className="text-3xl font-bold text-accent">{score.points}</p><p className="text-sm text-muted-foreground">Pontos</p></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-3xl font-bold text-primary">{score.correct}</p>
+                      <p className="text-sm text-muted-foreground">Acertos</p>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-accent">{score.points}</p>
+                      <p className="text-sm text-muted-foreground">Pontos</p>
+                    </div>
                   </div>
-                  <p className="text-lg">{score.correct >= 7 ? "Excelente! 🌟" : score.correct >= 5 ? "Muito bem! 👏" : "Continue estudando! 📖"}</p>
+
+                  {maxCombo > 1 && (
+                    <div className="bg-orange-100 dark:bg-orange-900/20 p-3 rounded-lg">
+                      <p className="text-sm font-medium">🔥 Maior Combo: {maxCombo}x</p>
+                    </div>
+                  )}
+
+                  <p className="text-lg">
+                    {score.correct === questions.length ? "Perfeito! 🌟🌟🌟" :
+                     score.correct >= 7 ? "Excelente! 🌟" :
+                     score.correct >= 5 ? "Muito bem! 👏" : "Continue estudando! 📖"}
+                  </p>
                   <Button onClick={() => setQuizFinished(false)} className="bg-gradient-primary text-primary-foreground">
                     Jogar Novamente
                   </Button>
@@ -217,10 +354,18 @@ const Quiz = () => {
             {!quizStarted && !quizFinished && (
               <div className="space-y-6">
                 <div className="grid md:grid-cols-3 gap-4">
-                  {[{ key: "iniciante", label: "🟢 Iniciante", desc: "Perguntas básicas", pts: 10, icon: Target },
+                  {[
+                    { key: "iniciante", label: "🟢 Iniciante", desc: "Perguntas básicas", pts: 10, icon: Target },
                     { key: "profissional", label: "🔵 Profissional", desc: "Perguntas intermediárias", pts: 20, icon: Zap },
-                    { key: "especialista", label: "🔴 Especialista", desc: "Perguntas avançadas", pts: 30, icon: Crown }].map(d => (
-                    <Card key={d.key} className={`cursor-pointer transition-all hover:shadow-divine ${selectedDifficulty === d.key ? `ring-2 ring-primary` : ""}`} onClick={() => setSelectedDifficulty(d.key)}>
+                    { key: "especialista", label: "🔴 Especialista", desc: "Perguntas avançadas", pts: 30, icon: Crown }
+                  ].map(d => (
+                    <Card
+                      key={d.key}
+                      className={`cursor-pointer transition-all hover:shadow-divine ${
+                        selectedDifficulty === d.key ? `ring-2 ring-primary` : ""
+                      }`}
+                      onClick={() => setSelectedDifficulty(d.key)}
+                    >
                       <CardHeader className="text-center">
                         <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${getDifficultyColor(d.key)} flex items-center justify-center mx-auto mb-3`}>
                           <d.icon className="h-6 w-6 text-white" />
@@ -238,13 +383,25 @@ const Quiz = () => {
                 <div className="max-w-xs mx-auto">
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger><SelectValue placeholder="Tema" /></SelectTrigger>
-                    <SelectContent>{CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 </div>
 
-                <div className="text-center">
-                  <Button size="lg" onClick={startQuiz} disabled={loading} className="bg-gradient-primary text-primary-foreground shadow-glow">
-                    <Trophy className="mr-2 h-5 w-5" /> {loading ? "Carregando..." : "Começar Quiz"}
+                <div className="text-center space-y-3">
+                  <div className="text-sm text-muted-foreground">
+                    <p>✨ Sistema de combo - acerte seguido para multiplicar pontos!</p>
+                    <p>⚡ Bônus de velocidade - responda rápido para ganhar mais!</p>
+                  </div>
+                  <Button
+                    size="lg"
+                    onClick={startQuiz}
+                    disabled={loading}
+                    className="bg-gradient-primary text-primary-foreground shadow-glow"
+                  >
+                    <Trophy className="mr-2 h-5 w-5" />
+                    {loading ? "Carregando..." : "Começar Quiz"}
                   </Button>
                 </div>
               </div>
@@ -254,10 +411,26 @@ const Quiz = () => {
               <Card className="max-w-3xl mx-auto shadow-divine">
                 <CardHeader>
                   <div className="flex items-center justify-between mb-3">
-                    <Badge className={`bg-gradient-to-r ${getDifficultyColor(selectedDifficulty)} text-white`}>
-                      {selectedDifficulty.toUpperCase()}
-                    </Badge>
-                    <span className="text-sm font-medium">Pergunta {currentQuestionIndex + 1}/{questions.length}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`bg-gradient-to-r ${getDifficultyColor(selectedDifficulty)} text-white`}>
+                        {selectedDifficulty.toUpperCase()}
+                      </Badge>
+                      {combo > 1 && (
+                        <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white animate-pulse">
+                          <Flame className="h-3 w-3 mr-1" />
+                          {combo}x COMBO!
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className={`flex items-center gap-1 ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : ''}`}>
+                        <Timer className="h-4 w-4" />
+                        <span className="font-bold">{timeLeft}s</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {currentQuestionIndex + 1}/{questions.length}
+                      </span>
+                    </div>
                   </div>
                   <Progress value={progress} className="mb-4" />
                   <CardTitle className="text-xl sm:text-2xl">{currentQuestion.question}</CardTitle>
@@ -268,25 +441,53 @@ const Quiz = () => {
                       const key = `option_${opt.toLowerCase()}` as keyof Question;
                       const isSelected = selectedAnswer === opt;
                       const isCorrectOpt = currentQuestion.correct_answer === opt;
-                      let cls = "w-full justify-start text-left h-auto py-4 px-6";
+                      let cls = "w-full justify-start text-left h-auto py-4 px-6 transition-all";
+
                       if (showResult) {
-                        if (isCorrectOpt) cls += " bg-green-100 dark:bg-green-900/30 border-green-500";
-                        else if (isSelected && !isCorrect) cls += " bg-red-100 dark:bg-red-900/30 border-red-500";
-                      } else if (isSelected) cls += " bg-primary/10 border-primary";
+                        if (isCorrectOpt) cls += " bg-green-100 dark:bg-green-900/30 border-green-500 border-2";
+                        else if (isSelected && !isCorrect) cls += " bg-red-100 dark:bg-red-900/30 border-red-500 border-2";
+                      } else if (isSelected) cls += " bg-primary/10 border-primary border-2";
 
                       return (
-                        <Button key={opt} variant="outline" className={cls} onClick={() => handleAnswerSelect(opt)} disabled={showResult}>
-                          <span className="font-bold mr-3">{opt})</span> {currentQuestion[key] as string}
+                        <Button
+                          key={opt}
+                          variant="outline"
+                          className={cls}
+                          onClick={() => handleAnswerSelect(opt)}
+                          disabled={showResult}
+                        >
+                          <span className="font-bold mr-3">{opt})</span>
+                          {currentQuestion[key] as string}
                         </Button>
                       );
                     })}
                   </div>
+
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground"><Award className="inline h-4 w-4 mr-1" /> Pontos: <span className="font-bold">{score.points}</span></div>
+                    <div className="text-sm space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Award className="inline h-4 w-4" />
+                        <span className="font-bold">{score.points}</span> pontos
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Trophy className="inline h-4 w-4" />
+                        <span className="font-bold">{score.correct}</span> acertos
+                      </div>
+                    </div>
+
                     {!showResult ? (
-                      <Button onClick={submitAnswer} disabled={!selectedAnswer} className="bg-gradient-primary text-primary-foreground">Confirmar</Button>
+                      <Button
+                        onClick={submitAnswer}
+                        disabled={!selectedAnswer}
+                        className="bg-gradient-primary text-primary-foreground"
+                      >
+                        Confirmar
+                      </Button>
                     ) : (
-                      <Button onClick={nextQuestion} className="bg-gradient-primary text-primary-foreground">
+                      <Button
+                        onClick={nextQuestion}
+                        className="bg-gradient-primary text-primary-foreground"
+                      >
                         {currentQuestionIndex < questions.length - 1 ? "Próxima →" : "Finalizar"}
                       </Button>
                     )}
@@ -298,24 +499,38 @@ const Quiz = () => {
 
           <TabsContent value="ranking">
             <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Ranking Geral</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" /> Ranking Geral
+                </CardTitle>
+              </CardHeader>
               <CardContent>
                 {ranking.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">Nenhum jogador ainda. Seja o primeiro!</p>
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum jogador ainda. Seja o primeiro!
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {ranking.map((r, i) => (
-                      <div key={r.user_id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <div
+                        key={r.user_id}
+                        className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      >
                         <div className="w-8 text-center">
                           {i === 0 && <Crown className="h-6 w-6 text-yellow-500 mx-auto" />}
                           {i === 1 && <Trophy className="h-6 w-6 text-gray-400 mx-auto" />}
                           {i === 2 && <Award className="h-6 w-6 text-orange-600 mx-auto" />}
                           {i > 2 && <span className="text-muted-foreground font-bold">#{i + 1}</span>}
                         </div>
-                        <Avatar><AvatarImage src={r.profiles?.avatar_url || undefined} /><AvatarFallback>{r.profiles?.full_name?.[0] || "?"}</AvatarFallback></Avatar>
+                        <Avatar>
+                          <AvatarImage src={r.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>{r.profiles?.full_name?.[0] || "?"}</AvatarFallback>
+                        </Avatar>
                         <div className="flex-1">
                           <p className="font-semibold">{r.profiles?.full_name || r.profiles?.username}</p>
-                          <p className="text-xs text-muted-foreground">{r.total_correct}/{r.total_answered} corretas</p>
+                          <p className="text-xs text-muted-foreground">
+                            {r.total_correct}/{r.total_answered} corretas
+                          </p>
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-primary">{r.total_points} pts</p>

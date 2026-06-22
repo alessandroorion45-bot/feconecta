@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, Send, Smile } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useGamification } from "@/hooks/useGamification";
+import { useAuth } from "@/contexts/AuthContext";
 
 type GratitudePost = { id: number; author: string; message: string; date: string; amens: number; type: "gratidão" | "testemunho" };
 
@@ -19,15 +21,23 @@ const mockPosts: GratitudePost[] = [
 
 const GratitudeWall = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { awardXP } = useGamification(user?.id);
   const [posts, setPosts] = useState(mockPosts);
   const [newMessage, setNewMessage] = useState("");
   const [amenList, setAmenList] = useState<number[]>([]);
 
-  const submitPost = () => {
+  const submitPost = async () => {
     if (!newMessage.trim()) return;
     const post: GratitudePost = { id: Date.now(), author: "Você", message: newMessage, date: "Agora", amens: 0, type: "gratidão" };
     setPosts([post, ...posts]);
     setNewMessage("");
+
+    // Conceder XP por publicar gratidão
+    if (user) {
+      await awardXP('gratitude_post');
+    }
+
     toast({ title: "Gratidão publicada! 🙌", description: "Que Deus continue te abençoando." });
   };
 

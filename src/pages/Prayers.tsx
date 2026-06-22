@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
+import { useGamification } from "@/hooks/useGamification";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -161,6 +162,7 @@ const Prayers = () => {
   const [selectedPrayerForAnswer, setSelectedPrayerForAnswer] = useState<Prayer | null>(null);
   const { toast } = useToast();
   const { trackActivity } = useActivityTracking();
+  const { awardXP } = useGamification(user?.id);
   const [newPrayer, setNewPrayer] = useState({ title: "", description: "", category: "Espiritual" });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -328,6 +330,10 @@ const Prayers = () => {
       if (error) throw error;
 
       trackActivity("prayer_created");
+
+      // Conceder XP por criar oração
+      await awardXP('prayer_created');
+
       toast({
         title: "Oração publicada! 🙏",
         description: "A comunidade estará orando com você",
@@ -398,7 +404,10 @@ const Prayers = () => {
           .eq("id", prayerId);
 
         trackActivity("prayer_interceded");
-        
+
+        // Conceder XP por interceder
+        await awardXP('prayer_interceded');
+
         // Animate prayer
         setAnimatedPrayers(prev => new Set(prev).add(prayerId));
         setTimeout(() => {
