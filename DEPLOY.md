@@ -20,9 +20,10 @@ O projeto está configurado para deploy automático:
 - ✅ Framework: Vite detectado automaticamente
 
 ### Último Deploy
-- **Commit**: `9c34a5e` - "fix: Corrige import do supabase em GratitudeWall"
-- **Status**: 🔄 Em andamento
+- **Commit**: `75a8ae3` - "fix: Corrige configuração Vercel + remove arquivo duplicado"
+- **Status**: 🔄 Deploying (triggered automaticamente)
 - **Build**: ✅ Passou localmente (6.8s)
+- **Fix aplicado**: Configuração explícita do Vercel + remoção de queryClient duplicado
 
 ---
 
