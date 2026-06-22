@@ -8,6 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminProvider } from "@/contexts/AdminContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -47,6 +48,7 @@ const GratitudeWall = lazy(() => import("./pages/GratitudeWall"));
 const SpiritualMentoring = lazy(() => import("./pages/SpiritualMentoring"));
 const FavoritesHub = lazy(() => import("./pages/FavoritesHub"));
 const NearbyChurches = lazy(() => import("./pages/NearbyChurches"));
+const ThemesGallery = lazy(() => import("./pages/ThemesGallery"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Configure QueryClient with optimized settings for high traffic
@@ -96,6 +98,7 @@ const routes: RouteObject[] = [
   { path: "/mentoring", element: <ProtectedRoute><SpiritualMentoring /></ProtectedRoute> },
   { path: "/favorites", element: <ProtectedRoute><FavoritesHub /></ProtectedRoute> },
   { path: "/nearby-churches", element: <ProtectedRoute><NearbyChurches /></ProtectedRoute> },
+  { path: "/themes", element: <ProtectedRoute><ThemesGallery /></ProtectedRoute> },
   { path: "/user/:userId", element: <UserProfile /> },
   { path: "/friend/:friendId", element: <FriendDetails /> },
   { path: "*", element: <NotFound /> },
@@ -114,17 +117,19 @@ const App = () => (
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <AdminProvider>
-            <DailyLoginTracker />
-            <LanguageProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <NetworkStatusIndicator />
-                <Suspense fallback={<LoadingFallback />}>
-                  <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
-                </Suspense>
-              </TooltipProvider>
-            </LanguageProvider>
+            <ThemeProvider>
+              <DailyLoginTracker />
+              <LanguageProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <NetworkStatusIndicator />
+                  <Suspense fallback={<LoadingFallback />}>
+                    <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
+                  </Suspense>
+                </TooltipProvider>
+              </LanguageProvider>
+            </ThemeProvider>
           </AdminProvider>
         </AuthProvider>
       </QueryClientProvider>
