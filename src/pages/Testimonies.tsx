@@ -212,21 +212,64 @@ const Testimonies = () => {
       return;
     }
 
-    const { error } = await supabase.from("testimonies").insert([
+    console.log('[Testimonies] Tentando inserir testemunho:', {
+      user_id: user.id,
+      title: newTestimony.title.trim(),
+      content_length: newTestimony.content.trim().length
+    });
+
+    // Verificar se o perfil existe antes de inserir
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profileData) {
+      console.error('[Testimonies] Perfil não encontrado:', profileError);
+      toast({
+        title: "Erro no perfil",
+        description: "Seu perfil não foi encontrado. Tente fazer logout e login novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('[Testimonies] Perfil encontrado:', profileData);
+
+    const { data, error } = await supabase.from("testimonies").insert([
       {
         user_id: user.id,
         title: newTestimony.title.trim(),
         content: newTestimony.content.trim(),
       },
-    ]);
+    ]).select();
 
     if (error) {
+      console.error('[Testimonies] Erro ao inserir testemunho:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+
+      let errorMessage = "Não foi possível publicar o depoimento";
+
+      if (error.code === '23503') {
+        errorMessage = "Erro: Perfil não encontrado no banco de dados";
+      } else if (error.code === '42501') {
+        errorMessage = "Erro de permissão. Tente fazer logout e login novamente.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
-        title: "Erro",
-        description: "Não foi possível publicar o depoimento",
+        title: "Erro ao publicar",
+        description: errorMessage,
         variant: "destructive",
       });
     } else {
+      console.log('[Testimonies] Testemunho inserido com sucesso:', data);
       trackActivity("testimony_shared");
       toast({
         title: "Glória a Deus!",

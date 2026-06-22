@@ -150,14 +150,43 @@ const AudioRecorder = ({ userId, onClose, onSuccess }: AudioRecorderProps) => {
         .from("testimonies-audio")
         .getPublicUrl(fileName);
 
-      const { error: insertError } = await supabase.from("testimonies").insert({
+      console.log('[AudioRecorder] Tentando inserir testemunho em áudio:', {
+        user_id: userId,
+        title: title.trim(),
+        audio_url: publicUrlData.publicUrl
+      });
+
+      // Verificar se o perfil existe antes de inserir
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .eq("id", userId)
+        .single();
+
+      if (profileError || !profileData) {
+        console.error('[AudioRecorder] Perfil não encontrado:', profileError);
+        throw new Error("Perfil não encontrado. Tente fazer logout e login novamente.");
+      }
+
+      console.log('[AudioRecorder] Perfil encontrado:', profileData);
+
+      const { data: insertData, error: insertError } = await supabase.from("testimonies").insert({
         user_id: userId,
         title: title.trim(),
         content: "[Testemunho em áudio]",
         audio_url: publicUrlData.publicUrl,
-      });
+      }).select();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[AudioRecorder] Erro ao inserir testemunho:', {
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details
+        });
+        throw insertError;
+      }
+
+      console.log('[AudioRecorder] Testemunho inserido com sucesso:', insertData);
 
       toast({
         title: "Testemunho publicado!",

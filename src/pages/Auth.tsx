@@ -147,9 +147,9 @@ const Auth = () => {
       try {
         console.log('[Auth] Processando OAuth callback...');
 
-        // Add timeout
+        // Add timeout (15s para conexões lentas)
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT')), 5000)
+          setTimeout(() => reject(new Error('TIMEOUT')), 15000)
         );
 
         const userPromise = supabase.auth.getUser();
@@ -172,7 +172,7 @@ const Auth = () => {
 
             const { data: profile } = await Promise.race([
               profilePromise,
-              new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 5000))
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 15000))
             ]) as Awaited<ReturnType<typeof profilePromise>>;
 
             if (!profile?.country) {
