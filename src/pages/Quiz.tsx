@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Target, Zap, Crown, Award, TrendingUp } from "lucide-react";
+import { useGamification } from "@/hooks/useGamification";
+import { Trophy, Target, Zap, Crown, Award, TrendingUp, Timer, Flame } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -50,6 +51,7 @@ const CATEGORIES = [
 const Quiz = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { awardXP } = useGamification(user?.id);
   const [selectedDifficulty, setSelectedDifficulty] = useState("iniciante");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -62,6 +64,8 @@ const Quiz = () => {
   const [quizFinished, setQuizFinished] = useState(false);
   const [ranking, setRanking] = useState<RankingUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const [combo, setCombo] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(30);
 
   useEffect(() => { loadRanking(); }, []);
 
