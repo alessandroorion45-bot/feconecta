@@ -5,12 +5,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Book, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
+import { Book, ChevronLeft, ChevronRight, AlertCircle, CheckCircle } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { useGamification } from '@/hooks/useGamification'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function BibleReader() {
+  const { toast } = useToast()
+  const { user } = useAuth()
+  const { awardXP } = useGamification(user?.id)
   const { livros, loading, error } = useBiblia()
   const [livroIndex, setLivroIndex] = useState(0)
   const [capituloIndex, setCapituloIndex] = useState(0)
+  const [completedChapters, setCompletedChapters] = useState<Set<string>>(new Set())
 
   const livroAtual = livros[livroIndex]
   const capituloAtual = livroAtual?.chapters[capituloIndex]
@@ -71,6 +78,27 @@ export function BibleReader() {
 
   const podeVoltar = livroIndex > 0 || capituloIndex > 0
   const podeAvancar = livroIndex < livros.length - 1 || capituloIndex < totalCapitulos - 1
+
+  const markChapterAsRead = async () => {
+    const chapterKey = `${livroAtual?.abbrev}-${capituloIndex + 1}`
+
+    if (completedChapters.has(chapterKey)) return
+
+    setCompletedChapters(new Set(completedChapters).add(chapterKey))
+
+    // Conceder XP por leitura bíblica
+    if (user) {
+      await awardXP('bible_reading_completed')
+    }
+
+    toast({
+      title: "Capítulo completado! 📖",
+      description: "+15 XP concedidos. Continue meditando na Palavra!",
+    })
+  }
+
+  const currentChapterKey = `${livroAtual?.abbrev}-${capituloIndex + 1}`
+  const isCurrentChapterRead = completedChapters.has(currentChapterKey)
 
   if (loading) {
     return (
@@ -248,23 +276,34 @@ export function BibleReader() {
           </ScrollArea>
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t pt-4">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={capituloAnterior}
+              disabled={!podeVoltar}
+              className="flex-1 sm:flex-initial"
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              onClick={proximoCapitulo}
+              disabled={!podeAvancar}
+              className="flex-1 sm:flex-initial"
+            >
+              Próximo
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
           <Button
-            variant="outline"
-            onClick={capituloAnterior}
-            disabled={!podeVoltar}
+            variant={isCurrentChapterRead ? "default" : "outline"}
+            onClick={markChapterAsRead}
+            disabled={isCurrentChapterRead}
             className="w-full sm:w-auto"
           >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Capítulo Anterior
-          </Button>
-          <Button
-            variant="outline"
-            onClick={proximoCapitulo}
-            disabled={!podeAvancar}
-            className="w-full sm:w-auto"
-          >
-            Próximo Capítulo
-            <ChevronRight className="h-4 w-4 ml-2" />
+            <CheckCircle className="h-4 w-4 mr-2" />
+            {isCurrentChapterRead ? "Lido ✓" : "Marcar como lido"}
           </Button>
         </CardFooter>
         <CardFooter className="flex flex-col items-center border-t pt-4 text-xs text-muted-foreground space-y-2">

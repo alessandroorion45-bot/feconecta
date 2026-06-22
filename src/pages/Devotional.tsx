@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Heart, Share2, ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useGamification } from "@/hooks/useGamification";
+import { useAuth } from "@/contexts/AuthContext";
 
 const devotionals = [
   {
@@ -38,10 +40,29 @@ const devotionals = [
 
 const Devotional = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { awardXP } = useGamification(user?.id);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [completedToday, setCompletedToday] = useState(false);
 
   const current = devotionals[currentIndex];
+
+  const markAsComplete = async () => {
+    if (completedToday) return;
+
+    setCompletedToday(true);
+
+    // Conceder XP por completar devocional diário
+    if (user) {
+      await awardXP('devotional_completed');
+    }
+
+    toast({
+      title: "Devocional completado! ✅",
+      description: "+20 XP concedidos. Continue firme na fé!",
+    });
+  };
 
   const toggleFavorite = (id: number) => {
     setFavorites(prev =>
@@ -95,7 +116,16 @@ const Devotional = () => {
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant={completedToday ? "default" : "outline"}
+                  size="sm"
+                  onClick={markAsComplete}
+                  disabled={completedToday}
+                >
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  {completedToday ? "Completado ✓" : "Marcar como lido"}
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => toggleFavorite(current.id)}>
                   <Heart className={`h-4 w-4 mr-1 ${favorites.includes(current.id) ? "fill-red-500 text-red-500" : ""}`} />
                   Favoritar

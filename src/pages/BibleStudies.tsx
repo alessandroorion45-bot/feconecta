@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, BookOpen, Video, Headphones, FileText, ChevronRight, Clock } from "lucide-react";
+import { Search, BookOpen, Video, Headphones, FileText, ChevronRight, Clock, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useGamification } from "@/hooks/useGamification";
+import { useAuth } from "@/contexts/AuthContext";
 
 type StudyType = "video" | "audio" | "text";
 type Study = { id: number; title: string; author: string; description: string; category: string; type: StudyType; duration: string; content: string; date: string };
@@ -22,9 +25,13 @@ const typeIcons: Record<StudyType, React.ElementType> = { video: Video, audio: H
 const typeLabels: Record<StudyType, string> = { video: "Vídeo", audio: "Áudio", text: "Texto" };
 
 const BibleStudies = () => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { awardXP } = useGamification(user?.id);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedStudy, setSelectedStudy] = useState<Study | null>(null);
+  const [completedStudies, setCompletedStudies] = useState<number[]>([]);
 
   const categories = [...new Set(studies.map(s => s.category))];
   const filtered = useMemo(() => studies.filter(s => {
@@ -32,6 +39,22 @@ const BibleStudies = () => {
     const matchCat = !selectedCategory || s.category === selectedCategory;
     return matchSearch && matchCat;
   }), [search, selectedCategory]);
+
+  const markStudyAsComplete = async (studyId: number) => {
+    if (completedStudies.includes(studyId)) return;
+
+    setCompletedStudies([...completedStudies, studyId]);
+
+    // Conceder XP por completar estudo bíblico
+    if (user) {
+      await awardXP('bible_study_completed');
+    }
+
+    toast({
+      title: "Estudo completado! 📖",
+      description: "+30 XP concedidos. Continue estudando a Palavra!",
+    });
+  };
 
   if (selectedStudy) {
     const TypeIcon = typeIcons[selectedStudy.type];
@@ -55,6 +78,15 @@ const BibleStudies = () => {
               <div className="bg-muted/50 rounded-lg p-6">
                 <p className="leading-relaxed">{selectedStudy.content}</p>
               </div>
+              <Button
+                variant={completedStudies.includes(selectedStudy.id) ? "default" : "outline"}
+                className="w-full"
+                onClick={() => markStudyAsComplete(selectedStudy.id)}
+                disabled={completedStudies.includes(selectedStudy.id)}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {completedStudies.includes(selectedStudy.id) ? "Estudo Completado ✓" : "Marcar como completado"}
+              </Button>
             </CardContent>
           </Card>
         </main>
