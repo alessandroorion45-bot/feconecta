@@ -7,6 +7,7 @@ import { createBrowserRouter, RouterProvider, RouteObject } from "react-router-d
 import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AdminProvider } from "@/contexts/AdminContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -112,17 +113,19 @@ const App = () => (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <DailyLoginTracker />
-          <LanguageProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <NetworkStatusIndicator />
-              <Suspense fallback={<LoadingFallback />}>
-                <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
-              </Suspense>
-            </TooltipProvider>
-          </LanguageProvider>
+          <AdminProvider>
+            <DailyLoginTracker />
+            <LanguageProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <NetworkStatusIndicator />
+                <Suspense fallback={<LoadingFallback />}>
+                  <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
+                </Suspense>
+              </TooltipProvider>
+            </LanguageProvider>
+          </AdminProvider>
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>
