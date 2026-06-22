@@ -8,6 +8,7 @@ import { Heart, MessageCircle, Sparkles, Plus, Share2, Loader2, Mic, Volume2 } f
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
+import { useGamification } from "@/hooks/useGamification";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import UserAvatar from "@/components/UserAvatar";
@@ -53,6 +54,7 @@ const Testimonies = () => {
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const { toast } = useToast();
   const { trackActivity } = useActivityTracking();
+  const { awardXP } = useGamification(user?.id);
   const [newTestimony, setNewTestimony] = useState({ title: "", content: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [audioDialogOpen, setAudioDialogOpen] = useState(false);
@@ -271,6 +273,10 @@ const Testimonies = () => {
     } else {
       console.log('[Testimonies] Testemunho inserido com sucesso:', data);
       trackActivity("testimony_shared");
+
+      // Conceder XP por compartilhar testemunho
+      await awardXP('testimony_shared');
+
       toast({
         title: "Glória a Deus!",
         description: "Seu testemunho foi compartilhado",
@@ -456,6 +462,9 @@ const Testimonies = () => {
     } else {
       setNewComment("");
       loadComments(commentsOpen);
+
+      // Conceder XP por comentar
+      await awardXP('comment_posted');
 
       // Update comments count optimistically
       setTestimonies((prev) =>

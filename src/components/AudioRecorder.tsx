@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Mic, Square, Play, Pause, Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useGamification } from "@/hooks/useGamification";
 
 interface AudioRecorderProps {
   userId: string;
@@ -22,13 +23,14 @@ const AudioRecorder = ({ userId, onClose, onSuccess }: AudioRecorderProps) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
+
   const { toast } = useToast();
+  const { awardXP } = useGamification(userId);
 
   useEffect(() => {
     return () => {
@@ -187,6 +189,9 @@ const AudioRecorder = ({ userId, onClose, onSuccess }: AudioRecorderProps) => {
       }
 
       console.log('[AudioRecorder] Testemunho inserido com sucesso:', insertData);
+
+      // Conceder XP por testemunho em áudio
+      await awardXP('testimony_shared');
 
       toast({
         title: "Testemunho publicado!",

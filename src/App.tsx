@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import LoadingFallback from "@/components/LoadingFallback";
+import { DailyLoginTracker } from "@/components/gamification/DailyLoginTracker";
 
 // Eager: critical path pages
 import Index from "./pages/Index";
@@ -111,6 +112,7 @@ const App = () => (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <DailyLoginTracker />
           <LanguageProvider>
             <TooltipProvider>
               <Toaster />
