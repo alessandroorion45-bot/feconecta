@@ -1,0 +1,23 @@
+@echo off
+chcp 65001 >nul
+echo.
+echo ========================================
+echo   CONFIGURADOR AUTOMÁTICO DA VERCEL
+echo ========================================
+echo.
+echo 🚀 Iniciando configuração...
+echo.
+
+REM Executar script PowerShell
+PowerShell.exe -ExecutionPolicy Bypass -File "%~dp0configurar-vercel.ps1"
+
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo ❌ Erro ao executar script!
+    pause
+    exit /b 1
+)
+
+echo.
+echo ✅ Script executado com sucesso!
+pause
