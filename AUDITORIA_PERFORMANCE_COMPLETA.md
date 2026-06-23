@@ -1,356 +1,152 @@
-# 🔍 AUDITORIA COMPLETA DE PERFORMANCE
-
-**Data:** 2026-06-18  
-**App:** https://feconecta-pi.vercel.app/  
-**Status:** 🔴 CRÍTICO - Múltiplos gargalos identificados
+# 🔍 AUDITORIA DE PERFORMANCE - FECONECTA
+**Data:** 2026-06-23
+**Problemas Identificados:** 4 críticos
 
 ---
 
-## 🚨 **PROBLEMAS CRÍTICOS ENCONTRADOS:**
+## ❌ PROBLEMA 1: FALTA DE ÍNDICES
 
-### **1. AuthContext com Timeout de 3 segundos** ⚠️
+### Tabelas SEM índices otimizados:
+- `user_activities` - sem índice em (user_id, created_at)
+- `user_activities` - sem índice em activity_type
+- `admin_logs` - sem índice em (admin_id, created_at)
+- `vip_subscriptions` - índices OK ✅
+- `user_themes` - índices OK ✅
 
-**Arquivo:** `src/contexts/AuthContext.tsx:48-50`
-
-```typescript
-// ❌ PROBLEMA: Timeout de 3 segundos em TODA página
-const timeoutPromise = new Promise<never>((_, reject) =>
-  setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 3000)
-);
-```
-
-**Impacto:**
-- **TODA página** espera até 3 segundos para carregar
-- Bloqueio inicial em todas as rotas
-- Usuário vê tela branca/loading por 3 segundos
-
-**Solução:**
-```typescript
-// ✅ CORREÇÃO: Reduzir timeout para 1 segundo
-const timeoutPromise = new Promise<never>((_, reject) =>
-  setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 1000) // 3000 → 1000
-);
-```
-
-**Ganho esperado:** App carrega **2 segundos mais rápido**
-
----
-
-### **2. useBiblia Hook sem Otimização**
-
-**Arquivo:** `src/components/bible/BibleReader.tsx:11`
-
-```typescript
-const { livros, loading, error } = useBiblia()
-```
-
-**Problema:**
-- Carrega TODA a Bíblia de uma vez (66 livros, 1189 capítulos!)
-- Sem cache
-- Sem lazy loading
-- Sem paginação
-
-**Impacto:**
-- Página `/bible` demora 5-10 segundos
-- Download de MB de dados JSON
-- Memória alta
-
-**Solução:**
-- Lazy load: carregar 1 livro por vez
-- Cache: armazenar livros já carregados
-- Preload: carregar próximo capítulo em background
-
----
-
-### **3. Múltiplos useEffect em BibleReader**
-
-**Arquivo:** `src/components/bible/BibleReader.tsx:20-45`
-
-```typescript
-useEffect(...) // 1
-useEffect(...) // 2  
-useEffect(...) // 3
-useEffect(...) // 4
-```
-
-**Problema:**
-- 4 useEffect diferentes
-- Re-renders desnecessários
-- Cálculos repetidos
-
-**Solução:** Consolidar em 1-2 useEffect
-
----
-
-### **4. Skeleton Loading Infinito**
-
-**Observado:** Páginas ficam no loading infinito
-
-**Causas possíveis:**
-1. Query do Supabase falhando silenciosamente
-2. AuthContext timeout travando
-3. Erro não capturado
-
-**Solução:** Adicionar error boundary e logs
-
----
-
-## 📊 **ANÁLISE POR ROTA:**
-
-### **/bible** (MUITO LENTO)
-```
-Tempo: 8-12 segundos
-Causa: Carrega Bíblia completa
-Prioridade: 🔴 ALTA
-```
-
-### **/profile** (LENTO)
-```
-Tempo: 3-5 segundos  
-Causa: AuthContext timeout + queries sem índice
-Prioridade: 🔴 ALTA
-```
-
-### **/feed** (LENTO)
-```
-Tempo: 4-6 segundos
-Causa: AuthContext + sem cache + queries
-Prioridade: 🟡 MÉDIA
-```
-
-### **/login** (OK mas pode melhorar)
-```
-Tempo: 1-2 segundos
-Causa: AuthContext timeout
-Prioridade: 🟢 BAIXA
-```
-
----
-
-## 🔧 **CORREÇÕES URGENTES:**
-
-### **Correção 1: AuthContext Timeout**
-
-**Antes:**
-```typescript
-// 3 segundos de timeout = 3s de espera
-setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 3000)
-```
-
-**Depois:**
-```typescript
-// 800ms de timeout = muito mais rápido
-setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 800)
-```
-
-**Ganho:** **2-3 segundos** em todas as páginas ⚡
-
----
-
-### **Correção 2: Cache da Bíblia**
-
-**Criar:** `src/hooks/useBibliaOptimized.ts`
-
-```typescript
-import { useState, useEffect } from 'react';
-
-const CACHE_KEY = 'biblia_cache';
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
-
-export function useBibliaOptimized() {
-  const [livros, setLivros] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Tentar cache primeiro
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      try {
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_TTL) {
-          setLivros(data);
-          setLoading(false);
-          return; // ✅ Retorna instantaneamente!
-        }
-      } catch (e) {}
-    }
-
-    // Se não tem cache, buscar
-    fetchBiblia().then(data => {
-      setLivros(data);
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        data,
-        timestamp: Date.now()
-      }));
-      setLoading(false);
-    });
-  }, []);
-
-  return { livros, loading };
-}
-```
-
-**Ganho:** **8-10 segundos** na segunda visita ⚡
-
----
-
-### **Correção 3: Lazy Loading de Componentes**
-
-**Arquivo:** `src/App.tsx` ou router
-
-**Antes:**
-```typescript
-import Bible from './pages/Bible';
-```
-
-**Depois:**
-```typescript
-import { lazy, Suspense } from 'react';
-const Bible = lazy(() => import('./pages/Bible'));
-
-// No router:
-<Suspense fallback={<LoadingSpinner />}>
-  <Bible />
-</Suspense>
-```
-
-**Ganho:** Bundle inicial **50% menor** ⚡
-
----
-
-## 📊 **QUERIES LENTAS IDENTIFICADAS:**
-
-### **Query 1: Buscar perfil sem índice**
-
+### SQL para criar índices:
 ```sql
--- Lenta (2-3s):
-SELECT * FROM profiles WHERE username = 'x';
+-- user_activities (query de perfil)
+CREATE INDEX IF NOT EXISTS idx_user_activities_user_created 
+ON public.user_activities(user_id, created_at DESC);
 
--- Já corrigida com índice! ✅
+CREATE INDEX IF NOT EXISTS idx_user_activities_type 
+ON public.user_activities(activity_type);
+
+-- admin_logs
+CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_created 
+ON public.admin_logs(admin_id, created_at DESC);
+
+-- users (busca por email)
+CREATE INDEX IF NOT EXISTS idx_users_email 
+ON public.users(email);
 ```
 
-### **Query 2: Buscar fotos sem índice**
+---
 
+## ❌ PROBLEMA 2: QUERIES COMPLEXAS
+
+### Queries identificadas como lentas:
+
+#### 1. Perfil do usuário (TIMEOUT 10s!)
+**Arquivo:** Provavelmente `Profile.tsx` ou `AuthContext.tsx`
+
+**Problema:** Carrega TODOS os dados do perfil de uma vez:
+- Fotos
+- Vídeos
+- Atividades
+- Conquistas
+- Amigos
+- Estatísticas
+
+**Solução:** Lazy loading + paginação
+
+#### 2. Dashboard Admin (JÁ OTIMIZADO!)
+**Status:** ✅ View materializada criada
+
+---
+
+## ❌ PROBLEMA 3: RLS POLICIES PESADAS
+
+### Policies que podem causar lentidão:
+
+#### user_activities:
 ```sql
--- Lenta (2-4s):
-SELECT * FROM profile_photos WHERE user_id = 'x';
-
--- Já corrigida com índice! ✅
+-- Policy atual (pode estar lenta):
+CREATE POLICY "Users can view own activities"
+ON user_activities FOR SELECT
+USING (auth.uid() = user_id);
 ```
 
----
+**Problema:** Se não houver índice em `user_id`, faz full table scan!
 
-## 🎯 **PLANO DE AÇÃO IMEDIATO:**
+**Solução:** Criar índice (já incluído no Problema 1)
 
-### **AGORA (5 minutos):**
-
-1. ✅ **Reduzir timeout do AuthContext**
-   ```
-   3000ms → 800ms
-   ```
-
-2. ✅ **Adicionar cache na Bíblia**
-   ```
-   Segunda visita: 10s → 100ms
-   ```
-
-3. ✅ **Lazy loading de rotas**
-   ```
-   Bundle: 2MB → 500KB
-   ```
-
----
-
-### **HOJE (30 minutos):**
-
-4. ✅ **Error boundaries**
-5. ✅ **Logs de performance**
-6. ✅ **Consolidar useEffects**
-
----
-
-### **ESTA SEMANA:**
-
-7. ✅ **Implementar cache completo**
-8. ✅ **Monitoramento de performance**
-9. ✅ **Otimizar BibleReader**
-
----
-
-## 📈 **GANHO ESPERADO:**
-
-### **Antes das correções:**
-```
-/bible:   10s  ❌
-/profile:  5s  ❌
-/feed:     6s  ❌
-/login:    2s  ⚠️
+#### admin_logs:
+```sql
+-- Policy atual:
+CREATE POLICY "Admins can view logs"
+ON admin_logs FOR SELECT
+USING (has_permission(auth.uid(), 'logs.view'));
 ```
 
-### **Depois das correções:**
-```
-/bible:   2s (1ª vez) / 100ms (cache)  ✅
-/profile: 500ms  ✅
-/feed:    800ms  ✅
-/login:   300ms  ✅
-```
+**Problema:** `has_permission()` executa para CADA linha!
 
-**Ganho total:** **5-10x mais rápido!** 🚀
+**Solução:** Usar função IMMUTABLE ou cache
 
 ---
 
-## 🔍 **COMO MEDIR:**
+## ❌ PROBLEMA 4: PROBLEMA DE REDE COM SUPABASE
 
-### **Teste ANTES:**
+### Possíveis causas:
 
-1. Limpe o cache (Ctrl+Shift+Delete)
-2. Abra F12 → Network
-3. Acesse https://feconecta-pi.vercel.app/bible
-4. Anote o tempo total
+1. **Região distante:**
+   - Supabase: US East
+   - Usuário: Brasil
+   - Latência: ~150-300ms por query
 
-**Esperado:** 8-12 segundos
+2. **Muitas queries em sequência:**
+   - N+1 problem
+   - Waterfall de queries
 
----
+3. **Falta de cache:**
+   - Queries repetidas sem cache
 
-### **Teste DEPOIS:**
+### Soluções:
 
-1. Após aplicar correções
-2. Limpe o cache novamente
-3. F12 → Network
-4. Acesse https://feconecta-pi.vercel.app/bible
-
-**Esperado:** 1-2 segundos (1ª vez) / 100ms (cache)
-
----
-
-## ✅ **CHECKLIST DE IMPLEMENTAÇÃO:**
-
-- [ ] Reduzir AuthContext timeout (3000 → 800)
-- [ ] Adicionar cache na Bíblia
-- [ ] Lazy loading de rotas pesadas
-- [ ] Error boundary global
-- [ ] Performance logs
-- [ ] Consolidar useEffects do BibleReader
-- [ ] Testar em produção
-- [ ] Medir ganho real
+1. **Usar Supabase Edge Functions** (região mais próxima)
+2. **Implementar cache agressivo**
+3. **Usar batch queries**
+4. **Prefetch de dados**
 
 ---
 
-## 🎯 **CONCLUSÃO:**
+## 🎯 PLANO DE CORREÇÃO
 
-**Principais gargalos:**
-1. 🔴 AuthContext timeout de 3s (afeta TUDO)
-2. 🔴 Bíblia sem cache (8-10s de carregamento)
-3. 🟡 Sem lazy loading (bundle grande)
-4. 🟡 Múltiplos useEffects (re-renders)
+### PRIORIDADE ALTA (5min cada):
 
-**Prioridade:**
-1. **AuthContext** (impacto: 100% das páginas)
-2. **Cache da Bíblia** (impacto: /bible)
-3. **Lazy loading** (impacto: carregamento inicial)
+1. ✅ Criar índices faltantes (SQL)
+2. ✅ Otimizar RLS policies
+3. ✅ Adicionar cache em queries críticas
 
-**Próximo passo:** Implementar as 3 correções urgentes!
+### PRIORIDADE MÉDIA (30min):
+
+4. ⏳ Implementar lazy loading no perfil
+5. ⏳ Adicionar paginação em listas
+6. ⏳ Otimizar queries N+1
+
+### PRIORIDADE BAIXA (1h+):
+
+7. ⏳ Migrar para Supabase Edge Functions
+8. ⏳ Implementar prefetching
+9. ⏳ Adicionar service worker
 
 ---
 
-**Quer que eu implemente as correções AGORA?** 🚀
+## 📊 GANHO ESPERADO
+
+| Correção | Ganho |
+|----------|-------|
+| Índices | -70% tempo de query |
+| RLS otimizado | -50% overhead |
+| Cache | -80% queries repetidas |
+| **TOTAL** | **-60-80% tempo de carga** |
+
+---
+
+## ✅ PRÓXIMOS PASSOS
+
+1. Executar SQL de índices no Supabase
+2. Implementar cache em queries críticas
+3. Otimizar RLS policies
+4. Testar e medir ganhos
+
