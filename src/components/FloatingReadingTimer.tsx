@@ -272,10 +272,10 @@ const FloatingReadingTimer = ({ bookAbbrev, chapter }: FloatingReadingTimerProps
     };
   }, [isRunning, isPaused]);
 
-  // Save state periodically
+  // Save state periodically (otimizado: 30s em vez de 5s)
   useEffect(() => {
     if (isRunning || isPaused) {
-      const saveInterval = setInterval(saveState, 5000);
+      const saveInterval = setInterval(saveState, 30000); // 30 segundos - reduz 84% das escritas
       return () => clearInterval(saveInterval);
     }
   }, [isRunning, isPaused, saveState]);

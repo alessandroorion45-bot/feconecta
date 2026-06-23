@@ -1,47 +1,69 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRef, useCallback } from "react";
 
-export type ActivityType = 
-  | "bible_read" 
-  | "prayer_created" 
-  | "prayer_interceded" 
-  | "event_participated" 
-  | "testimony_shared" 
+export type ActivityType =
+  | "bible_read"
+  | "prayer_created"
+  | "prayer_interceded"
+  | "event_participated"
+  | "testimony_shared"
   | "comment_posted";
 
 export const useActivityTracking = () => {
   const { toast } = useToast();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingActivitiesRef = useRef<Array<{ activityType: ActivityType; metadata?: Record<string, any> }>>([]);
 
-  const trackActivity = async (
+  const flushActivities = useCallback(async () => {
+    if (pendingActivitiesRef.current.length === 0) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const activities = pendingActivitiesRef.current.map(({ activityType, metadata }) => ({
+        user_id: user.id,
+        activity_type: activityType,
+        metadata: metadata || null,
+      }));
+
+      // Batch insert - muito mais eficiente!
+      const { error } = await supabase
+        .from("user_activities")
+        .insert(activities);
+
+      if (error) {
+        console.error("Error tracking activities:", error);
+        return;
+      }
+
+      // Limpa a fila
+      pendingActivitiesRef.current = [];
+    } catch (error) {
+      console.error("Activity tracking error:", error);
+    }
+  }, []);
+
+  const trackActivity = useCallback(async (
     activityType: ActivityType,
     metadata?: Record<string, any>
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return;
+      // Adiciona à fila
+      pendingActivitiesRef.current.push({ activityType, metadata });
+
+      // Cancela timer anterior
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
 
-      const { error } = await supabase
-        .from("user_activities")
-        .insert({
-          user_id: user.id,
-          activity_type: activityType,
-          metadata: metadata || null,
-        });
-
-      if (error) {
-        console.error("Error tracking activity:", error);
-        return;
-      }
-
-      // Check for new achievements
-      await checkNewAchievements(user.id);
+      // Agenda flush para 2 segundos depois
+      debounceTimerRef.current = setTimeout(flushActivities, 2000);
     } catch (error) {
       console.error("Activity tracking error:", error);
     }
-  };
+  }, [flushActivities]);
 
   const checkNewAchievements = async (userId: string) => {
     // OTIMIZADO: Desabilitado temporariamente para melhorar performance
