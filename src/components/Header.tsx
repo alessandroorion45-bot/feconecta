@@ -80,7 +80,7 @@ const Header = () => {
   const currentPath = location.pathname;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-soft">
+    <header className="sticky top-0 z-50 w-full theme-header shadow-soft">
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 flex h-14 sm:h-16 items-center justify-between gap-2">
         {/* Left: Menu (mobile) + Logo */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
