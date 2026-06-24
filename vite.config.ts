@@ -62,28 +62,10 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        experimentalMinChunkSize: 500,
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'ui-heavy': ['framer-motion', 'react-image-crop', 'recharts'],
-          'radix-ui': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-          ],
-          'lucide': ['lucide-react'],
-        },
+        manualChunks: undefined,
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-      },
-      treeshake: {
-        moduleSideEffects: false,
-        preset: 'smallest',
-        propertyReadSideEffects: false,
       },
     },
     chunkSizeWarningLimit: 1000,
