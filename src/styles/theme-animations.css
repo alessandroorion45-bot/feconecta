@@ -1,0 +1,316 @@
+/* =====================================================
+   ANIMAÇÕES ESPECÍFICAS POR TEMA
+   ===================================================== */
+
+/* ===== ANIMAÇÕES GLOBAIS ===== */
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes float-intense {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(5deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px var(--theme-glow));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px var(--theme-glow));
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes sparkle-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+  }
+  25% {
+    transform: translateX(-5px) translateY(-5px);
+  }
+  50% {
+    transform: translateX(5px) translateY(0);
+  }
+  75% {
+    transform: translateX(-5px) translateY(5px);
+  }
+}
+
+@keyframes divine-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--theme-glow),
+                0 0 20px var(--theme-glow),
+                0 0 30px var(--theme-glow);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--theme-glow),
+                0 0 40px var(--theme-glow),
+                0 0 60px var(--theme-glow);
+  }
+}
+
+@keyframes royal-float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: translateY(-12px) scale(1.02);
+    filter: brightness(1.1);
+  }
+}
+
+@keyframes fire-flicker {
+  0%, 100% {
+    filter: brightness(1) hue-rotate(0deg);
+  }
+  25% {
+    filter: brightness(1.2) hue-rotate(5deg);
+  }
+  50% {
+    filter: brightness(0.9) hue-rotate(-5deg);
+  }
+  75% {
+    filter: brightness(1.1) hue-rotate(3deg);
+  }
+}
+
+@keyframes crystal-shine {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* ===== CLASSES DE ANIMAÇÃO ===== */
+
+.theme-animate-float {
+  animation: float-gentle 3s ease-in-out infinite;
+}
+
+.theme-animate-float-intense {
+  animation: float-intense 2.5s ease-in-out infinite;
+}
+
+.theme-animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.theme-animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--theme-glow) 50%,
+    transparent 100%
+  );
+  background-size: 2000px 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+.theme-animate-wave {
+  animation: wave 4s ease-in-out infinite;
+}
+
+.theme-animate-divine-pulse {
+  animation: divine-pulse 3s ease-in-out infinite;
+}
+
+.theme-animate-royal-float {
+  animation: royal-float 4s ease-in-out infinite;
+}
+
+.theme-animate-fire-flicker {
+  animation: fire-flicker 0.3s ease-in-out infinite;
+}
+
+.theme-animate-crystal {
+  background: linear-gradient(
+    45deg,
+    var(--theme-primary) 0%,
+    var(--theme-secondary) 50%,
+    var(--theme-accent) 100%
+  );
+  background-size: 200% 200%;
+  animation: crystal-shine 3s ease-in-out infinite;
+}
+
+.theme-animate-sparkle {
+  animation: sparkle-rotate 4s linear infinite;
+}
+
+/* ===== HOVER EFFECTS PREMIUM ===== */
+
+.theme-hover-glow:hover {
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+
+.theme-hover-float:hover {
+  animation: float-gentle 2s ease-in-out infinite;
+}
+
+.theme-hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-hover-lift:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px var(--theme-shadow-hover);
+}
+
+/* ===== CARD PREMIUM EFFECTS ===== */
+
+.theme-card-premium {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-card-premium::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg);
+  animation: shimmer 6s linear infinite;
+}
+
+.theme-card-premium:hover::before {
+  animation-duration: 3s;
+}
+
+/* ===== BUTTON PREMIUM EFFECTS ===== */
+
+.theme-button-premium {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.theme-button-premium::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.theme-button-premium:hover::after {
+  width: 300px;
+  height: 300px;
+}
+
+.theme-button-premium:active {
+  transform: scale(0.95);
+}
+
+/* ===== BADGE EFFECTS ===== */
+
+.theme-badge-shine {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    var(--theme-primary),
+    var(--theme-secondary)
+  );
+  background-size: 200% 200%;
+  animation: crystal-shine 2s ease-in-out infinite;
+}
+
+.theme-badge-glow {
+  box-shadow: 0 0 10px var(--theme-glow),
+              0 0 20px var(--theme-glow);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ===== LOADING ANIMATIONS ===== */
+
+.theme-loading-pulse {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.theme-loading-wave {
+  animation: wave 2s ease-in-out infinite;
+}
+
+/* ===== TEXT EFFECTS ===== */
+
+.theme-text-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--theme-text) 0%,
+    var(--theme-glow) 50%,
+    var(--theme-text) 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+.theme-text-glow {
+  text-shadow: 0 0 10px var(--theme-glow),
+               0 0 20px var(--theme-glow);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ===== MODAL ENTRANCE PREMIUM ===== */
+
+@keyframes modal-entrance {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.theme-modal-premium {
+  animation: modal-entrance 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}

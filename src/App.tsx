@@ -14,6 +14,7 @@ import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import LoadingFallback from "@/components/LoadingFallback";
 import { DailyLoginTracker } from "@/components/gamification/DailyLoginTracker";
+import { PremiumEffectsWrapper } from "@/components/effects/PremiumEffectsWrapper";
 
 // Eager: critical path pages
 import Index from "./pages/Index";
@@ -142,17 +143,19 @@ const App = () => (
         <AuthProvider>
           <AdminProvider>
             <ThemeProvider>
-              <DailyLoginTracker />
-              <LanguageProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <NetworkStatusIndicator />
-                  <Suspense fallback={<LoadingFallback />}>
-                    <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
-                  </Suspense>
-                </TooltipProvider>
-              </LanguageProvider>
+              <PremiumEffectsWrapper>
+                <DailyLoginTracker />
+                <LanguageProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <NetworkStatusIndicator />
+                    <Suspense fallback={<LoadingFallback />}>
+                      <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
+                    </Suspense>
+                  </TooltipProvider>
+                </LanguageProvider>
+              </PremiumEffectsWrapper>
             </ThemeProvider>
           </AdminProvider>
         </AuthProvider>

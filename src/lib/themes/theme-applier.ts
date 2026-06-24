@@ -49,6 +49,13 @@ export function applyThemeTokens(tokens: ThemeDesignTokens, themeName: string) {
 
   // ===== ADICIONAR CLASSE DE TRANSIÇÃO =====
   root.classList.add('theme-transitioning');
+  document.body.classList.add('theme-transitioning');
+
+  // ===== FLASH VISUAL =====
+  const flash = document.createElement('div');
+  flash.className = 'theme-flash-overlay';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 600);
 
   // ===== APLICAR CORES BASE (HSL para Tailwind) =====
   root.style.setProperty('--primary', hexToHSL(tokens.primary));
@@ -127,7 +134,8 @@ export function applyThemeTokens(tokens: ThemeDesignTokens, themeName: string) {
   // ===== REMOVER CLASSE DE TRANSIÇÃO APÓS ANIMAÇÃO =====
   setTimeout(() => {
     root.classList.remove('theme-transitioning');
-  }, 500);
+    document.body.classList.remove('theme-transitioning');
+  }, 600);
 }
 
 // Extrai cor sólida de linear-gradient ou rgba
