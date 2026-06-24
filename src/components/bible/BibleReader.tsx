@@ -9,6 +9,7 @@ import { Book, ChevronLeft, ChevronRight, AlertCircle, CheckCircle } from 'lucid
 import { useToast } from '@/hooks/use-toast'
 import { useGamification } from '@/hooks/useGamification'
 import { useAuth } from '@/contexts/AuthContext'
+import { VerseActions } from './VerseActions'
 
 export function BibleReader() {
   const { toast } = useToast()
@@ -254,15 +255,28 @@ export function BibleReader() {
                 capituloAtual.map((versiculo, index) => (
                   <div
                     key={index}
-                    className="group hover:bg-muted/50 p-3 rounded-lg transition-all"
+                    className="group hover:bg-muted/50 p-4 rounded-lg transition-all border border-transparent hover:border-primary/20"
                   >
-                    <div className="flex gap-3">
-                      <span className="text-sm font-bold text-primary mt-1 min-w-[2rem]">
-                        {index + 1}
-                      </span>
-                      <p className="text-base leading-relaxed flex-1">
-                        {versiculo}
-                      </p>
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <span className="text-sm font-bold text-primary mt-1 min-w-[2rem]">
+                          {index + 1}
+                        </span>
+                        <p className="text-base leading-relaxed flex-1">
+                          {versiculo}
+                        </p>
+                      </div>
+                      {user && (
+                        <div className="ml-11 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <VerseActions
+                            book={livroAtual?.book || ''}
+                            chapter={capituloIndex + 1}
+                            verse={index + 1}
+                            verseText={versiculo}
+                            compact
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

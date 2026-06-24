@@ -119,6 +119,7 @@ const Header = () => {
                   <MenuItem path="/palavra-viva" icon={<SearchIcon className="h-5 w-5" />} label="Caça-Palavras" currentPath={currentPath} onClick={handleNavClick} iconColor="text-purple-500" />
 
                   <MenuSection title="Estudo & Louvor" />
+                  <MenuItem path="/favorite-verses" icon={<Heart className="h-5 w-5 fill-current" />} label="Versículos Favoritos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-red-500" />
                   <MenuItem path="/devotional" icon={<Sparkles className="h-5 w-5" />} label="Devocional Diário" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
                   <MenuItem path="/studies" icon={<BookMarked className="h-5 w-5" />} label="Estudos Bíblicos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-teal-500" />
                   <MenuItem path="/worship" icon={<Music className="h-5 w-5" />} label="Louvores" currentPath={currentPath} onClick={handleNavClick} iconColor="text-pink-500" />

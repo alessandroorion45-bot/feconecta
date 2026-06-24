@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { BibleReader } from "@/components/bible/BibleReader";
+import { TrendingVerses } from "@/components/bible/TrendingVerses";
 
 const Bible = () => {
   return (
@@ -20,6 +21,10 @@ const Bible = () => {
         </div>
 
         <BibleReader />
+
+        <div className="mt-8">
+          <TrendingVerses />
+        </div>
       </main>
     </div>
   );
