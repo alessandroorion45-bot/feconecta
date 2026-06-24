@@ -50,6 +50,7 @@ const SpiritualMentoring = lazy(() => import("./pages/SpiritualMentoring"));
 const FavoritesHub = lazy(() => import("./pages/FavoritesHub"));
 const NearbyChurches = lazy(() => import("./pages/NearbyChurches"));
 const ThemesGallery = lazy(() => import("./pages/ThemesGallery"));
+const FavoriteVerses = lazy(() => import("./pages/FavoriteVerses"));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -112,6 +113,7 @@ const routes: RouteObject[] = [
   { path: "/favorites", element: <ProtectedRoute><FavoritesHub /></ProtectedRoute> },
   { path: "/nearby-churches", element: <ProtectedRoute><NearbyChurches /></ProtectedRoute> },
   { path: "/themes", element: <ProtectedRoute><ThemesGallery /></ProtectedRoute> },
+  { path: "/favorite-verses", element: <ProtectedRoute><FavoriteVerses /></ProtectedRoute> },
 
   // Admin Routes
   { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
