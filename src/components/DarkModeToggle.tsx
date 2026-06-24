@@ -1,43 +1,26 @@
-import { Moon, Sun } from "lucide-react";
+import { Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { ThemeCenterModal } from "@/components/themes/ThemeCenterModal";
 
 const DarkModeToggle = () => {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const isDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDark(isDarkMode);
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDark;
-    setIsDark(newDarkMode);
-    localStorage.setItem('darkMode', String(newDarkMode));
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={toggleDarkMode}
-      title={isDark ? "Modo claro" : "Modo escuro"}
-    >
-      {isDark ? (
-        <Sun className="h-5 w-5" />
-      ) : (
-        <Moon className="h-5 w-5" />
-      )}
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => setIsModalOpen(true)}
+        title="Personalizar aparência"
+        className="relative group overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+        <Palette className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+      </Button>
+
+      <ThemeCenterModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+    </>
   );
 };
 
