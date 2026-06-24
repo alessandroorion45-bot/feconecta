@@ -4,7 +4,7 @@ import { BibleReader } from "@/components/bible/BibleReader";
 
 const Bible = () => {
   return (
-    <div className="min-h-screen bg-gradient-hero flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--theme-background)' }}>
       <Header />
       <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 md:py-8">
         <div className="mb-4 sm:mb-6 md:mb-8 text-center">

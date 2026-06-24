@@ -39,9 +39,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen" style={{ background: 'var(--theme-background)' }}>
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-900 border-r shadow-lg z-40">
+      <aside className="theme-sidebar fixed left-0 top-0 h-full w-64 border-r shadow-lg z-40">
         <div className="p-6">
           <div className="flex items-center gap-2 mb-8">
             <Crown className="h-8 w-8 text-purple-600" />

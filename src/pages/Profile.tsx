@@ -278,7 +278,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--theme-background)' }}>
       <Header />
       <main className="flex-1 w-full max-w-2xl mx-auto py-0 sm:py-6 md:py-8 px-0 sm:px-4">
         {/* Public Profile View */}
