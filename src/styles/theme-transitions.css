@@ -1,0 +1,238 @@
+/* =====================================================
+   TRANSIÇÕES DE TEMAS - Sistema imersivo
+   ===================================================== */
+
+/* ===== TRANSIÇÕES GLOBAIS ===== */
+:root {
+  /* Duração das transições */
+  --theme-transition-duration: 0.5s;
+  --theme-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== ELEMENTOS QUE TRANSITAM ===== */
+* {
+  transition-property: background-color, color, border-color, box-shadow, opacity;
+  transition-duration: var(--theme-transition-duration);
+  transition-timing-function: var(--theme-transition-timing);
+}
+
+/* ===== BODY BACKGROUND ===== */
+body {
+  background: var(--theme-background);
+  color: var(--theme-text);
+  transition: background 0.5s ease, color 0.5s ease;
+}
+
+/* ===== DURANTE A TRANSIÇÃO DE TEMA ===== */
+.theme-transitioning {
+  pointer-events: none;
+}
+
+.theme-transitioning * {
+  animation: themeBlurFade 0.5s ease-in-out;
+}
+
+@keyframes themeBlurFade {
+  0% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+/* ===== CARDS ===== */
+.theme-card {
+  background: var(--theme-card-background);
+  border: 1px solid var(--theme-border);
+  box-shadow: 0 4px 6px var(--theme-shadow);
+  transition: all 0.3s ease;
+}
+
+.theme-card:hover {
+  background: var(--theme-surface-hover);
+  border-color: var(--theme-border-hover);
+  box-shadow: 0 10px 20px var(--theme-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* ===== HEADER ===== */
+.theme-header {
+  background: var(--theme-header-background);
+  backdrop-filter: blur(var(--theme-backdrop-blur));
+  border-bottom: 1px solid var(--theme-border);
+}
+
+/* ===== SIDEBAR ===== */
+.theme-sidebar {
+  background: var(--theme-sidebar-background);
+}
+
+/* ===== BUTTONS ===== */
+.theme-button-primary {
+  background: var(--theme-button-primary);
+  color: var(--theme-text-on-primary);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.theme-button-primary:hover {
+  background: var(--theme-button-hover);
+  box-shadow: 0 0 20px var(--theme-glow);
+  transform: scale(1.05);
+}
+
+.theme-button-secondary {
+  background: var(--theme-button-secondary);
+  color: var(--theme-text-on-accent);
+  transition: all 0.3s ease;
+}
+
+/* ===== INPUTS ===== */
+.theme-input {
+  background: var(--theme-input-background);
+  border: 1px solid var(--theme-input-border);
+  color: var(--theme-text);
+  transition: all 0.3s ease;
+}
+
+.theme-input:focus {
+  border-color: var(--theme-border-focus);
+  box-shadow: 0 0 0 3px var(--theme-glow);
+  outline: none;
+}
+
+/* ===== MODAIS ===== */
+.theme-modal {
+  background: var(--theme-modal-background);
+  backdrop-filter: blur(var(--theme-backdrop-blur));
+  border: 1px solid var(--theme-border);
+}
+
+.theme-modal-overlay {
+  background: var(--theme-overlay);
+  backdrop-filter: blur(var(--theme-backdrop-blur));
+}
+
+/* ===== TOOLTIPS ===== */
+.theme-tooltip {
+  background: var(--theme-tooltip-background);
+  color: var(--theme-text-on-primary);
+  border-radius: 4px;
+  padding: 6px 12px;
+}
+
+/* ===== GLASS MORPHISM (Premium) ===== */
+.theme-glass {
+  background: var(--theme-glass);
+  backdrop-filter: blur(var(--theme-backdrop-blur));
+  border: 1px solid var(--theme-border);
+}
+
+/* ===== GLOW EFFECTS (Premium) ===== */
+.theme-glow {
+  box-shadow: 0 0 20px var(--theme-glow);
+}
+
+.theme-glow-hover:hover {
+  box-shadow: 0 0 40px var(--theme-glow);
+}
+
+/* ===== GRADIENTES ===== */
+.theme-gradient-header {
+  background: var(--theme-gradient-header);
+}
+
+.theme-gradient-sidebar {
+  background: var(--theme-gradient-sidebar);
+}
+
+.theme-gradient-card {
+  background: var(--theme-gradient-card);
+}
+
+/* ===== ESTADOS ===== */
+.theme-success {
+  color: var(--theme-success);
+}
+
+.theme-warning {
+  color: var(--theme-warning);
+}
+
+.theme-error {
+  color: var(--theme-error);
+}
+
+.theme-info {
+  color: var(--theme-info);
+}
+
+/* ===== PARTÍCULAS (se implementado) ===== */
+.theme-particles {
+  color: var(--theme-particle-color);
+}
+
+/* ===== SCROLLBAR CUSTOMIZADA ===== */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--theme-background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-border);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-border-hover);
+}
+
+/* ===== SELEÇÃO DE TEXTO ===== */
+::selection {
+  background: var(--theme-glow);
+  color: var(--theme-text-on-primary);
+}
+
+/* ===== SKELETON LOADERS ===== */
+.theme-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--theme-surface) 0%,
+    var(--theme-surface-hover) 50%,
+    var(--theme-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeletonLoading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ===== LINK HOVER ===== */
+.theme-link {
+  color: var(--theme-text);
+  text-decoration: underline;
+  text-decoration-color: var(--theme-glow);
+  transition: all 0.3s ease;
+}
+
+.theme-link:hover {
+  color: var(--theme-glow);
+  text-shadow: 0 0 10px var(--theme-glow);
+}

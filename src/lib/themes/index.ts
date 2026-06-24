@@ -1,8 +1,23 @@
 // =====================================================
-// TEMAS PREMIUM - DEFINIÇÕES COMPLETAS
+// TEMAS IMERSIVOS - SISTEMA COMPLETO
 // =====================================================
-// 9 temas ultra premium com paletas, gradientes e efeitos
+// Sistema de design tokens completo para experiências visuais únicas
 // =====================================================
+
+import { ThemeDesignTokens } from './tokens';
+import { applyThemeTokens } from './theme-applier';
+import {
+  defaultThemeTokens,
+  darkRoyalThemeTokens,
+  reinoCelestialThemeTokens,
+  novaJerusalemThemeTokens,
+  tronoGloriaThemeTokens,
+  arcaAliancaThemeTokens,
+  guerreiroFeThemeTokens,
+  monteSiaoThemeTokens,
+  jardimEdenThemeTokens,
+  diamantePromessaThemeTokens,
+} from './theme-definitions';
 
 export interface ThemeColors {
   primary: string;
@@ -28,7 +43,8 @@ export interface Theme {
   effects?: ThemeEffects;
   rarity: 1 | 2 | 3 | 4 | 5;
   tier?: "standard" | "gold" | "platinum";
-  cssVars: Record<string, string>; // Variáveis CSS para aplicar
+  cssVars: Record<string, string>; // Variáveis CSS legadas
+  designTokens: ThemeDesignTokens; // Design tokens completos
 }
 
 // =====================================================
@@ -54,6 +70,7 @@ export const defaultTheme: Theme = {
     "--theme-background": "#ffffff",
     "--theme-text": "#1f2937",
   },
+  designTokens: defaultThemeTokens,
 };
 
 // =====================================================
@@ -87,6 +104,7 @@ export const reinoCelestialTheme: Theme = {
     "--theme-gradient-start": "#f8f7ff",
     "--theme-gradient-end": "#ffd700",
   },
+  designTokens: reinoCelestialThemeTokens,
 };
 
 // =====================================================
@@ -120,6 +138,7 @@ export const novaJerusalemTheme: Theme = {
     "--theme-gradient-start": "#ffd700",
     "--theme-gradient-end": "#c4b5fd",
   },
+  designTokens: novaJerusalemThemeTokens,
 };
 
 // =====================================================
@@ -152,6 +171,7 @@ export const tronoGloriaTheme: Theme = {
     "--theme-gradient-start": "#7c3aed",
     "--theme-gradient-end": "#fbbf24",
   },
+  designTokens: tronoGloriaThemeTokens,
 };
 
 // =====================================================
@@ -184,6 +204,7 @@ export const arcaAliancaTheme: Theme = {
     "--theme-gradient-start": "#d97706",
     "--theme-gradient-end": "#92400e",
   },
+  designTokens: arcaAliancaThemeTokens,
 };
 
 // =====================================================
@@ -216,6 +237,7 @@ export const guerreiroFeTheme: Theme = {
     "--theme-gradient-start": "#dc2626",
     "--theme-gradient-end": "#fbbf24",
   },
+  designTokens: guerreiroFeThemeTokens,
 };
 
 // =====================================================
@@ -248,6 +270,7 @@ export const monteSiaoTheme: Theme = {
     "--theme-gradient-start": "#1e3a8a",
     "--theme-gradient-end": "#60a5fa",
   },
+  designTokens: monteSiaoThemeTokens,
 };
 
 // =====================================================
@@ -281,6 +304,7 @@ export const jardimEdenTheme: Theme = {
     "--theme-gradient-start": "#059669",
     "--theme-gradient-end": "#10b981",
   },
+  designTokens: jardimEdenThemeTokens,
 };
 
 // =====================================================
@@ -314,6 +338,7 @@ export const diamantePromessaTheme: Theme = {
     "--theme-gradient-start": "#0ea5e9",
     "--theme-gradient-end": "#38bdf8",
   },
+  designTokens: diamantePromessaThemeTokens,
 };
 
 // =====================================================
@@ -348,6 +373,7 @@ export const darkRoyalTheme: Theme = {
     "--theme-gradient-start": "#a855f7",
     "--theme-gradient-end": "#fbbf24",
   },
+  designTokens: darkRoyalThemeTokens,
 };
 
 // =====================================================
@@ -377,47 +403,8 @@ export function getTheme(key: string): Theme {
 export function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;
 
-  const root = document.documentElement;
-
-  // Import da função de conversão
-  const hexToHSL = (hex: string): string => {
-    hex = hex.replace(/^#/, '');
-    const r = parseInt(hex.substring(0, 2), 16) / 255;
-    const g = parseInt(hex.substring(2, 4), 16) / 255;
-    const b = parseInt(hex.substring(4, 6), 16) / 255;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0;
-    let s = 0;
-    const l = (max + min) / 2;
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
-      }
-    }
-    h = Math.round(h * 360);
-    s = Math.round(s * 100);
-    const lightness = Math.round(l * 100);
-    return `${h} ${s}% ${lightness}%`;
-  };
-
-  // Aplicar variáveis CSS originais do tema
-  Object.entries(theme.cssVars).forEach(([key, value]) => {
-    root.style.setProperty(key, value);
-  });
-
-  // CRÍTICO: Aplicar nas variáveis que o Tailwind usa (formato HSL)
-  root.style.setProperty('--primary', hexToHSL(theme.colors.primary));
-  root.style.setProperty('--secondary', hexToHSL(theme.colors.secondary));
-  root.style.setProperty('--accent', hexToHSL(theme.colors.accent));
-  root.style.setProperty('--background', hexToHSL(theme.colors.background));
-  root.style.setProperty('--foreground', hexToHSL(theme.colors.text));
-
-  console.log('[Theme] Tema aplicado:', theme.name, theme.colors);
+  // Usar o novo sistema de design tokens completo
+  applyThemeTokens(theme.designTokens, theme.name);
 }
 
 export function getAllThemes(): Theme[] {
