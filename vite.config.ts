@@ -35,25 +35,34 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Otimizações EXTREMAS para produção e escalabilidade
-    target: 'es2015',
+    target: 'es2020',
     minify: 'terser',
     cssMinify: true,
+    cssCodeSplit: true,
     terserOptions: {
       compress: {
-        drop_console: false, // MANTER LOGS EM PRODUÇÃO (para debugging)
+        drop_console: false,
         drop_debugger: true,
-        pure_funcs: [], // NÃO REMOVER nenhum console.* (debugging necessário)
-        passes: 2,
+        pure_funcs: [],
+        passes: 3,
+        ecma: 2020,
+        module: true,
+        toplevel: true,
+        unsafe_arrows: true,
+        unsafe_methods: true,
       },
       mangle: {
         safari10: true,
+        toplevel: true,
       },
       format: {
         comments: false,
+        ecma: 2020,
       },
     },
     rollupOptions: {
       output: {
+        experimentalMinChunkSize: 500,
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'supabase-vendor': ['@supabase/supabase-js'],
@@ -65,15 +74,22 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-tabs',
             '@radix-ui/react-toast',
           ],
+          'lucide': ['lucide-react'],
         },
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
+      treeshake: {
+        moduleSideEffects: false,
+        preset: 'smallest',
+        propertyReadSideEffects: false,
+      },
     },
     chunkSizeWarningLimit: 1000,
-    sourcemap: false, // Desabilitar sourcemaps em produção
-    reportCompressedSize: false, // Mais rápido
+    sourcemap: false,
+    reportCompressedSize: false,
+    assetsInlineLimit: 4096,
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],

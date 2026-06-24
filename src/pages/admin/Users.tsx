@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAdmin } from "@/contexts/AdminContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminActions } from "@/hooks/useAdminActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -15,58 +24,56 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, Crown, Shield, Ban, Check } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Search, AlertTriangle, Clock, Ban, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface User {
+interface UserProfile {
   id: string;
-  full_name: string;
   email: string;
-  total_xp: number;
-  created_at: string;
-  user_id_number: number;
+  registered_at: string;
+  last_sign_in_at: string | null;
+  total_warnings: number;
 }
 
+type PunishmentType = 'warning' | 'suspend' | 'ban';
+
 export default function AdminUsers() {
-  const { isAdmin, hasPermission, loading: adminLoading } = useAdmin();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
+  const { getUserProfiles, warnUser, suspendUser, banUser } = useAdminActions();
+
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [vipFilter, setVipFilter] = useState<string>("all");
+
+  // Dialog state
+  const [showPunishDialog, setShowPunishDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [punishmentType, setPunishmentType] = useState<PunishmentType>('warning');
+  const [reason, setReason] = useState("");
+  const [suspendDays, setSuspendDays] = useState(7);
+  const [processing, setProcessing] = useState(false);
+
+  // HARDCODED: Verificar se é admin
+  const isAdmin = user?.email === 'alessandroibama40@gmail.com';
 
   useEffect(() => {
-    if (!adminLoading && !isAdmin) {
+    if (!isAdmin) {
       navigate("/");
       return;
     }
 
-    if (isAdmin) {
-      loadUsers();
-    }
-  }, [isAdmin, adminLoading, navigate]);
+    loadUsers();
+  }, [isAdmin, navigate]);
 
   const loadUsers = async () => {
+    setLoading(true);
     try {
-      let query = supabase
-        .from("users")
-        .select("id, full_name, email, total_xp, created_at, user_id_number")
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setUsers(data || []);
+      const data = await getUserProfiles();
+      setUsers(data);
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
       toast({
@@ -79,56 +86,80 @@ export default function AdminUsers() {
     }
   };
 
-  const handleGrantVIP = async (userId: string) => {
-    if (!hasPermission("users.grant_vip")) {
+  const openPunishDialog = (user: UserProfile, type: PunishmentType) => {
+    setSelectedUser(user);
+    setPunishmentType(type);
+    setReason("");
+    setShowPunishDialog(true);
+  };
+
+  const handlePunish = async () => {
+    if (!selectedUser || !reason.trim()) {
       toast({
-        title: "Sem permissão",
-        description: "Você não tem permissão para conceder VIP.",
+        title: "Erro",
+        description: "Preencha o motivo da punição.",
         variant: "destructive",
       });
       return;
     }
 
+    setProcessing(true);
     try {
-      const { error } = await supabase.rpc("grant_vip", {
-        p_user_id: userId,
-        p_vip_tier: "standard",
-        p_duration_days: null,
-        p_grant_reason: "Concedido via admin panel",
-      });
+      let success = false;
 
-      if (error) throw error;
+      switch (punishmentType) {
+        case 'warning':
+          success = await warnUser(selectedUser.id, reason);
+          break;
+        case 'suspend':
+          success = await suspendUser(selectedUser.id, reason, suspendDays);
+          break;
+        case 'ban':
+          success = await banUser(selectedUser.id, reason);
+          break;
+      }
 
-      toast({
-        title: "VIP Concedido!",
-        description: "O usuário agora tem acesso VIP.",
-      });
+      if (success) {
+        const messages = {
+          warning: "Usuário advertido com sucesso!",
+          suspend: `Usuário suspenso por ${suspendDays} dias!`,
+          ban: "Usuário banido permanentemente!",
+        };
 
-      loadUsers();
+        toast({
+          title: "Sucesso!",
+          description: messages[punishmentType],
+        });
+
+        setShowPunishDialog(false);
+        loadUsers();
+      } else {
+        throw new Error("Falha ao aplicar punição");
+      }
     } catch (error: any) {
-      console.error("Erro ao conceder VIP:", error);
+      console.error("Erro ao punir usuário:", error);
       toast({
         title: "Erro",
-        description: error.message || "Não foi possível conceder VIP.",
+        description: error.message || "Não foi possível aplicar a punição.",
         variant: "destructive",
       });
+    } finally {
+      setProcessing(false);
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `ID-${String(user.user_id_number).padStart(6, "0")}`.includes(searchTerm);
+  const filteredUsers = users.filter((user) =>
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    return matchesSearch;
-  });
-
-  if (adminLoading || loading) {
+  if (loading) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Carregando usuários...</p>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Carregando usuários...</p>
+          </div>
         </div>
       </AdminLayout>
     );
@@ -145,106 +176,91 @@ export default function AdminUsers() {
         <div>
           <h1 className="text-3xl font-bold">Gestão de Usuários</h1>
           <p className="text-muted-foreground mt-1">
-            Gerenciar usuários, permissões e status VIP
+            Gerenciar usuários, advertências e punições
           </p>
         </div>
 
         {/* Filters */}
         <Card>
           <CardHeader>
-            <CardTitle>Filtros</CardTitle>
+            <CardTitle>Buscar Usuários</CardTitle>
           </CardHeader>
-          <CardContent className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, email ou ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+          <CardContent>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
             </div>
-
-            <Select value={vipFilter} onValueChange={setVipFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filtrar VIP" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="vip">Apenas VIP</SelectItem>
-                <SelectItem value="non-vip">Não VIP</SelectItem>
-              </SelectContent>
-            </Select>
           </CardContent>
         </Card>
 
         {/* Users Table */}
         <Card>
           <CardHeader>
-            <CardTitle>
-              Usuários ({filteredUsers.length})
-            </CardTitle>
+            <CardTitle>Usuários ({filteredUsers.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>XP</TableHead>
                   <TableHead>Cadastro</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Último Acesso</TableHead>
+                  <TableHead>Advertências</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-mono text-xs">
-                      ID-{String(user.user_id_number).padStart(6, "0")}
-                    </TableCell>
                     <TableCell className="font-medium">
-                      {user.full_name || "Sem nome"}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
                       {user.email}
                     </TableCell>
-                    <TableCell>
-                      {user.total_xp?.toLocaleString() || 0} XP
+                    <TableCell className="text-sm">
+                      {new Date(user.registered_at).toLocaleDateString("pt-BR")}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                      {user.last_sign_in_at
+                        ? new Date(user.last_sign_in_at).toLocaleDateString("pt-BR")
+                        : "Nunca"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="default">
-                        <Check className="h-3 w-3 mr-1" />
-                        Ativo
-                      </Badge>
+                      {user.total_warnings > 0 ? (
+                        <Badge variant="destructive">
+                          {user.total_warnings} {user.total_warnings === 1 ? 'advertência' : 'advertências'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Nenhuma</Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleGrantVIP(user.id)}
-                          disabled={!hasPermission("users.grant_vip")}
+                          onClick={() => openPunishDialog(user, 'warning')}
                         >
-                          <Crown className="h-3 w-3 mr-1" />
-                          VIP
-                        </Button>
-
-                        <Button size="sm" variant="outline" disabled>
-                          <Shield className="h-3 w-3 mr-1" />
-                          Roles
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Advertir
                         </Button>
 
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={!hasPermission("users.ban")}
+                          onClick={() => openPunishDialog(user, 'suspend')}
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          Suspender
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => openPunishDialog(user, 'ban')}
                         >
                           <Ban className="h-3 w-3 mr-1" />
                           Banir
@@ -264,6 +280,71 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Punishment Dialog */}
+      <Dialog open={showPunishDialog} onOpenChange={setShowPunishDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {punishmentType === 'warning' && 'Advertir Usuário'}
+              {punishmentType === 'suspend' && 'Suspender Usuário'}
+              {punishmentType === 'ban' && 'Banir Usuário'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {punishmentType === 'suspend' && (
+              <div className="space-y-2">
+                <Label>Duração (dias)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={suspendDays}
+                  onChange={(e) => setSuspendDays(parseInt(e.target.value) || 7)}
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Motivo *</Label>
+              <Textarea
+                placeholder="Descreva o motivo da punição..."
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+
+            {punishmentType === 'ban' && (
+              <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
+                <p className="text-sm text-destructive font-semibold">
+                  ⚠️ ATENÇÃO: Esta ação é PERMANENTE!
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  O usuário será banido permanentemente e não poderá mais acessar a plataforma.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPunishDialog(false)} disabled={processing}>
+              Cancelar
+            </Button>
+            <Button
+              variant={punishmentType === 'ban' ? 'destructive' : 'default'}
+              onClick={handlePunish}
+              disabled={processing || !reason.trim()}
+            >
+              {processing ? 'Processando...' : 'Confirmar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

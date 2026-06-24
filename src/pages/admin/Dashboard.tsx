@@ -1,120 +1,123 @@
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { MetricsCard } from "@/components/admin/MetricsCard";
-import { useAdmin } from "@/contexts/AdminContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Users, Crown, Palette, Trophy, Flag, Activity } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Users, Crown, Palette, Trophy, Flag, Activity, BarChart, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardStats {
   totalUsers: number;
-  vipUsers: number;
-  activeThemes: number;
-  totalAchievements: number;
-  pendingReports: number;
-  onlineUsers: number;
+  usersToday: number;
+  usersWeek: number;
+  totalLogs: number;
+  activePunishments: number;
 }
 
 export default function AdminDashboard() {
-  const { isAdmin, isSuperAdmin, loading: adminLoading } = useAdmin();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
-    vipUsers: 0,
-    activeThemes: 0,
-    totalAchievements: 0,
-    pendingReports: 0,
-    onlineUsers: 0,
+    usersToday: 0,
+    usersWeek: 0,
+    totalLogs: 0,
+    activePunishments: 0,
   });
   const [loading, setLoading] = useState(true);
 
+  // SOLUÇÃO TEMPORÁRIA: Verificar email diretamente (hardcoded)
+  const isAdmin = user?.email === 'alessandroibama40@gmail.com';
+
   useEffect(() => {
-    if (!adminLoading && !isAdmin) {
+    console.log('[Dashboard] User email:', user?.email);
+    console.log('[Dashboard] Is admin?', isAdmin);
+
+    if (!authLoading && !isAdmin) {
+      console.log('[Dashboard] Not admin, redirecting to /');
       navigate("/");
       return;
     }
 
     if (isAdmin) {
+      console.log('[Dashboard] Loading stats...');
       loadStats();
     }
-  }, [isAdmin, adminLoading, navigate]);
+  }, [isAdmin, authLoading, navigate, user]);
 
   const loadStats = async () => {
+    console.log('[Dashboard] loadStats started');
     try {
-      // OTIMIZADO: 1 query em vez de 5 (95% mais rápido!)
-      // Usa materialized view para stats pré-calculadas
-      const { data: statsData, error } = await supabase
-        .from("admin_dashboard_stats")
-        .select("*")
+      // Buscar estatísticas REAIS da view otimizada
+      console.log('[Dashboard] Fetching REAL stats from database');
+
+      const { data, error } = await supabase
+        .from('admin_dashboard_stats')
+        .select('*')
         .single();
 
       if (error) {
-        // Fallback para queries individuais se view não existir ainda
-        console.warn("View materializada não encontrada, usando queries individuais:", error);
-
-        const { count: totalUsers } = await supabase
-          .from("users")
-          .select("*", { count: "exact", head: true });
-
-        const { count: vipUsers } = await supabase
-          .from("vip_subscriptions")
-          .select("*", { count: "exact", head: true })
-          .eq("is_active", true);
-
-        const { count: activeThemes } = await supabase
-          .from("user_themes")
-          .select("theme_id", { count: "exact", head: true })
-          .eq("is_active", true);
-
-        const { count: totalAchievements } = await supabase
-          .from("achievements")
-          .select("*", { count: "exact", head: true });
-
-        const { count: pendingReports } = await supabase
-          .from("reports")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending");
-
-        setStats({
-          totalUsers: totalUsers || 0,
-          vipUsers: vipUsers || 0,
-          activeThemes: activeThemes || 0,
-          totalAchievements: totalAchievements || 0,
-          pendingReports: pendingReports || 0,
-          onlineUsers: 0,
-        });
-        return;
+        console.error('[Dashboard] Error fetching stats:', error);
+        throw error;
       }
 
-      // Usar dados da view materializada (muito mais rápido!)
+      console.log('[Dashboard] Stats fetched successfully:', data);
+
       setStats({
-        totalUsers: statsData.total_users || 0,
-        vipUsers: statsData.vip_users || 0,
-        activeThemes: statsData.active_themes || 0,
-        totalAchievements: statsData.total_achievements || 0,
-        pendingReports: statsData.pending_reports || 0,
-        onlineUsers: 0, // Implementar com realtime depois
+        totalUsers: data?.total_users || 0,
+        usersToday: data?.users_today || 0,
+        usersWeek: data?.users_week || 0,
+        totalLogs: data?.total_logs || 0,
+        activePunishments: data?.active_punishments || 0,
       });
+
+      console.log('[Dashboard] Stats loaded successfully (REAL DATA)');
     } catch (error) {
-      console.error("Erro ao carregar estatísticas:", error);
+      console.error("[Dashboard] Erro ao carregar estatísticas:", error);
+      // Fallback: mostrar zeros em vez de dados falsos
+      setStats({
+        totalUsers: 0,
+        usersToday: 0,
+        usersWeek: 0,
+        totalLogs: 0,
+        activePunishments: 0,
+      });
     } finally {
       setLoading(false);
+      console.log('[Dashboard] Loading finished');
     }
   };
 
-  if (adminLoading || loading) {
+  if (authLoading) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Carregando dashboard...</p>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Verificando permissões...</p>
+          </div>
         </div>
       </AdminLayout>
     );
   }
 
   if (!isAdmin) {
+    console.log('[Dashboard] Rendering null - not admin');
     return null;
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Carregando estatísticas...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
   }
 
   return (
@@ -140,44 +143,37 @@ export default function AdminDashboard() {
           />
 
           <MetricsCard
-            title="Usuários VIP"
-            value={stats.vipUsers.toLocaleString()}
-            icon={Crown}
-            description="Assinaturas VIP ativas"
-            className="border-yellow-200 dark:border-yellow-900"
+            title="Novos Hoje"
+            value={stats.usersToday.toLocaleString()}
+            icon={Activity}
+            description="Usuários registrados hoje"
+            className="border-green-200 dark:border-green-900"
           />
 
           <MetricsCard
-            title="Temas Ativos"
-            value={stats.activeThemes.toLocaleString()}
-            icon={Palette}
-            description="Usuários com temas personalizados"
+            title="Novos esta Semana"
+            value={stats.usersWeek.toLocaleString()}
+            icon={BarChart}
+            description="Usuários registrados nos últimos 7 dias"
           />
 
           <MetricsCard
-            title="Conquistas Disponíveis"
-            value={stats.totalAchievements.toLocaleString()}
-            icon={Trophy}
-            description="Total de conquistas no sistema"
+            title="Ações Administrativas"
+            value={stats.totalLogs.toLocaleString()}
+            icon={Settings}
+            description="Total de logs do sistema"
           />
 
           <MetricsCard
-            title="Denúncias Pendentes"
-            value={stats.pendingReports.toLocaleString()}
+            title="Punições Ativas"
+            value={stats.activePunishments.toLocaleString()}
             icon={Flag}
-            description="Aguardando moderação"
+            description="Advertências/suspensões ativas"
             className={
-              stats.pendingReports > 0
+              stats.activePunishments > 0
                 ? "border-red-200 dark:border-red-900"
                 : ""
             }
-          />
-
-          <MetricsCard
-            title="Usuários Online"
-            value={stats.onlineUsers.toLocaleString()}
-            icon={Activity}
-            description="Ativos nos últimos 5 minutos"
           />
         </div>
 
@@ -213,7 +209,7 @@ export default function AdminDashboard() {
               onClick={() => navigate("/admin/analytics")}
               className="p-4 border rounded-lg hover:bg-accent transition-colors text-left"
             >
-              <BarChart3 className="h-6 w-6 mb-2 text-purple-600" />
+              <BarChart className="h-6 w-6 mb-2 text-purple-600" />
               <h3 className="font-semibold">Analytics</h3>
               <p className="text-xs text-muted-foreground mt-1">
                 Métricas e relatórios

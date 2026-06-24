@@ -52,7 +52,13 @@ const ThemesGallery = lazy(() => import("./pages/ThemesGallery"));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
-const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminUsers = lazy(() => import("./pages/admin/UsersEnhanced"));
+const AdminThemes = lazy(() => import("./pages/admin/Themes"));
+const AdminPhotos = lazy(() => import("./pages/admin/Photos"));
+const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
+const AdminLogs = lazy(() => import("./pages/admin/Logs"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
+const AdminAutomation = lazy(() => import("./pages/admin/Automation"));
 const AdminReports = lazy(() => import("./pages/admin/Reports"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -109,6 +115,12 @@ const routes: RouteObject[] = [
   // Admin Routes
   { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
   { path: "/admin/users", element: <ProtectedRoute><AdminUsers /></ProtectedRoute> },
+  { path: "/admin/themes", element: <ProtectedRoute><AdminThemes /></ProtectedRoute> },
+  { path: "/admin/photos", element: <ProtectedRoute><AdminPhotos /></ProtectedRoute> },
+  { path: "/admin/notifications", element: <ProtectedRoute><AdminNotifications /></ProtectedRoute> },
+  { path: "/admin/logs", element: <ProtectedRoute><AdminLogs /></ProtectedRoute> },
+  { path: "/admin/analytics", element: <ProtectedRoute><AdminAnalytics /></ProtectedRoute> },
+  { path: "/admin/automation", element: <ProtectedRoute><AdminAutomation /></ProtectedRoute> },
   { path: "/admin/reports", element: <ProtectedRoute><AdminReports /></ProtectedRoute> },
 
   { path: "/user/:userId", element: <UserProfile /> },

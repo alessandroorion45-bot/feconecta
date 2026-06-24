@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { GlobalSearch } from "./GlobalSearch";
 import {
   LayoutDashboard,
   Users,
@@ -10,6 +11,11 @@ import {
   Settings,
   ArrowLeft,
   Crown,
+  Palette,
+  Image,
+  FileText,
+  Bell,
+  Bot,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -19,8 +25,13 @@ interface AdminLayoutProps {
 const navItems = [
   { path: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/admin/users", icon: Users, label: "Usuários" },
+  { path: "/admin/themes", icon: Palette, label: "Temas VIP" },
+  { path: "/admin/photos", icon: Image, label: "Fotos" },
   { path: "/admin/reports", icon: Flag, label: "Denúncias" },
+  { path: "/admin/notifications", icon: Bell, label: "Notificações" },
+  { path: "/admin/logs", icon: FileText, label: "Logs" },
   { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },
+  { path: "/admin/automation", icon: Bot, label: "Automações" },
   { path: "/admin/settings", icon: Settings, label: "Configurações" },
 ];
 
@@ -37,6 +48,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Admin Panel
             </h1>
+          </div>
+
+          {/* Global Search */}
+          <div className="mb-4">
+            <GlobalSearch />
           </div>
 
           <nav className="space-y-2">
