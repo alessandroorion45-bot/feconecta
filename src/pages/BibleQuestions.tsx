@@ -99,33 +99,103 @@ const BibleQuestions = () => {
   };
 
   const submitQuestion = async () => {
-    if (!user || !newTitle.trim() || !newBody.trim()) return;
+    if (!user || !newTitle.trim() || !newBody.trim()) {
+      toast({
+        title: "⚠️ Campos obrigatórios",
+        description: "Preencha título e corpo da pergunta",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
-    const { error } = await supabase.from("bible_questions").insert({
+
+    console.log('[BibleQuestions] Publicando pergunta:', {
+      user_id: user.id,
+      title: newTitle.trim(),
+      category: newCategory,
+      tags: newTags.split(",").map(t => t.trim()).filter(Boolean),
+    });
+
+    const { data, error } = await supabase.from("bible_questions").insert({
       user_id: user.id,
       title: newTitle.trim(),
       body: newBody.trim(),
       category: newCategory,
       tags: newTags.split(",").map(t => t.trim()).filter(Boolean),
-    });
+    }).select();
+
     setSubmitting(false);
-    if (error) { toast({ title: "Erro ao publicar", variant: "destructive" }); return; }
-    toast({ title: "Pergunta publicada! 🙌" });
-    setNewTitle(""); setNewBody(""); setNewTags(""); setShowNewQuestion(false);
+
+    if (error) {
+      console.error('[BibleQuestions] Erro ao publicar:', error);
+      toast({
+        title: "❌ Erro ao publicar pergunta",
+        description: error.message || "Verifique sua conexão e tente novamente",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('[BibleQuestions] Pergunta publicada com sucesso:', data);
+
+    toast({
+      title: "✅ Pergunta publicada!",
+      description: "Sua dúvida foi compartilhada com a comunidade (+5 XP)",
+      className: "bg-green-50 border-green-200",
+    });
+
+    setNewTitle("");
+    setNewBody("");
+    setNewTags("");
+    setShowNewQuestion(false);
     loadQuestions();
   };
 
   const submitAnswer = async () => {
-    if (!user || !newAnswer.trim() || !selectedQuestion) return;
+    if (!user || !newAnswer.trim() || !selectedQuestion) {
+      toast({
+        title: "⚠️ Campo obrigatório",
+        description: "Digite sua resposta antes de enviar",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
-    const { error } = await supabase.from("bible_question_answers").insert({
+
+    console.log('[BibleQuestions] Enviando resposta:', {
+      question_id: selectedQuestion.id,
+      user_id: user.id,
+      content_length: newAnswer.trim().length,
+    });
+
+    const { data, error } = await supabase.from("bible_question_answers").insert({
       question_id: selectedQuestion.id,
       user_id: user.id,
       content: newAnswer.trim(),
-    });
+    }).select();
+
     setSubmitting(false);
-    if (error) { toast({ title: "Erro ao responder", variant: "destructive" }); return; }
-    toast({ title: "Resposta enviada! ✨" });
+
+    if (error) {
+      console.error('[BibleQuestions] Erro ao responder:', error);
+      toast({
+        title: "❌ Erro ao enviar resposta",
+        description: error.message || "Verifique sua conexão e tente novamente",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('[BibleQuestions] Resposta enviada com sucesso:', data);
+
+    toast({
+      title: "✅ Resposta enviada!",
+      description: "Obrigado por ajudar a comunidade (+3 XP)",
+      className: "bg-green-50 border-green-200",
+    });
+
     setNewAnswer("");
     loadAnswers(selectedQuestion.id);
     loadQuestions();

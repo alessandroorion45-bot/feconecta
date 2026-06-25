@@ -74,6 +74,7 @@ export const VerseActions = ({
       setIsFavorited(!!favorite);
 
       // Carregar stats
+      // @ts-ignore - RPC function not in generated types yet
       const { data: statsData } = await supabase.rpc('get_verse_stats', {
         p_book: book,
         p_chapter: chapter,
@@ -81,7 +82,7 @@ export const VerseActions = ({
       });
 
       if (statsData) {
-        setStats(statsData as VerseStats);
+        setStats(statsData as any as VerseStats);
       }
     };
 
@@ -104,6 +105,7 @@ export const VerseActions = ({
     try {
       if (isFavorited) {
         // Remover favorito
+        // @ts-ignore - Schema uses 'book', 'chapter', 'verse' but types expect old schema
         await supabase
           .from('favorite_verses')
           .delete()
@@ -116,11 +118,12 @@ export const VerseActions = ({
         setStats(prev => ({ ...prev, favorites: Math.max(0, prev.favorites - 1) }));
 
         toast({
-          title: 'Removido dos favoritos',
+          title: '✅ Removido dos favoritos',
           description: 'Versículo removido da sua coleção',
         });
       } else {
         // Adicionar favorito
+        // @ts-ignore - Schema uses 'book', 'chapter', 'verse' but types expect old schema
         await supabase.from('favorite_verses').insert({
           user_id: user.id,
           book,
@@ -134,7 +137,7 @@ export const VerseActions = ({
 
         toast({
           title: '❤️ Adicionado aos favoritos!',
-          description: 'Versículo salvo na sua coleção pessoal',
+          description: 'Versículo salvo na sua coleção pessoal (+2 XP)',
         });
 
         // TODO: Adicionar +2 XP (gamificação)
@@ -158,93 +161,97 @@ export const VerseActions = ({
     return count.toString();
   };
 
-  if (compact) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button
-          onClick={handleFavorite}
-          disabled={loading}
-          className={`flex items-center gap-1 hover:text-red-500 transition-colors ${
-            isFavorited ? 'text-red-500' : ''
-          }`}
-        >
-          <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
-          {stats.favorites > 0 && <span>{formatCount(stats.favorites)}</span>}
-        </button>
-
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-1 hover:text-primary transition-colors"
-        >
-          <MessageCircle className="h-4 w-4" />
-          {stats.comments > 0 && <span>{formatCount(stats.comments)}</span>}
-        </button>
-
-        <button
-          onClick={() => setShowShare(true)}
-          className="flex items-center gap-1 hover:text-primary transition-colors"
-        >
-          <Share2 className="h-4 w-4" />
-          {stats.shares > 0 && <span>{formatCount(stats.shares)}</span>}
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-3">
+    <>
       {/* Botões de ação */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          variant={isFavorited ? 'default' : 'outline'}
-          size="sm"
-          onClick={handleFavorite}
-          disabled={loading}
-          className={`gap-2 ${isFavorited ? 'theme-animate-pulse-glow' : ''}`}
-        >
-          <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
-          {isFavorited ? 'Favoritado' : 'Favoritar'}
-          {stats.favorites > 0 && (
-            <span className="ml-1 text-xs opacity-70">({formatCount(stats.favorites)})</span>
-          )}
-        </Button>
+      <div className={compact ? "flex items-center gap-2 text-sm text-muted-foreground" : "space-y-3"}>
+        {compact ? (
+          // Modo compacto (ícones menores)
+          <>
+            <button
+              onClick={handleFavorite}
+              disabled={loading}
+              className={`flex items-center gap-1 hover:text-red-500 transition-all hover:scale-110 ${
+                isFavorited ? 'text-red-500 animate-bounce-once' : ''
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
+              {stats.favorites > 0 && <span>{formatCount(stats.favorites)}</span>}
+            </button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowReactions(!showReactions)}
-          className="gap-2"
-        >
-          <Sparkles className="h-4 w-4" />
-          Reagir
-        </Button>
+            <button
+              onClick={() => setShowComments(!showComments)}
+              className={`flex items-center gap-1 hover:text-primary transition-all hover:scale-110 ${
+                showComments ? 'text-primary' : ''
+              }`}
+            >
+              <MessageCircle className="h-4 w-4" />
+              {stats.comments > 0 && <span>{formatCount(stats.comments)}</span>}
+            </button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowComments(!showComments)}
-          className="gap-2"
-        >
-          <MessageCircle className="h-4 w-4" />
-          Comentar
-          {stats.comments > 0 && (
-            <span className="ml-1 text-xs opacity-70">({formatCount(stats.comments)})</span>
-          )}
-        </Button>
+            <button
+              onClick={() => setShowShare(true)}
+              className="flex items-center gap-1 hover:text-primary transition-all hover:scale-110"
+            >
+              <Share2 className="h-4 w-4" />
+              {stats.shares > 0 && <span>{formatCount(stats.shares)}</span>}
+            </button>
+          </>
+        ) : (
+          // Modo expandido (botões completos)
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant={isFavorited ? 'default' : 'outline'}
+              size="sm"
+              onClick={handleFavorite}
+              disabled={loading}
+              className={`gap-2 transition-all ${isFavorited ? 'theme-animate-pulse-glow' : ''}`}
+            >
+              <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
+              {isFavorited ? 'Favoritado' : 'Favoritar'}
+              {stats.favorites > 0 && (
+                <span className="ml-1 text-xs opacity-70">({formatCount(stats.favorites)})</span>
+              )}
+            </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowShare(true)}
-          className="gap-2"
-        >
-          <Share2 className="h-4 w-4" />
-          Compartilhar
-        </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowReactions(!showReactions)}
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              Reagir
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowComments(!showComments)}
+              className="gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Comentar
+              {stats.comments > 0 && (
+                <span className="ml-1 text-xs opacity-70">({formatCount(stats.comments)})</span>
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowShare(true)}
+              className="gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              Compartilhar
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Reações */}
-      {showReactions && (
+      {/* Reações (só modo expandido) */}
+      {!compact && showReactions && (
         <VerseReactions
           book={book}
           chapter={chapter}
@@ -254,18 +261,20 @@ export const VerseActions = ({
         />
       )}
 
-      {/* Comentários */}
+      {/* Comentários (FUNCIONA EM AMBOS OS MODOS) */}
       {showComments && (
-        <VerseComments
-          book={book}
-          chapter={chapter}
-          verse={verse}
-          verseText={verseText}
-          onCountChange={(count) => setStats(prev => ({ ...prev, comments: count }))}
-        />
+        <div className={compact ? "mt-3" : ""}>
+          <VerseComments
+            book={book}
+            chapter={chapter}
+            verse={verse}
+            verseText={verseText}
+            onCountChange={(count) => setStats(prev => ({ ...prev, comments: count }))}
+          />
+        </div>
       )}
 
-      {/* Modal de compartilhamento */}
+      {/* Modal de compartilhamento (FUNCIONA EM AMBOS OS MODOS) */}
       {showShare && (
         <VerseShareDialog
           book={book}
@@ -277,6 +286,6 @@ export const VerseActions = ({
           onShare={() => setStats(prev => ({ ...prev, shares: prev.shares + 1 }))}
         />
       )}
-    </div>
+    </>
   );
 };

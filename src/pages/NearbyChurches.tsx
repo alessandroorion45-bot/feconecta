@@ -94,33 +94,88 @@ const NearbyChurches = () => {
   };
 
   const handleSubmit = async () => {
-    if (!user || !form.name.trim()) return;
+    if (!user || !form.name.trim()) {
+      toast({
+        title: "⚠️ Nome obrigatório",
+        description: "Digite o nome da igreja",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     const payload = {
       name: form.name.trim(),
       description: form.description.trim() || null,
       denomination: form.denomination || null,
-      country: form.country, state: form.state || null, city: form.city || null,
-      neighborhood: form.neighborhood || null, address: form.address || null,
-      phone: form.phone || null, whatsapp: form.whatsapp || null, social_media: form.social_media || null,
+      country: form.country,
+      state: form.state || null,
+      city: form.city || null,
+      neighborhood: form.neighborhood || null,
+      address: form.address || null,
+      phone: form.phone || null,
+      whatsapp: form.whatsapp || null,
+      social_media: form.social_media || null,
       worship_days: form.worship_days.length > 0 ? form.worship_days : null,
-      worship_times: form.worship_times.filter(t => t.trim()) || null,
+      worship_times: form.worship_times.filter(t => t.trim()).length > 0 ? form.worship_times.filter(t => t.trim()) : null,
       operating_hours: form.operating_hours || null,
       user_id: user.id,
     };
 
+    console.log('[NearbyChurches] Enviando igreja:', payload);
+
     if (editingChurch) {
-      const { error } = await supabase.from("nearby_churches").update(payload).eq("id", editingChurch.id);
-      if (error) { toast({ title: "Erro ao atualizar", variant: "destructive" }); }
-      else { toast({ title: "Igreja atualizada! ⛪" }); }
+      const { data, error } = await supabase
+        .from("nearby_churches")
+        .update(payload)
+        .eq("id", editingChurch.id)
+        .select();
+
+      setSubmitting(false);
+
+      if (error) {
+        console.error('[NearbyChurches] Erro ao atualizar:', error);
+        toast({
+          title: "❌ Erro ao atualizar igreja",
+          description: error.message || "Verifique os dados e tente novamente",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('[NearbyChurches] Igreja atualizada:', data);
+      toast({
+        title: "✅ Igreja atualizada!",
+        description: "Informações atualizadas com sucesso",
+        className: "bg-green-50 border-green-200",
+      });
     } else {
-      const { error } = await supabase.from("nearby_churches").insert(payload);
-      if (error) { toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" }); }
-      else { toast({ title: "Igreja cadastrada com sucesso! ⛪" }); }
+      const { data, error } = await supabase
+        .from("nearby_churches")
+        .insert(payload)
+        .select();
+
+      setSubmitting(false);
+
+      if (error) {
+        console.error('[NearbyChurches] Erro ao cadastrar:', error);
+        toast({
+          title: "❌ Erro ao cadastrar igreja",
+          description: error.message || "Verifique os dados e tente novamente",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('[NearbyChurches] Igreja cadastrada:', data);
+      toast({
+        title: "✅ Igreja cadastrada com sucesso!",
+        description: "Agora a comunidade pode conhecer essa igreja (+10 XP)",
+        className: "bg-green-50 border-green-200",
+      });
     }
 
-    setSubmitting(false);
     setShowForm(false);
     resetForm();
     loadChurches();

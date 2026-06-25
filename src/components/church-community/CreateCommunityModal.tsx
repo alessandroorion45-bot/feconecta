@@ -90,6 +90,14 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
     }
 
     setLoading(true);
+
+    console.log('[CreateCommunity] Criando comunidade:', {
+      name: formData.name.trim(),
+      church_name: formData.church_name.trim(),
+      location,
+      ministries: selectedMinistries,
+    });
+
     try {
       // Create community
       const { data: community, error: communityError } = await supabase
@@ -110,7 +118,12 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
         .select()
         .single();
 
-      if (communityError) throw communityError;
+      if (communityError) {
+        console.error('[CreateCommunity] Erro ao criar comunidade:', communityError);
+        throw communityError;
+      }
+
+      console.log('[CreateCommunity] Comunidade criada:', community);
 
       // Add creator as admin member with selected ministries
       const { error: memberError } = await supabase
@@ -122,7 +135,12 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
           ministries: selectedMinistries,
         });
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('[CreateCommunity] Erro ao adicionar membro:', memberError);
+        throw memberError;
+      }
+
+      console.log('[CreateCommunity] Membro admin adicionado com sucesso');
 
       // Reset form
       setFormData({ name: "", church_name: "", description: "" });

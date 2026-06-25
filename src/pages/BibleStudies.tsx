@@ -1,92 +1,358 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, BookOpen, Video, Headphones, FileText, ChevronRight, Clock, CheckCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import {
+  Search, Video, Headphones, FileText, Clock, CheckCircle, Eye,
+  Heart, Share2
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-type StudyType = "video" | "audio" | "text";
-type Study = { id: number; title: string; author: string; description: string; category: string; type: StudyType; duration: string; content: string; date: string };
+interface BibleStudy {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  category: string;
+  type: 'video' | 'audio' | 'text';
+  duration: string;
+  content: string;
+  verses: string[];
+  application: string;
+  reflection_questions: string[];
+  views_count: number;
+  likes_count: number;
+  created_at: string;
+}
 
-const studies: Study[] = [
-  { id: 1, title: "O Sermão do Monte", author: "Pr. André Valadão", description: "Um estudo profundo sobre Mateus 5-7 e como aplicar os ensinamentos de Jesus no dia a dia.", category: "Fé", type: "video", duration: "45 min", content: "O Sermão do Monte é considerado o maior discurso de Jesus registrado nos Evangelhos. Nele, Jesus apresenta os princípios do Reino de Deus, começando pelas Bem-aventuranças...", date: "15 Mar 2026" },
-  { id: 2, title: "A Família segundo a Bíblia", author: "Pra. Denise Seixas", description: "Como construir uma família alicerçada nos princípios bíblicos.", category: "Família", type: "text", duration: "15 min de leitura", content: "A família é a primeira instituição criada por Deus. Em Gênesis, vemos que Deus criou o homem e a mulher para se complementarem e juntos glorificarem a Deus...", date: "14 Mar 2026" },
-  { id: 3, title: "Oração Eficaz", author: "Pr. Cláudio Duarte", description: "Princípios para uma vida de oração poderosa e transformadora.", category: "Oração", type: "audio", duration: "30 min", content: "A oração é o canal de comunicação entre nós e Deus. Jesus nos ensinou que devemos orar sem cessar e com fé. Tiago 5:16 diz que 'a oração do justo é poderosa e eficaz'...", date: "13 Mar 2026" },
-  { id: 4, title: "O Jovem e os Desafios da Fé", author: "Pr. Felipe Heiderich", description: "Como manter a fé firme em um mundo cheio de distrações e pressões.", category: "Jovens", type: "video", duration: "35 min", content: "Ser jovem e cristão nos dias de hoje é um desafio. Daniel foi um jovem que manteve sua fé em meio a uma cultura pagã. Podemos aprender com seu exemplo...", date: "12 Mar 2026" },
-  { id: 5, title: "Discipulado: O Chamado de Jesus", author: "Pr. Luciano Subirá", description: "O que significa ser discípulo de Cristo e como discipular outros.", category: "Discipulado", type: "text", duration: "20 min de leitura", content: "Em Mateus 28:19, Jesus nos ordena: 'Ide e fazei discípulos de todas as nações.' Discipulado não é apenas ensinar, é caminhar junto, compartilhar vida...", date: "11 Mar 2026" },
-  { id: 6, title: "Adoração que Transforma", author: "Pra. Ana Paula Valadão", description: "O poder da adoração verdadeira na vida do cristão.", category: "Fé", type: "audio", duration: "25 min", content: "Adoração vai muito além de cantar músicas na igreja. É um estilo de vida. Em João 4:23, Jesus diz que o Pai procura adoradores que o adorem em espírito e em verdade...", date: "10 Mar 2026" },
+const typeIcons = {
+  video: Video,
+  audio: Headphones,
+  text: FileText,
+};
+
+const typeLabels = {
+  video: "Vídeo",
+  audio: "Áudio",
+  text: "Texto",
+};
+
+const CATEGORIES = [
+  "Todos",
+  "Fé", "Oração", "Família", "Discipulado", "Santidade",
+  "Evangelismo", "Liderança", "Jovens", "Mulheres", "Homens",
+  "Trabalho", "Finanças", "Sabedoria", "Esperança", "Amor"
 ];
-
-const typeIcons: Record<StudyType, React.ElementType> = { video: Video, audio: Headphones, text: FileText };
-const typeLabels: Record<StudyType, string> = { video: "Vídeo", audio: "Áudio", text: "Texto" };
 
 const BibleStudies = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { awardXP } = useGamification(user?.id);
+
+  // Estados
+  const [studies, setStudies] = useState<BibleStudy[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedStudy, setSelectedStudy] = useState<Study | null>(null);
-  const [completedStudies, setCompletedStudies] = useState<number[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedType, setSelectedType] = useState<'all' | 'video' | 'audio' | 'text'>('all');
+  const [selectedStudy, setSelectedStudy] = useState<BibleStudy | null>(null);
+  const [completedStudies, setCompletedStudies] = useState<Set<string>>(new Set());
+  const [likedStudies, setLikedStudies] = useState<Set<string>>(new Set());
 
-  const categories = [...new Set(studies.map(s => s.category))];
-  const filtered = useMemo(() => studies.filter(s => {
-    const matchSearch = s.title.toLowerCase().includes(search.toLowerCase()) || s.author.toLowerCase().includes(search.toLowerCase());
-    const matchCat = !selectedCategory || s.category === selectedCategory;
-    return matchSearch && matchCat;
-  }), [search, selectedCategory]);
-
-  const markStudyAsComplete = async (studyId: number) => {
-    if (completedStudies.includes(studyId)) return;
-
-    setCompletedStudies([...completedStudies, studyId]);
-
-    // Conceder XP por completar estudo bíblico
+  // Carregar estudos do banco
+  useEffect(() => {
+    loadStudies();
     if (user) {
-      await awardXP('bible_study_completed');
+      loadUserProgress();
+    }
+  }, [selectedCategory, selectedType, user]);
+
+  const loadStudies = async () => {
+    setLoading(true);
+
+    console.log('[BibleStudies] Carregando estudos:', { category: selectedCategory, type: selectedType });
+
+    let query = supabase
+      .from('bible_studies')
+      .select('*')
+      .order('views_count', { ascending: false });
+
+    if (selectedCategory !== "Todos") {
+      query = query.eq('category', selectedCategory);
     }
 
+    if (selectedType !== 'all') {
+      query = query.eq('type', selectedType);
+    }
+
+    const { data, error } = await query.limit(100);
+
+    if (error) {
+      console.error('[BibleStudies] Erro ao carregar:', error);
+      toast({
+        title: "❌ Erro ao carregar estudos",
+        description: error.message,
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    console.log('[BibleStudies] Carregados:', data?.length, 'estudos');
+
+    if (data) {
+      setStudies(data as BibleStudy[]);
+    }
+
+    setLoading(false);
+  };
+
+  const loadUserProgress = async () => {
+    if (!user) return;
+
+    console.log('[BibleStudies] Carregando progresso do usuário');
+
+    const { data, error } = await supabase
+      .from('user_study_completions')
+      .select('study_id')
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('[BibleStudies] Erro ao carregar progresso:', error);
+      return;
+    }
+
+    if (data) {
+      const completed = new Set(data.map(c => c.study_id));
+      setCompletedStudies(completed);
+    }
+  };
+
+  const markStudyAsComplete = async (studyId: string) => {
+    if (completedStudies.has(studyId) || !user) return;
+
+    console.log('[BibleStudies] Marcando estudo como completo:', studyId);
+
+    const { error } = await supabase
+      .from('user_study_completions')
+      .insert({
+        user_id: user.id,
+        study_id: studyId,
+      });
+
+    if (error) {
+      console.error('[BibleStudies] Erro ao marcar como completo:', error);
+      toast({
+        title: "❌ Erro ao salvar progresso",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCompletedStudies(prev => new Set([...prev, studyId]));
+
     toast({
-      title: "Estudo completado! 📖",
-      description: "+30 XP concedidos. Continue estudando a Palavra!",
+      title: "✅ Estudo completado!",
+      description: "Continue aprofundando seu conhecimento da Palavra! 📖",
+      className: "bg-green-50 border-green-200",
     });
   };
 
+  const incrementViews = async (studyId: string) => {
+    // Incrementar visualizações
+    await supabase.rpc('increment', {
+      row_id: studyId,
+      table_name: 'bible_studies',
+      column_name: 'views_count',
+    }).catch(() => {
+      // Fallback se RPC não existir
+      supabase
+        .from('bible_studies')
+        .update({ views_count: studies.find(s => s.id === studyId)!.views_count + 1 })
+        .eq('id', studyId);
+    });
+  };
+
+  const toggleLike = (studyId: string) => {
+    const newLikes = new Set(likedStudies);
+    if (newLikes.has(studyId)) {
+      newLikes.delete(studyId);
+      toast({ title: "Removido dos favoritos" });
+    } else {
+      newLikes.add(studyId);
+      toast({
+        title: "⭐ Adicionado aos favoritos",
+        description: "Estudo salvo na sua coleção.",
+        className: "bg-green-50 border-green-200",
+      });
+    }
+    setLikedStudies(newLikes);
+  };
+
+  const shareStudy = async (study: BibleStudy) => {
+    const text = `📖 ${study.title}\n\n${study.description}\n\n🔗 FeConecta - Rede da Fé`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: study.title, text });
+        toast({ title: "📤 Compartilhado com sucesso!" });
+      } catch (e) {
+        // User cancelled
+      }
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "📋 Copiado!",
+        description: "Link copiado para a área de transferência.",
+      });
+    }
+  };
+
+  const filteredStudies = studies.filter(study =>
+    study.title.toLowerCase().includes(search.toLowerCase()) ||
+    study.description.toLowerCase().includes(search.toLowerCase()) ||
+    study.author.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Visualização de estudo específico
   if (selectedStudy) {
     const TypeIcon = typeIcons[selectedStudy.type];
+    const isCompleted = completedStudies.has(selectedStudy.id);
+
     return (
       <div className="min-h-screen bg-gradient-hero">
         <Header />
-        <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8">
-          <Button variant="ghost" className="mb-4" onClick={() => setSelectedStudy(null)}>← Voltar</Button>
+        <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <Button variant="ghost" className="mb-4" onClick={() => setSelectedStudy(null)}>
+            ← Voltar para Estudos
+          </Button>
+
           <Card className="shadow-divine">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline"><TypeIcon className="h-3 w-3 mr-1 inline" /> {typeLabels[selectedStudy.type]}</Badge>
+            {/* Header do Estudo */}
+            <CardHeader className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <TypeIcon className="h-3 w-3" />
+                  {typeLabels[selectedStudy.type]}
+                </Badge>
                 <Badge variant="outline">{selectedStudy.category}</Badge>
-                <Badge variant="secondary"><Clock className="h-3 w-3 mr-1 inline" /> {selectedStudy.duration}</Badge>
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {selectedStudy.duration}
+                </Badge>
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  {selectedStudy.views_count} visualizações
+                </Badge>
               </div>
-              <CardTitle className="text-2xl">{selectedStudy.title}</CardTitle>
-              <p className="text-muted-foreground">por {selectedStudy.author} • {selectedStudy.date}</p>
+
+              <CardTitle className="text-2xl sm:text-3xl mb-2">{selectedStudy.title}</CardTitle>
+              <p className="text-muted-foreground">Por {selectedStudy.author}</p>
+              <p className="text-muted-foreground italic mt-2">{selectedStudy.description}</p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground italic">{selectedStudy.description}</p>
-              <div className="bg-muted/50 rounded-lg p-6">
-                <p className="leading-relaxed">{selectedStudy.content}</p>
+
+            <CardContent className="p-6 sm:p-8 space-y-8">
+              {/* Versículos Base */}
+              {selectedStudy.verses && selectedStudy.verses.length > 0 && (
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-6 border-l-4 border-blue-500">
+                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                    📖 Versículos Base
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedStudy.verses.map((verse, idx) => (
+                      <p key={idx} className="text-blue-900 dark:text-blue-100 font-medium">
+                        • {verse}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Conteúdo Principal */}
+              <div>
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-primary">
+                  <BookOpen className="h-5 w-5" />
+                  📚 Conteúdo do Estudo
+                </h3>
+                <div className="prose prose-lg max-w-none dark:prose-invert">
+                  <div className="leading-relaxed whitespace-pre-line text-muted-foreground">
+                    {selectedStudy.content}
+                  </div>
+                </div>
               </div>
-              <Button
-                variant={completedStudies.includes(selectedStudy.id) ? "default" : "outline"}
-                className="w-full"
-                onClick={() => markStudyAsComplete(selectedStudy.id)}
-                disabled={completedStudies.includes(selectedStudy.id)}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {completedStudies.includes(selectedStudy.id) ? "Estudo Completado ✓" : "Marcar como completado"}
-              </Button>
+
+              {/* Aplicação Prática */}
+              {selectedStudy.application && (
+                <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 rounded-lg p-6 border-l-4 border-orange-500">
+                  <h3 className="font-bold text-lg mb-3 text-orange-700 dark:text-orange-300">
+                    🎯 Aplicação Prática
+                  </h3>
+                  <div className="text-orange-900 dark:text-orange-100 whitespace-pre-line leading-relaxed">
+                    {selectedStudy.application}
+                  </div>
+                </div>
+              )}
+
+              {/* Perguntas para Reflexão */}
+              {selectedStudy.reflection_questions && selectedStudy.reflection_questions.length > 0 && (
+                <div className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 rounded-lg p-6 border-l-4 border-green-500">
+                  <h3 className="font-bold text-lg mb-4 text-green-700 dark:text-green-300">
+                    🤔 Perguntas para Reflexão
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedStudy.reflection_questions.map((question, idx) => (
+                      <div key={idx} className="flex gap-3">
+                        <span className="text-green-600 dark:text-green-400 font-bold">{idx + 1}.</span>
+                        <p className="text-green-900 dark:text-green-100 flex-1">{question}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Ações */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    variant={isCompleted ? "default" : "outline"}
+                    onClick={() => markStudyAsComplete(selectedStudy.id)}
+                    disabled={isCompleted || !user}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {isCompleted ? "✓ Completado" : "Marcar como Completo"}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => toggleLike(selectedStudy.id)}
+                  >
+                    <Heart
+                      className={`h-4 w-4 mr-2 ${
+                        likedStudies.has(selectedStudy.id) ? "fill-red-500 text-red-500" : ""
+                      }`}
+                    />
+                    Favoritar
+                  </Button>
+
+                  <Button variant="outline" onClick={() => shareStudy(selectedStudy)}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Compartilhar
+                  </Button>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  {completedStudies.size} estudos completados
+                </p>
+              </div>
             </CardContent>
           </Card>
         </main>
@@ -94,49 +360,164 @@ const BibleStudies = () => {
     );
   }
 
+  // Lista de estudos
   return (
     <div className="min-h-screen bg-gradient-hero">
       <Header />
-      <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-divine bg-clip-text text-transparent mb-2">Estudos Bíblicos</h1>
-          <p className="text-muted-foreground">Pregações e estudos para crescimento espiritual</p>
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-divine bg-clip-text text-transparent mb-2">
+            📚 Estudos Bíblicos
+          </h1>
+          <p className="text-muted-foreground">
+            {studies.length} estudos profundos para crescimento espiritual
+          </p>
         </div>
 
+        {/* Barra de Pesquisa */}
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar estudo ou autor..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+          <Input
+            placeholder="Buscar estudo, autor ou tema..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          <Button variant={!selectedCategory ? "default" : "outline"} size="sm" onClick={() => setSelectedCategory(null)}>Todos</Button>
-          {categories.map(cat => (
-            <Button key={cat} variant={selectedCategory === cat ? "default" : "outline"} size="sm" onClick={() => setSelectedCategory(cat)}>{cat}</Button>
-          ))}
-        </div>
+        {/* Filtros */}
+        <Card className="mb-6 shadow-divine">
+          <CardContent className="p-4">
+            {/* Categorias */}
+            <div className="mb-4">
+              <p className="text-sm font-medium mb-2">Categorias:</p>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map(cat => (
+                  <Button
+                    key={cat}
+                    variant={selectedCategory === cat ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(cat)}
+                  >
+                    {cat}
+                  </Button>
+                ))}
+              </div>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {filtered.map(study => {
-            const TypeIcon = typeIcons[study.type];
-            return (
-              <Card key={study.id} className="cursor-pointer hover:shadow-divine transition-shadow" onClick={() => setSelectedStudy(study)}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="outline" className="text-xs"><TypeIcon className="h-3 w-3 mr-1 inline" /> {typeLabels[study.type]}</Badge>
-                    <Badge variant="secondary" className="text-xs">{study.category}</Badge>
-                  </div>
-                  <p className="font-semibold">{study.title}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{study.author}</p>
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{study.description}</p>
-                  <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                    <span><Clock className="h-3 w-3 inline mr-1" />{study.duration}</span>
-                    <span>{study.date}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+            {/* Tipos */}
+            <div>
+              <p className="text-sm font-medium mb-2">Formato:</p>
+              <div className="flex gap-2">
+                <Button
+                  variant={selectedType === 'all' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedType('all')}
+                >
+                  Todos
+                </Button>
+                <Button
+                  variant={selectedType === 'text' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedType('text')}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  Texto
+                </Button>
+                <Button
+                  variant={selectedType === 'video' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedType('video')}
+                >
+                  <Video className="h-4 w-4 mr-1" />
+                  Vídeo
+                </Button>
+                <Button
+                  variant={selectedType === 'audio' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedType('audio')}
+                >
+                  <Headphones className="h-4 w-4 mr-1" />
+                  Áudio
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Lista de Estudos */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">Carregando estudos...</p>
+            </div>
+          </div>
+        ) : filteredStudies.length === 0 ? (
+          <div className="text-center py-20">
+            <Search className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h2 className="text-2xl font-bold mb-2">Nenhum estudo encontrado</h2>
+            <p className="text-muted-foreground mb-6">Tente ajustar os filtros ou busca</p>
+            <Button onClick={() => { setSearch(""); setSelectedCategory("Todos"); setSelectedType('all'); }}>
+              Limpar Filtros
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredStudies.map(study => {
+              const TypeIcon = typeIcons[study.type];
+              const isCompleted = completedStudies.has(study.id);
+
+              return (
+                <Card
+                  key={study.id}
+                  className="cursor-pointer hover:shadow-divine transition-all hover:scale-[1.02]"
+                  onClick={() => {
+                    setSelectedStudy(study);
+                    incrementViews(study.id);
+                  }}
+                >
+                  <CardContent className="p-4">
+                    {isCompleted && (
+                      <Badge variant="default" className="mb-2 bg-green-500">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Completado
+                      </Badge>
+                    )}
+
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-xs flex items-center gap-1">
+                        <TypeIcon className="h-3 w-3" />
+                        {typeLabels[study.type]}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {study.category}
+                      </Badge>
+                    </div>
+
+                    <p className="font-semibold text-lg mb-1 line-clamp-2">{study.title}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{study.author}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+                      {study.description}
+                    </p>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {study.duration}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {study.views_count}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );

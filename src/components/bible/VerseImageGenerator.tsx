@@ -19,7 +19,8 @@ export const VerseImageGenerator = ({
 }: VerseImageGeneratorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { currentTheme } = useTheme();
-  const theme = themes[currentTheme];
+  // @ts-ignore - Theme type compatibility
+  const theme = themes[currentTheme] || themes['default'];
 
   useEffect(() => {
     generateImage();
@@ -32,18 +33,19 @@ export const VerseImageGenerator = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // 📱 FORMATO 9:16 (Stories/Reels) - 1080x1920
     const width = 1080;
-    const height = 1080;
+    const height = 1920;
     canvas.width = width;
     canvas.height = height;
 
     const tokens = theme.designTokens;
 
-    // Fundo com gradiente
+    // Fundo com gradiente vertical (mais dramático)
     if (tokens.background.includes('linear-gradient')) {
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
       gradient.addColorStop(0, theme.colors.primary);
-      gradient.addColorStop(0.5, theme.colors.secondary);
+      gradient.addColorStop(0.4, theme.colors.secondary);
       gradient.addColorStop(1, theme.colors.accent);
       ctx.fillStyle = gradient;
     } else {
@@ -52,39 +54,56 @@ export const VerseImageGenerator = ({
     ctx.fillRect(0, 0, width, height);
 
     // Overlay sutil
-    ctx.fillStyle = tokens.glassMorphism || 'rgba(255, 255, 255, 0.05)';
+    ctx.fillStyle = tokens.glassMorphism || 'rgba(0, 0, 0, 0.15)';
     ctx.fillRect(0, 0, width, height);
 
-    // Moldura decorativa
-    ctx.strokeStyle = tokens.borderHover;
-    ctx.lineWidth = 8;
-    ctx.strokeRect(60, 60, width - 120, height - 120);
+    // Elemento decorativo (baseado no tema) - NO FUNDO
+    if (theme.tier === 'platinum' || theme.tier === 'gold') {
+      // Adicionar estrelas ou sparkles
+      for (let i = 0; i < 40; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const size = Math.random() * 6 + 2;
 
-    // Referência no topo
+        ctx.fillStyle = tokens.glow;
+        ctx.globalAlpha = Math.random() * 0.4 + 0.2;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Moldura decorativa (mais estreita)
+    ctx.strokeStyle = tokens.borderHover;
+    ctx.lineWidth = 6;
+    ctx.strokeRect(50, 100, width - 100, height - 200);
+
+    // Referência no topo (maior e mais destacada)
     ctx.fillStyle = tokens.text;
-    ctx.font = 'bold 48px serif';
+    ctx.font = 'bold 56px serif';
     ctx.textAlign = 'center';
     const reference = `${book} ${chapter}:${verse}`;
-    ctx.fillText(reference, width / 2, 180);
+    ctx.fillText(reference, width / 2, 250);
 
     // Linha decorativa
     ctx.strokeStyle = tokens.glow;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(width / 2 - 150, 220);
-    ctx.lineTo(width / 2 + 150, 220);
+    ctx.moveTo(width / 2 - 200, 300);
+    ctx.lineTo(width / 2 + 200, 300);
     ctx.stroke();
 
-    // Texto do versículo (quebra em múltiplas linhas)
+    // Texto do versículo (centralizado verticalmente)
     ctx.fillStyle = tokens.text;
-    ctx.font = '36px serif';
+    ctx.font = 'bold 42px serif';
     ctx.textAlign = 'center';
 
-    const maxWidth = width - 240;
-    const lineHeight = 55;
+    const maxWidth = width - 200;
+    const lineHeight = 65;
     const words = verseText.split(' ');
     let line = '';
-    let y = 350;
+    let y = height / 2 - 100; // Centralizado
 
     for (let i = 0; i < words.length; i++) {
       const testLine = line + words[i] + ' ';
@@ -100,30 +119,16 @@ export const VerseImageGenerator = ({
     }
     ctx.fillText(line, width / 2, y);
 
-    // Logo/marca d'água no rodapé
+    // Logo/marca d'água no rodapé (maior)
     ctx.fillStyle = tokens.textSecondary;
-    ctx.font = 'italic 32px serif';
-    ctx.fillText('✨ Rede da Fé', width / 2, height - 120);
+    ctx.font = 'italic 38px serif';
+    ctx.fillText('✨ Rede da Fé', width / 2, height - 150);
 
-    // Elemento decorativo (baseado no tema)
-    if (theme.tier === 'platinum' || theme.tier === 'gold') {
-      // Adicionar estrelas ou sparkles
-      for (let i = 0; i < 20; i++) {
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        const size = Math.random() * 4 + 2;
+    ctx.font = '28px sans-serif';
+    ctx.fillText('Baixe o app e fortaleça sua fé!', width / 2, height - 100);
 
-        ctx.fillStyle = tokens.glow;
-        ctx.globalAlpha = Math.random() * 0.5 + 0.3;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // Gerar data URL
-    const dataUrl = canvas.toDataURL('image/png');
+    // Gerar data URL em alta qualidade
+    const dataUrl = canvas.toDataURL('image/png', 1.0);
     onGenerate(dataUrl);
   };
 

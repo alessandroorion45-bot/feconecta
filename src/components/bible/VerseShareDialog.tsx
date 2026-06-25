@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Download, Copy, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Copy, Check, Share } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,13 +37,20 @@ export const VerseShareDialog = ({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [canUseNativeShare, setCanUseNativeShare] = useState(false);
 
   const verseReference = `${book} ${chapter}:${verse}`;
   const shareText = `"${verseText}"\n\n${verseReference}\n\n✨ Compartilhado via Rede da Fé`;
 
+  // Verificar se Web Share API está disponível
+  useEffect(() => {
+    setCanUseNativeShare(typeof navigator !== 'undefined' && 'share' in navigator);
+  }, []);
+
   const recordShare = async (platform: string) => {
     if (!user) return;
 
+    // @ts-ignore - Schema types not updated
     await supabase.from('verse_shares').insert({
       user_id: user.id,
       book,
@@ -56,10 +63,52 @@ export const VerseShareDialog = ({
     onShare();
   };
 
+  // 📱 Compartilhamento NATIVO (mobile)
+  const handleNativeShare = async () => {
+    if (!navigator.share) return;
+
+    try {
+      // Se tiver imagem, converter para Blob
+      if (generatedImage) {
+        const response = await fetch(generatedImage);
+        const blob = await response.blob();
+        const file = new File([blob], `${book}-${chapter}-${verse}.png`, { type: 'image/png' });
+
+        await navigator.share({
+          title: verseReference,
+          text: shareText,
+          files: [file],
+        });
+      } else {
+        await navigator.share({
+          title: verseReference,
+          text: shareText,
+        });
+      }
+
+      recordShare('native-share');
+      toast({
+        title: '✅ Compartilhado com sucesso!',
+        description: '+10 XP',
+        className: 'animate-in slide-in-from-top'
+      });
+      onOpenChange(false);
+    } catch (error: any) {
+      // Usuário cancelou o compartilhamento
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing:', error);
+      }
+    }
+  };
+
   const handlePlatformShare = (platform: typeof SHARE_PLATFORMS[0]) => {
     window.open(platform.getUrl(shareText), '_blank');
     recordShare(platform.name.toLowerCase());
-    toast({ title: `Compartilhando no ${platform.name}`, description: '+10 XP' });
+    toast({
+      title: `📤 Compartilhando no ${platform.name}`,
+      description: '+10 XP',
+      className: 'animate-in slide-in-from-top'
+    });
   };
 
   const handleCopyText = async () => {
@@ -88,6 +137,19 @@ export const VerseShareDialog = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* 📱 COMPARTILHAMENTO NATIVO (mobile) */}
+          {canUseNativeShare && (
+            <Button
+              onClick={handleNativeShare}
+              size="lg"
+              className="w-full gap-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-6 text-lg animate-pulse-glow"
+            >
+              <Share className="h-5 w-5" />
+              Compartilhar Agora
+              <span className="text-sm opacity-90">(WhatsApp, Instagram, etc)</span>
+            </Button>
+          )}
+
           {/* Imagem gerada */}
           <div className="theme-card p-4 rounded-lg">
             <h3 className="text-sm font-semibold mb-3">Imagem Premium</h3>

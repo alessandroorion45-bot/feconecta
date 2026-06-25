@@ -94,11 +94,23 @@ export const useSharedReading = (roomId?: string) => {
   // Create a new room
   const createRoom = async (roomName: string, isPublic: boolean, bookAbbrev: string, chapter: number) => {
     if (!currentUserId) {
-      toast({ title: 'Erro', description: 'Você precisa estar logado', variant: 'destructive' });
+      toast({
+        title: '🔒 Login necessário',
+        description: 'Você precisa estar logado para criar uma sala',
+        variant: 'destructive',
+      });
       return null;
     }
 
     const roomCode = generateRoomCode();
+
+    console.log('[SharedReading] Criando sala:', {
+      host_id: currentUserId,
+      room_code: roomCode,
+      room_name: roomName,
+      book: bookAbbrev,
+      chapter,
+    });
 
     const { data: roomData, error: roomError } = await supabase
       .from('shared_reading_rooms')
@@ -115,13 +127,19 @@ export const useSharedReading = (roomId?: string) => {
       .single();
 
     if (roomError) {
-      console.error('Error creating room:', roomError);
-      toast({ title: 'Erro', description: 'Não foi possível criar a sala', variant: 'destructive' });
+      console.error('[SharedReading] Erro ao criar sala:', roomError);
+      toast({
+        title: '❌ Erro ao criar sala',
+        description: roomError.message || 'Verifique sua conexão e tente novamente',
+        variant: 'destructive',
+      });
       return null;
     }
 
+    console.log('[SharedReading] Sala criada:', roomData);
+
     // Add host as participant
-    await supabase
+    const { error: participantError } = await supabase
       .from('shared_reading_participants')
       .insert({
         room_id: roomData.id,
@@ -129,7 +147,19 @@ export const useSharedReading = (roomId?: string) => {
         is_host: true
       });
 
-    toast({ title: 'Sala criada!', description: `Código: ${roomCode}` });
+    if (participantError) {
+      console.error('[SharedReading] Erro ao adicionar host como participante:', participantError);
+      // Continuar mesmo com erro (a sala foi criada)
+    }
+
+    console.log('[SharedReading] Host adicionado como participante');
+
+    toast({
+      title: '✅ Sala criada com sucesso!',
+      description: `Código de acesso: ${roomCode} - Compartilhe com seus amigos (+5 XP)`,
+      className: 'bg-green-50 border-green-200',
+    });
+
     return roomData;
   };
 
