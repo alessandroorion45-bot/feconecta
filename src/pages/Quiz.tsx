@@ -76,18 +76,20 @@ const Quiz = () => {
   useEffect(() => {
     if (!timerActive || showResult) return;
 
-    if (timeLeft <= 0) {
-      // Tempo esgotado - marcar como errado
-      handleTimeout();
-      return;
-    }
-
+    // ✅ Usar setTimeLeft com callback para evitar dependência de timeLeft
     const timer = setInterval(() => {
-      setTimeLeft(t => t - 1);
+      setTimeLeft(t => {
+        if (t <= 1) {
+          handleTimeout();
+          return 0;
+        }
+        return t - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timerActive, timeLeft, showResult]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerActive, showResult]); // ✅ Removido timeLeft para evitar re-criação do interval
 
   const loadRanking = async () => {
     const { data } = await supabase

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/contexts/AdminContext";
 import { useAdminActions } from "@/hooks/useAdminActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,8 @@ interface AdminLog {
 }
 
 export default function AdminLogs() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { getAdminLogs } = useAdminActions();
 
@@ -36,17 +38,16 @@ export default function AdminLogs() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // HARDCODED: Verificar se é admin
-  const isAdmin = user?.email === 'alessandroibama40@gmail.com';
-
   useEffect(() => {
+    if (authLoading || adminLoading) return;
+
     if (!isAdmin) {
       navigate("/");
       return;
     }
 
     loadLogs();
-  }, [isAdmin, navigate]);
+  }, [isAdmin, authLoading, adminLoading, navigate]);
 
   const loadLogs = async () => {
     setLoading(true);

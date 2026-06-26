@@ -92,7 +92,8 @@ export const useVerseInteractions = (bookAbbrev: string, chapter: number) => {
 
   useEffect(() => {
     loadInteractions();
-  }, [loadInteractions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookAbbrev, chapter]); // ✅ Removido loadInteractions para evitar loop infinito
 
   // Subscribe to realtime updates
   useEffect(() => {

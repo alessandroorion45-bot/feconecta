@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/contexts/AdminContext";
 import { useAdminActions } from "@/hooks/useAdminActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,8 @@ interface NotificationHistory {
 }
 
 export default function AdminNotifications() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { sendMassNotification, getNotificationHistory } = useAdminActions();
@@ -55,17 +57,16 @@ export default function AdminNotifications() {
   const [notificationType, setNotificationType] = useState("info");
   const [targetAudience, setTargetAudience] = useState("all");
 
-  // HARDCODED: Verificar se é admin
-  const isAdmin = user?.email === 'alessandroibama40@gmail.com';
-
   useEffect(() => {
+    if (authLoading || adminLoading) return;
+
     if (!isAdmin) {
       navigate("/");
       return;
     }
 
     loadHistory();
-  }, [isAdmin, navigate]);
+  }, [isAdmin, authLoading, adminLoading, navigate]);
 
   const loadHistory = async () => {
     setLoading(true);

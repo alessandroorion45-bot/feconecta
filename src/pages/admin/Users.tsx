@@ -3,6 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/contexts/AdminContext";
 import { useAdminActions } from "@/hooks/useAdminActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,8 @@ interface UserProfile {
 type PunishmentType = 'warning' | 'suspend' | 'ban';
 
 export default function AdminUsers() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getUserProfiles, warnUser, suspendUser, banUser } = useAdminActions();
@@ -57,17 +59,16 @@ export default function AdminUsers() {
   const [suspendDays, setSuspendDays] = useState(7);
   const [processing, setProcessing] = useState(false);
 
-  // HARDCODED: Verificar se é admin
-  const isAdmin = user?.email === 'alessandroibama40@gmail.com';
-
   useEffect(() => {
+    if (authLoading || adminLoading) return;
+
     if (!isAdmin) {
       navigate("/");
       return;
     }
 
     loadUsers();
-  }, [isAdmin, navigate]);
+  }, [isAdmin, authLoading, adminLoading, navigate]);
 
   const loadUsers = async () => {
     setLoading(true);

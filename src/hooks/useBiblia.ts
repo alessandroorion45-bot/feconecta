@@ -64,26 +64,41 @@ export function useBiblia() {
           throw new Error('Nenhum livro encontrado no banco de dados')
         }
 
-        // Para cada livro, buscar versículos e organizar por capítulos
-        const livrosCompletos: Livro[] = []
+        // ✅ OTIMIZAÇÃO: Buscar TODOS os versículos de uma vez (1 query em vez de 66!)
+        console.log('📖 Buscando TODOS os versículos em uma única query...')
+        const bookIds = books.map(b => b.id)
 
-        for (const book of books) {
-          const { data: verses, error: versesError } = await supabase
-            .from('bible_verses')
-            .select('chapter, verse, text')
-            .eq('book_id', book.id)
-            .order('chapter', { ascending: true })
-            .order('verse', { ascending: true })
+        const { data: allVerses, error: versesError } = await supabase
+          .from('bible_verses')
+          .select('book_id, chapter, verse, text')
+          .in('book_id', bookIds)
+          .order('book_id', { ascending: true })
+          .order('chapter', { ascending: true })
+          .order('verse', { ascending: true })
 
-          if (versesError) {
-            console.error(`❌ Erro ao buscar versículos do livro ${book.name}:`, versesError)
-            throw versesError
+        if (versesError) {
+          console.error('❌ Erro ao buscar versículos:', versesError)
+          throw versesError
+        }
+
+        console.log(`✅ ${allVerses?.length || 0} versículos carregados!`)
+
+        // Organizar versículos por livro
+        const versesByBook = new Map<number, typeof allVerses>()
+        allVerses?.forEach(v => {
+          if (!versesByBook.has(v.book_id)) {
+            versesByBook.set(v.book_id, [])
           }
+          versesByBook.get(v.book_id)!.push(v)
+        })
+
+        // Construir livros completos
+        const livrosCompletos: Livro[] = books.map(book => {
+          const verses = versesByBook.get(book.id) || []
 
           // Organizar versículos por capítulo
           const chaptersMap = new Map<number, string[]>()
-
-          verses?.forEach(v => {
+          verses.forEach(v => {
             if (!chaptersMap.has(v.chapter)) {
               chaptersMap.set(v.chapter, [])
             }
@@ -93,12 +108,12 @@ export function useBiblia() {
           // Converter Map para array de arrays (chapters)
           const chapters: string[][] = Array.from(chaptersMap.values())
 
-          livrosCompletos.push({
+          return {
             abbrev: book.abbrev,
             book: book.name,
             chapters
-          })
-        }
+          }
+        })
 
         console.log('✅ Bíblia carregada com sucesso! Total de livros:', livrosCompletos.length)
 

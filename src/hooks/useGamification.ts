@@ -298,7 +298,8 @@ export function useGamification(userId?: string) {
     if (userId) {
       getUserStats();
     }
-  }, [userId, getUserStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]); // ✅ Removido getUserStats para evitar loop infinito
 
   // ============================================
   // HELPER: XP PARA PRÓXIMO NÍVEL

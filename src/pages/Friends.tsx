@@ -89,19 +89,31 @@ const Friends = () => {
   // Presence subscription
   useEffect(() => {
     if (!user) return;
+
+    // ✅ Flag para controlar se subscription completou
+    let isSubscribed = false;
+
     const presenceChannel = supabase.channel('online-presence', {
       config: { presence: { key: user.id } }
     });
+
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
         setOnlineUsers(new Set(Object.keys(presenceChannel.presenceState())));
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
+          isSubscribed = true;
           await presenceChannel.track({ user_id: user.id, online_at: new Date().toISOString() });
         }
       });
-    return () => { supabase.removeChannel(presenceChannel); };
+
+    // ✅ Cleanup só remove canal se subscription completou
+    return () => {
+      if (isSubscribed) {
+        supabase.removeChannel(presenceChannel);
+      }
+    };
   }, [user]);
 
   // Lazy load followers/following when tab changes

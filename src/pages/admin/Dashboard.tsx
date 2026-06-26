@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { MetricsCard } from "@/components/admin/MetricsCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/contexts/AdminContext";
 import { Users, Crown, Palette, Trophy, Flag, Activity, BarChart, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +18,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const { user, isLoading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -27,24 +29,19 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  // SOLUÇÃO TEMPORÁRIA: Verificar email diretamente (hardcoded)
-  const isAdmin = user?.email === 'alessandroibama40@gmail.com';
-
   useEffect(() => {
-    console.log('[Dashboard] User email:', user?.email);
-    console.log('[Dashboard] Is admin?', isAdmin);
+    // Aguardar verificação de autenticação e permissões
+    if (authLoading || adminLoading) return;
 
-    if (!authLoading && !isAdmin) {
-      console.log('[Dashboard] Not admin, redirecting to /');
+    // Se não for admin, redirecionar
+    if (!isAdmin) {
       navigate("/");
       return;
     }
 
-    if (isAdmin) {
-      console.log('[Dashboard] Loading stats...');
-      loadStats();
-    }
-  }, [isAdmin, authLoading, navigate, user]);
+    // Carregar estatísticas
+    loadStats();
+  }, [isAdmin, authLoading, adminLoading, navigate]);
 
   const loadStats = async () => {
     console.log('[Dashboard] loadStats started');

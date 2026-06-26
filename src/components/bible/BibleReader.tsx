@@ -103,7 +103,7 @@ export function BibleReader() {
 
     // Conceder XP por leitura bíblica
     if (user) {
-      await awardXP('bible_reading_completed')
+      await awardXP('bible_reading') // ✅ GameAction válido (15 XP)
     }
 
     toast({

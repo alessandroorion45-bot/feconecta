@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-const AUTH_TOKEN_KEY = 'sb-ucpsiqmsxocwasorvojw-auth-token';
+// ✅ Auth token key unificado (project ID correto)
+const AUTH_TOKEN_KEY = 'sb-kfetvofrwtuduwmpvdlz-auth-token';
 
 interface AuthContextType {
   session: Session | null;
@@ -32,7 +33,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log('[AuthContext] Initializing auth...');
 
         // Try to get session from localStorage first (faster)
-        const storedSession = localStorage.getItem('sb-kfetvofrwtuduwmpvdlz-auth-token');
+        const storedSession = localStorage.getItem(AUTH_TOKEN_KEY);
         if (storedSession) {
           try {
             const parsed = JSON.parse(storedSession);
@@ -128,16 +129,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Fazer logout no Supabase
       await supabase.auth.signOut();
 
-      // Limpar TODO o localStorage (incluindo cache)
-      localStorage.clear();
+      // ✅ Limpar APENAS keys de autenticação (preservar cache da Bíblia)
+      const authKeys = Object.keys(localStorage).filter(key =>
+        key.startsWith('sb-') ||
+        key.includes('auth') ||
+        key.includes('supabase') ||
+        key.includes('session')
+      );
+      authKeys.forEach(key => localStorage.removeItem(key));
 
-      console.log('[AuthContext] Logout completo!');
+      console.log('[AuthContext] Logout completo! Cache da Bíblia preservado.');
     } catch (error) {
       console.error('[AuthContext] Erro no logout:', error);
       // Mesmo com erro, garantir que estado local está limpo
       setSession(null);
       setUser(null);
-      localStorage.clear();
+
+      // ✅ Limpar apenas auth keys
+      const authKeys = Object.keys(localStorage).filter(key =>
+        key.startsWith('sb-') ||
+        key.includes('auth') ||
+        key.includes('supabase') ||
+        key.includes('session')
+      );
+      authKeys.forEach(key => localStorage.removeItem(key));
     }
   }, []);
 
