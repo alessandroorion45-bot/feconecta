@@ -58,6 +58,13 @@ export const VerseActions = ({
   const [showShare, setShowShare] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Se houver comentários, mostrar automaticamente
+  useEffect(() => {
+    if (stats.comments > 0 && !showComments) {
+      setShowComments(true);
+    }
+  }, [stats.comments]);
+
   // Carregar stats e estado de favorito
   useEffect(() => {
     if (!user) return;
