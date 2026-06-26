@@ -473,7 +473,7 @@ export const ProfileVideos = ({ userId, isOwner, isFriend = false }: ProfileVide
       if (navigator.share) {
         await navigator.share({
           title: video.title,
-          text: video.description || 'Confira este vídeo na Rede da Fé!',
+          text: video.description || 'Confira este vídeo na Aliança!',
           url: video.video_url
         });
       } else {

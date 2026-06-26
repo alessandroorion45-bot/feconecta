@@ -310,7 +310,7 @@ const TestimonyDetail = () => {
     ? testimony.audio_url
       ? `${testimony.title} — Testemunho em áudio de ${testimony.profiles?.full_name || "Usuário"}`
       : `${testimony.title} — ${testimony.content.substring(0, 150)}...`
-    : "Testemunho na Rede da Fé";
+    : "Testemunho na Aliança";
 
   const metaImage = testimony?.profiles?.cover_image_url || testimony?.profiles?.avatar_url || "/placeholder.svg";
   const authorName = testimony?.profiles?.full_name || "Usuário";
@@ -352,7 +352,7 @@ const TestimonyDetail = () => {
   return (
     <div className="min-h-screen bg-gradient-hero">
       <Helmet>
-        <title>{testimony.title} — {authorName} | Rede da Fé</title>
+        <title>{testimony.title} — {authorName} | Aliança</title>
         <meta name="description" content={metaDescription} />
         
         {/* Open Graph */}
@@ -361,7 +361,7 @@ const TestimonyDetail = () => {
         <meta property="og:image" content={metaImage} />
         <meta property="og:url" content={`${window.location.origin}/testemunho/${testimony.id}`} />
         <meta property="og:type" content="article" />
-        <meta property="og:site_name" content="Rede da Fé" />
+        <meta property="og:site_name" content="Aliança" />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />

@@ -153,7 +153,7 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
       if (navigator.share) {
         await navigator.share({
           title: `Álbum: ${album.name}`,
-          text: album.description || `Confira o álbum "${album.name}" na Rede da Fé!`,
+          text: album.description || `Confira o álbum "${album.name}" na Aliança!`,
           url: shareUrl
         });
       } else {
@@ -600,8 +600,8 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'Foto - Rede da Fé',
-          text: photo.caption || 'Confira esta foto na Rede da Fé!',
+          title: 'Foto - Aliança',
+          text: photo.caption || 'Confira esta foto na Aliança!',
           url: photo.photo_url
         });
       } else {

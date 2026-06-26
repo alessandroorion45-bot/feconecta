@@ -308,7 +308,7 @@ const DailyBiblicalChallenges = ({ userId }: DailyBiblicalChallengesProps) => {
 
 💬 "${todayChallenge.motivational_quote}"
 
-🏆 Completei este desafio na Rede da Fé!
+🏆 Completei este desafio na Aliança!
 
 🔥 Minha sequência: ${currentStreak} dias consecutivos!
 

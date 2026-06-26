@@ -94,7 +94,7 @@ const Header = () => {
               <SheetContent side="left" className="w-80 overflow-y-auto">
                 <SheetHeader className="text-left mb-4 pb-2">
                   <SheetTitle className="text-2xl font-bold bg-gradient-divine bg-clip-text text-transparent leading-normal pb-1">
-                    Rede da Fé
+                    Aliança
                   </SheetTitle>
                   <SheetDescription className="text-sm text-muted-foreground leading-normal">
                     Uma comunidade cristã moderna
@@ -159,12 +159,14 @@ const Header = () => {
             </Sheet>
           )}
 
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 group hover:opacity-80 transition-opacity shrink-0">
-            <div className="p-2 rounded-lg bg-gradient-primary shadow-glow shrink-0">
-              <Church className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
-            </div>
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 group hover:opacity-90 transition-opacity shrink-0">
+            <img
+              src="/alianca-logo.png"
+              alt="Aliança"
+              className="h-10 w-10 sm:h-12 sm:w-12 object-contain drop-shadow-lg"
+            />
             <span className="text-lg sm:text-xl font-bold bg-gradient-divine bg-clip-text text-transparent whitespace-nowrap leading-normal">
-              Rede da Fé
+              Aliança
             </span>
           </Link>
         </div>

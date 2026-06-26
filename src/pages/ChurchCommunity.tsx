@@ -30,7 +30,7 @@ const ChurchCommunity = () => {
   return (
     <>
       <Helmet>
-        <title>Comunidade da Igreja | Rede da Fé</title>
+        <title>Comunidade da Igreja | Aliança</title>
         <meta name="description" content="Participe de decisões coletivas e avalie líderes na comunidade da sua igreja." />
       </Helmet>
 

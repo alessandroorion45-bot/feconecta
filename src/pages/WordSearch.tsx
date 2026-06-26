@@ -193,7 +193,7 @@ const WordSearch = () => {
     <div className="palavra-viva-wrapper" style={{ backgroundImage: `url(${wordSearchBg})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <div className="palavra-viva-bg-overlay" />
       <Helmet>
-        <title>Palavra Viva – A Jornada Bíblica | Rede da Fé</title>
+        <title>Palavra Viva – A Jornada Bíblica | Aliança</title>
         <meta name="description" content="Jogo de caça-palavras cristão interativo e educativo. Encontre palavras bíblicas e aprenda versículos. 100% gratuito." />
       </Helmet>
 

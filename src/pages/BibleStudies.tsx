@@ -197,7 +197,7 @@ const BibleStudies = () => {
   };
 
   const shareStudy = async (study: BibleStudy) => {
-    const text = `📖 ${study.title}\n\n${study.description}\n\n🔗 FeConecta - Rede da Fé`;
+    const text = `📖 ${study.title}\n\n${study.description}\n\n🔗 FeConecta - Aliança`;
 
     if (navigator.share) {
       try {

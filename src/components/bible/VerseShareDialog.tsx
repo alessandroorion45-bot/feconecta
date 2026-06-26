@@ -42,7 +42,7 @@ export const VerseShareDialog = ({
   const [canUseNativeShare, setCanUseNativeShare] = useState(false);
 
   const verseReference = `${book} ${chapter}:${verse}`;
-  const shareText = `"${verseText}"\n\n${verseReference}\n\n✨ Compartilhado via Rede da Fé`;
+  const shareText = `"${verseText}"\n\n${verseReference}\n\n✨ Compartilhado via Aliança`;
 
   // Verificar se Web Share API está disponível
   useEffect(() => {

@@ -152,7 +152,7 @@ const Devotional = () => {
   };
 
   const shareDevotional = async () => {
-    const text = `"${current.verse_text}"\n\n${current.verse_reference}\n\n${current.reflection}\n\n✨ Devocional Diário - Rede da Fé`;
+    const text = `"${current.verse_text}"\n\n${current.verse_reference}\n\n${current.reflection}\n\n✨ Devocional Diário - Aliança`;
 
     if (navigator.share) {
       try {

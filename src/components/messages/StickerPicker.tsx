@@ -43,7 +43,7 @@ export const StickerPicker: React.FC<StickerPickerProps> = ({
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg">Stickers da Rede da Fé</h3>
+          <h3 className="font-semibold text-lg">Stickers da Aliança</h3>
           {onClose && (
             <button
               onClick={onClose}

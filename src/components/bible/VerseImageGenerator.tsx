@@ -228,7 +228,7 @@ export const VerseImageGenerator = ({
     // Logo/marca d'água no rodapé
     ctx.fillStyle = theme.secondaryTextColor;
     ctx.font = `italic 42px ${theme.fontFamily}`;
-    ctx.fillText('✨ Rede da Fé', width / 2, height - 180);
+    ctx.fillText('✨ Aliança', width / 2, height - 180);
 
     ctx.font = '32px sans-serif';
     ctx.fillText('Fortaleça sua fé diariamente', width / 2, height - 120);

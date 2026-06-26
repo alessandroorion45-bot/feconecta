@@ -461,7 +461,7 @@ const Auth = () => {
         }
 
         toast({
-          title: "🙏 Seja bem-vindo à Rede da Fé!",
+          title: "🙏 Seja bem-vindo à Aliança!",
           description: '"Porque para Deus nada é impossível." Lucas 1:37',
           duration: 5000,
           className: "bg-white/90 border border-white/20 shadow-glow text-foreground backdrop-blur-xl",
@@ -577,7 +577,7 @@ const Auth = () => {
         }
       } else {
         toast({
-          title: "🙏 Seja bem-vindo à Rede da Fé!",
+          title: "🙏 Seja bem-vindo à Aliança!",
           description: '"Porque para Deus nada é impossível." Lucas 1:37',
           duration: 5000,
           className: "bg-white/90 border border-white/20 shadow-glow text-foreground backdrop-blur-xl",
@@ -764,7 +764,7 @@ const Auth = () => {
             <Church className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="text-xl font-semibold text-foreground">
-            {language === 'pt' ? 'Rede da Fé' : 
+            {language === 'pt' ? 'Aliança' : 
              language === 'es' ? 'Red de Fe' : 
              language === 'nl' ? 'Geloofsnetwerk' : 
              'Faith Network'}

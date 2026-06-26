@@ -70,7 +70,7 @@ const Index = () => {
             <Church className="h-8 w-8 sm:h-12 sm:w-12 text-primary-foreground" />
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-divine bg-clip-text text-transparent leading-tight pt-1 pb-1">
-            Rede da Fé
+            Aliança
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 px-2 leading-relaxed">
             Uma comunidade cristã moderna para compartilhar fé, testemunhos e comunhão
@@ -165,7 +165,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t py-6 sm:py-8 mt-auto">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm sm:text-base text-muted-foreground">
-          <p>© 2024 Rede da Fé. Compartilhando fé e amor em Cristo.</p>
+          <p>© 2024 Aliança. Compartilhando fé e amor em Cristo.</p>
         </div>
       </footer>
     </div>
