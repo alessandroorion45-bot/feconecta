@@ -5,11 +5,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Book, ChevronLeft, ChevronRight, AlertCircle, CheckCircle } from 'lucide-react'
+import { Book, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, BookOpenCheck } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useGamification } from '@/hooks/useGamification'
 import { useAuth } from '@/contexts/AuthContext'
 import { VerseActions } from './VerseActions'
+import { ReadingModeSettings, type ReadingModeConfig } from './ReadingModeSettings'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 export function BibleReader() {
   const { toast } = useToast()
@@ -19,6 +25,14 @@ export function BibleReader() {
   const [livroIndex, setLivroIndex] = useState(0)
   const [capituloIndex, setCapituloIndex] = useState(0)
   const [completedChapters, setCompletedChapters] = useState<Set<string>>(new Set())
+  const [readingMode, setReadingMode] = useState<ReadingModeConfig>({
+    fontSize: 18,
+    lineHeight: 1.8,
+    maxWidth: 80,
+    fontFamily: 'serif',
+    theme: 'light',
+    focusMode: false,
+  })
 
   const livroAtual = livros[livroIndex]
   const capituloAtual = livroAtual?.chapters[capituloIndex]
@@ -158,16 +172,61 @@ export function BibleReader() {
     )
   }
 
+  const getThemeStyles = () => {
+    switch (readingMode.theme) {
+      case 'dark':
+        return {
+          background: '#1a1a1a',
+          color: '#e5e5e5',
+        };
+      case 'sepia':
+        return {
+          background: '#f4ecd8',
+          color: '#5c4a3a',
+        };
+      default:
+        return {
+          background: '#ffffff',
+          color: '#1a1a1a',
+        };
+    }
+  };
+
+  const getFontFamily = () => {
+    switch (readingMode.fontFamily) {
+      case 'sans':
+        return 'ui-sans-serif, system-ui, sans-serif';
+      case 'mono':
+        return 'ui-monospace, monospace';
+      default:
+        return 'ui-serif, Georgia, serif';
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Navigation Card */}
-      <Card className="shadow-divine">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Book className="h-5 w-5 text-primary" />
-            Navegação
-          </CardTitle>
-        </CardHeader>
+      {!readingMode.focusMode && (
+        <Card className="shadow-divine">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Book className="h-5 w-5 text-primary" />
+                Navegação
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <BookOpenCheck className="h-4 w-4" />
+                    Modo Leitura
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96" align="end">
+                  <ReadingModeSettings config={readingMode} onChange={setReadingMode} />
+                </PopoverContent>
+              </Popover>
+            </CardTitle>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Book Selector */}
@@ -239,18 +298,42 @@ export function BibleReader() {
             </div>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
       {/* Chapter Content */}
-      <Card className="shadow-soft">
-        <CardHeader className="border-b bg-gradient-primary text-primary-foreground">
-          <CardTitle className="text-2xl">
-            {livroAtual?.book} {capituloIndex + 1}
-          </CardTitle>
-        </CardHeader>
+      <Card className="shadow-soft" style={getThemeStyles()}>
+        {!readingMode.focusMode && (
+          <CardHeader className="border-b bg-gradient-primary text-primary-foreground">
+            <CardTitle className="text-2xl">
+              {livroAtual?.book} {capituloIndex + 1}
+            </CardTitle>
+          </CardHeader>
+        )}
+        {readingMode.focusMode && (
+          <div className="p-4 text-center border-b" style={getThemeStyles()}>
+            <h2 className="text-2xl font-bold" style={{ fontFamily: getFontFamily() }}>
+              {livroAtual?.book} {capituloIndex + 1}
+            </h2>
+            <Button
+              onClick={() => setReadingMode({ ...readingMode, focusMode: false })}
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+            >
+              Sair do Modo Foco
+            </Button>
+          </div>
+        )}
         <CardContent className="pt-6">
           <ScrollArea className="h-[600px] pr-4">
-            <div className="space-y-4" aria-live="polite">
+            <div
+              className="space-y-4 mx-auto"
+              style={{
+                maxWidth: `${readingMode.maxWidth}%`,
+              }}
+              aria-live="polite"
+            >
               {capituloAtual && capituloAtual.length > 0 ? (
                 capituloAtual.map((versiculo, index) => (
                   <div
@@ -259,14 +342,25 @@ export function BibleReader() {
                   >
                     <div className="space-y-3">
                       <div className="flex gap-3">
-                        <span className="text-sm font-bold text-primary mt-1 min-w-[2rem]">
+                        <span
+                          className="text-sm font-bold text-primary mt-1 min-w-[2rem]"
+                          style={{ fontSize: `${readingMode.fontSize * 0.8}px` }}
+                        >
                           {index + 1}
                         </span>
-                        <p className="text-base leading-relaxed flex-1">
+                        <p
+                          className="flex-1"
+                          style={{
+                            fontSize: `${readingMode.fontSize}px`,
+                            lineHeight: readingMode.lineHeight,
+                            fontFamily: getFontFamily(),
+                            color: getThemeStyles().color,
+                          }}
+                        >
                           {versiculo}
                         </p>
                       </div>
-                      {user && (
+                      {user && !readingMode.focusMode && (
                         <div className="ml-11 opacity-0 group-hover:opacity-100 transition-opacity">
                           <VerseActions
                             book={livroAtual?.book || ''}

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Heart, MoreVertical, Flag, Trash2 } from 'lucide-react';
+import { Heart, MoreVertical, Flag, Trash2, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useGamification } from '@/hooks/useGamification';
 import UserAvatar from '@/components/UserAvatar';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -14,6 +15,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Comment {
   id: string;
@@ -21,12 +29,14 @@ interface Comment {
   comment_text: string;
   likes_count: number;
   created_at: string;
+  parent_comment_id: string | null;
   profiles: {
     username: string;
     full_name: string;
     avatar_url: string;
   };
   liked_by_me?: boolean;
+  replies?: Comment[];
 }
 
 interface VerseCommentsProps {
@@ -37,20 +47,27 @@ interface VerseCommentsProps {
   onCountChange: (count: number) => void;
 }
 
-export const VerseComments = ({ book, chapter, verse, verseText, onCountChange }: VerseCommentsProps) => {
+type SortOption = 'recent' | 'likes' | 'relevant';
+
+export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseCommentsProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { awardXP } = useGamification(user?.id);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
 
   useEffect(() => {
     loadComments();
-  }, [book, chapter, verse]);
+  }, [book, chapter, verse, sortBy]);
 
   const loadComments = async () => {
+    // Carregar todos os comentários (pais e filhos)
     // @ts-ignore - Schema types not updated
-    const { data: commentsData } = await supabase
+    const { data: allCommentsData } = await supabase
       .from('verse_comments')
       .select(`
         *,
@@ -59,35 +76,88 @@ export const VerseComments = ({ book, chapter, verse, verseText, onCountChange }
       .eq('book', book)
       .eq('chapter', chapter)
       .eq('verse', verse)
-      .eq('is_hidden', false)
-      .is('parent_comment_id', null)
-      .order('created_at', { ascending: false });
+      .eq('is_hidden', false);
 
-    if (commentsData && user) {
-      const commentIds = commentsData.map((c: any) => c.id);
-      // @ts-ignore - Schema types not updated
+    if (!allCommentsData) return;
+
+    // Organizar em árvore
+    const commentsMap = new Map<string, Comment>();
+    const rootComments: Comment[] = [];
+
+    // Primeiro, criar o mapa de todos os comentários
+    allCommentsData.forEach((c: any) => {
+      commentsMap.set(c.id, { ...c, replies: [] });
+    });
+
+    // Obter curtidas do usuário se logado
+    let likedSet = new Set<string>();
+    if (user) {
+      const commentIds = allCommentsData.map((c: any) => c.id);
+      // @ts-ignore - Table exists in database but not in generated types
       const { data: myLikes } = await supabase
         .from('verse_comment_likes')
         .select('comment_id')
         .eq('user_id', user.id)
         .in('comment_id', commentIds);
 
-      const likedSet = new Set(myLikes?.map((l: any) => l.comment_id) || []);
+      likedSet = new Set(myLikes?.map((l: any) => l.comment_id) || []);
+    }
 
-      const withLikes = commentsData.map((c: any) => ({
-        ...c,
-        liked_by_me: likedSet.has(c.id),
-      }));
+    // Construir árvore
+    allCommentsData.forEach((c: any) => {
+      const comment = commentsMap.get(c.id)!;
+      comment.liked_by_me = likedSet.has(c.id);
 
-      setComments(withLikes as Comment[]);
-      onCountChange(withLikes.length);
-    } else if (commentsData) {
-      setComments(commentsData as Comment[]);
-      onCountChange(commentsData.length);
+      if (c.parent_comment_id) {
+        // É uma resposta
+        const parent = commentsMap.get(c.parent_comment_id);
+        if (parent) {
+          parent.replies = parent.replies || [];
+          parent.replies.push(comment);
+        }
+      } else {
+        // É comentário raiz
+        rootComments.push(comment);
+      }
+    });
+
+    // Ordenar comentários raiz
+    sortComments(rootComments, sortBy);
+
+    // Ordenar respostas também
+    rootComments.forEach(comment => {
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.sort((a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      }
+    });
+
+    setComments(rootComments);
+    onCountChange(allCommentsData.length);
+  };
+
+  const sortComments = (comments: Comment[], sortOption: SortOption) => {
+    switch (sortOption) {
+      case 'likes':
+        comments.sort((a, b) => b.likes_count - a.likes_count);
+        break;
+      case 'relevant':
+        comments.sort((a, b) => {
+          const scoreA = a.likes_count * 2 + (a.replies?.length || 0) * 3;
+          const scoreB = b.likes_count * 2 + (b.replies?.length || 0) * 3;
+          return scoreB - scoreA;
+        });
+        break;
+      case 'recent':
+      default:
+        comments.sort((a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (parentId?: string | null) => {
     if (!user) {
       toast({
         title: '🔒 Login necessário',
@@ -97,7 +167,9 @@ export const VerseComments = ({ book, chapter, verse, verseText, onCountChange }
       return;
     }
 
-    if (!newComment.trim()) {
+    const text = parentId ? replyText : newComment;
+
+    if (!text.trim()) {
       toast({
         title: '⚠️ Comentário vazio',
         description: 'Digite algo antes de publicar',
@@ -115,16 +187,35 @@ export const VerseComments = ({ book, chapter, verse, verseText, onCountChange }
         book,
         chapter,
         verse,
-        comment_text: newComment,
+        comment_text: text,
+        parent_comment_id: parentId || null,
       });
 
-      setNewComment('');
+      if (parentId) {
+        setReplyText('');
+        setReplyingTo(null);
+      } else {
+        setNewComment('');
+      }
+
+      // Conceder XP por comentar
+      if (user) {
+        try {
+          await awardXP('verse_commented');
+        } catch (error) {
+          console.error('Error awarding XP:', error);
+        }
+      }
+
       toast({
-        title: '✨ Comentário publicado!',
+        title: parentId ? '✨ Resposta publicada!' : '✨ Comentário publicado!',
         description: '+5 XP - Obrigado por compartilhar sua reflexão',
         className: 'animate-in slide-in-from-top bg-green-50 border-green-200',
       });
-      loadComments();
+
+      // Aguardar um pouco antes de recarregar para garantir que o banco salvou
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadComments();
     } catch (error) {
       console.error('Error posting comment:', error);
       toast({
@@ -161,14 +252,14 @@ export const VerseComments = ({ book, chapter, verse, verseText, onCountChange }
 
     try {
       if (wasLiked) {
-        // @ts-ignore - Schema types not updated
+        // @ts-ignore - Table exists in database but not in generated types
         await supabase
           .from('verse_comment_likes')
           .delete()
           .eq('user_id', user.id)
           .eq('comment_id', commentId);
       } else {
-        // @ts-ignore - Schema types not updated
+        // @ts-ignore - Table exists in database but not in generated types
         await supabase.from('verse_comment_likes').insert({
           user_id: user.id,
           comment_id: commentId,
@@ -228,8 +319,143 @@ export const VerseComments = ({ book, chapter, verse, verseText, onCountChange }
     }
   };
 
+  // Componente recursivo para renderizar comentário e suas respostas
+  const CommentItem = ({ comment, depth = 0 }: { comment: Comment; depth?: number }) => (
+    <div
+      className={`flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-all animate-in fade-in slide-in-from-bottom-2 ${
+        depth > 0 ? 'ml-8 mt-2 border-l-2 border-primary/20' : ''
+      }`}
+    >
+      <UserAvatar
+        src={comment.profiles?.avatar_url}
+        fallback={comment.profiles?.full_name || 'U'}
+        size="sm"
+      />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="font-semibold text-sm">{comment.profiles?.full_name}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
+            </p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:scale-110 transition-transform">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {user?.id === comment.user_id ? (
+                <DropdownMenuItem onClick={() => handleDelete(comment.id)} className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => handleReport(comment.id)}>
+                  <Flag className="h-4 w-4 mr-2" />
+                  Denunciar
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <p className="text-sm mt-2 whitespace-pre-wrap leading-relaxed">{comment.comment_text}</p>
+        <div className="flex items-center gap-2 mt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => toggleLike(comment.id)}
+            className={`gap-2 transition-all hover:scale-110 ${
+              comment.liked_by_me ? 'text-red-500 animate-pulse' : ''
+            }`}
+          >
+            <Heart
+              className={`h-4 w-4 transition-all ${
+                comment.liked_by_me ? 'fill-current scale-110' : ''
+              }`}
+            />
+            {comment.likes_count > 0 && (
+              <span className="font-semibold">{comment.likes_count}</span>
+            )}
+          </Button>
+          {depth < 3 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReplyingTo(comment.id)}
+              className="gap-2 transition-all hover:scale-110"
+            >
+              <Reply className="h-4 w-4" />
+              Responder
+            </Button>
+          )}
+        </div>
+
+        {/* Formulário de resposta */}
+        {replyingTo === comment.id && (
+          <div className="mt-3 space-y-2 pl-4 border-l-2 border-primary/30">
+            <Textarea
+              placeholder={`Respondendo a ${comment.profiles?.full_name}...`}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              rows={2}
+              className="resize-none focus:ring-2 focus:ring-primary/50 transition-all"
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleSubmit(comment.id)}
+                disabled={loading || !replyText.trim()}
+                size="sm"
+                className="gap-2 transition-all hover:scale-105 disabled:hover:scale-100"
+              >
+                {loading ? '⏳ Publicando...' : '✨ Responder'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setReplyingTo(null);
+                  setReplyText('');
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Respostas aninhadas */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {comment.replies.map((reply) => (
+              <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-4 p-4 bg-muted/20 rounded-lg border border-muted animate-in fade-in duration-300">
+      {/* 🎯 BARRA DE ORDENAÇÃO */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-sm">
+          💬 {comments.length === 0 ? 'Nenhum comentário' : `${comments.length} comentário${comments.length !== 1 ? 's' : ''}`}
+        </h3>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recent">Mais recentes</SelectItem>
+            <SelectItem value="likes">Mais curtidos</SelectItem>
+            <SelectItem value="relevant">Mais relevantes</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* 💬 ÁREA DE NOVO COMENTÁRIO */}
       <div className="flex items-start gap-3">
         {user && (
@@ -248,7 +474,7 @@ export const VerseComments = ({ book, chapter, verse, verseText, onCountChange }
             className="resize-none focus:ring-2 focus:ring-primary/50 transition-all"
           />
           <Button
-            onClick={handleSubmit}
+            onClick={() => handleSubmit(null)}
             disabled={loading || !newComment.trim()}
             size="sm"
             className="gap-2 transition-all hover:scale-105 disabled:hover:scale-100"
@@ -265,66 +491,8 @@ export const VerseComments = ({ book, chapter, verse, verseText, onCountChange }
             💭 Seja o primeiro a comentar sobre este versículo!
           </p>
         ) : (
-          comments.map((comment, index) => (
-            <div
-              key={comment.id}
-              className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-all animate-in fade-in slide-in-from-bottom-2"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <UserAvatar
-                src={comment.profiles?.avatar_url}
-                fallback={comment.profiles?.full_name || 'U'}
-                size="sm"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-sm">{comment.profiles?.full_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
-                    </p>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:scale-110 transition-transform">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {user?.id === comment.user_id ? (
-                        <DropdownMenuItem onClick={() => handleDelete(comment.id)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem onClick={() => handleReport(comment.id)}>
-                          <Flag className="h-4 w-4 mr-2" />
-                          Denunciar
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                <p className="text-sm mt-2 whitespace-pre-wrap leading-relaxed">{comment.comment_text}</p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleLike(comment.id)}
-                  className={`mt-2 gap-2 transition-all hover:scale-110 ${
-                    comment.liked_by_me ? 'text-red-500 animate-pulse' : ''
-                  }`}
-                >
-                  <Heart
-                    className={`h-4 w-4 transition-all ${
-                      comment.liked_by_me ? 'fill-current scale-110' : ''
-                    }`}
-                  />
-                  {comment.likes_count > 0 && (
-                    <span className="font-semibold">{comment.likes_count}</span>
-                  )}
-                </Button>
-              </div>
-            </div>
+          comments.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} />
           ))
         )}
       </div>

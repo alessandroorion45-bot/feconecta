@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useGamification } from '@/hooks/useGamification';
 import { VerseImageGenerator } from './VerseImageGenerator';
 
 interface VerseShareDialogProps {
@@ -35,6 +36,7 @@ export const VerseShareDialog = ({
 }: VerseShareDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { awardXP } = useGamification(user?.id);
   const [copied, setCopied] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [canUseNativeShare, setCanUseNativeShare] = useState(false);
@@ -59,6 +61,9 @@ export const VerseShareDialog = ({
       verse_text: verseText,
       platform,
     });
+
+    // Conceder XP por compartilhar
+    await awardXP('verse_shared');
 
     onShare();
   };

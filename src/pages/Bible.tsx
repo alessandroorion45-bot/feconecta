@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { BibleReader } from "@/components/bible/BibleReader";
 import { TrendingVerses } from "@/components/bible/TrendingVerses";
+import { DailyVerse } from "@/components/bible/DailyVerse";
 
 const Bible = () => {
   return (
@@ -18,6 +19,11 @@ const Bible = () => {
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
             Medite na Palavra de Deus
           </p>
+        </div>
+
+        {/* Versículo do Dia */}
+        <div className="mb-8">
+          <DailyVerse />
         </div>
 
         <BibleReader />

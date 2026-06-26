@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useGamification } from '@/hooks/useGamification';
 import { VerseReactions } from './VerseReactions';
 import { VerseComments } from './VerseComments';
 import { VerseShareDialog } from './VerseShareDialog';
@@ -44,6 +45,7 @@ export const VerseActions = ({
 }: VerseActionsProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { awardXP } = useGamification(user?.id);
   const [isFavorited, setIsFavorited] = useState(false);
   const [stats, setStats] = useState<VerseStats>({
     favorites: 0,
@@ -135,12 +137,14 @@ export const VerseActions = ({
         setIsFavorited(true);
         setStats(prev => ({ ...prev, favorites: prev.favorites + 1 }));
 
+        // Conceder XP por favoritar
+        await awardXP('verse_favorited');
+
         toast({
           title: '❤️ Adicionado aos favoritos!',
           description: 'Versículo salvo na sua coleção pessoal (+2 XP)',
+          className: 'animate-in slide-in-from-top bg-green-50 border-green-200',
         });
-
-        // TODO: Adicionar +2 XP (gamificação)
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
