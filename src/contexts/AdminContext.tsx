@@ -67,9 +67,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         .eq('is_active', true)
         .order('role', { ascending: true });
 
-      // Timeout de 10 segundos
+      // Timeout de 20 segundos (aumentado após adicionar índices)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('ROLES_QUERY_TIMEOUT')), 10000)
+        setTimeout(() => reject(new Error('ROLES_QUERY_TIMEOUT')), 20000)
       );
 
       const { data: rolesData, error: rolesError } = await Promise.race([
