@@ -37,6 +37,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const FriendDetails = lazy(() => import("./pages/FriendDetails"));
 const Videos = lazy(() => import("./pages/Videos"));
 const Chat = lazy(() => import("./pages/Chat"));
+const TestChatEngine = lazy(() => import("./pages/TestChatEngine"));
 const SharedReading = lazy(() => import("./pages/SharedReading"));
 const ChurchCommunity = lazy(() => import("./pages/ChurchCommunity"));
 const WordSearch = lazy(() => import("./pages/WordSearch"));
@@ -101,6 +102,7 @@ const routes: RouteObject[] = [
   { path: "/friends", element: <ProtectedRoute><Friends /></ProtectedRoute> },
   { path: "/videos", element: <Videos /> },
   { path: "/chat", element: <ProtectedRoute><Chat /></ProtectedRoute> },
+  { path: "/test-chat-engine", element: <ProtectedRoute><TestChatEngine /></ProtectedRoute> },
   { path: "/shared-reading", element: <ProtectedRoute><SharedReading /></ProtectedRoute> },
   { path: "/church-community", element: <ProtectedRoute><ChurchCommunity /></ProtectedRoute> },
   { path: "/palavra-viva", element: <WordSearch /> },

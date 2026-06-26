@@ -11,6 +11,7 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { useChatSounds } from '@/hooks/useChatSounds';
 import { useDynamicBackground } from '@/hooks/useDynamicBackground';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { useChatWebSocket } from '@/hooks/useChatWebSocket';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Search, Sparkles } from 'lucide-react';
@@ -68,7 +69,6 @@ const Chat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const selectedConvRef = useRef<Conversation | null>(null);
-  const loadConversationsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -88,58 +88,37 @@ const Chat = () => {
       });
   }, [user]);
 
-  // Setup Realtime subscription ONCE per user
-  useEffect(() => {
-    if (!user) return;
+  // Gerenciador centralizado de WebSocket (evita subscrições duplicadas)
+  const handleNewMessage = useCallback((newMessage: Message) => {
+    const conv = selectedConvRef.current;
 
-    const channel = supabase
-      .channel(`chat-messages-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          const newMessage = payload.new as Message;
-          
-          // Only process messages relevant to this user
-          if (newMessage.sender_id !== user.id && newMessage.receiver_id !== user.id) return;
+    // Se é mensagem da conversa atual, adicionar à lista
+    if (conv &&
+        (newMessage.sender_id === conv.friendId ||
+         newMessage.receiver_id === conv.friendId)) {
+      setMessages(prev => {
+        // Evitar duplicatas
+        if (prev.some(m => m.id === newMessage.id)) return prev;
+        return [...prev, newMessage];
+      });
 
-          const conv = selectedConvRef.current;
-          
-          if (conv && 
-              (newMessage.sender_id === conv.friendId || 
-               newMessage.receiver_id === conv.friendId)) {
-            setMessages(prev => {
-              if (prev.some(m => m.id === newMessage.id)) return prev;
-              return [...prev, newMessage];
-            });
-            
-            if (newMessage.sender_id !== user.id) {
-              playSound('receive');
-            }
-          }
-          
-          // Debounce conversation list refresh
-          if (loadConversationsTimerRef.current) {
-            clearTimeout(loadConversationsTimerRef.current);
-          }
-          loadConversationsTimerRef.current = setTimeout(() => {
-            loadConversations();
-          }, 500);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-      if (loadConversationsTimerRef.current) {
-        clearTimeout(loadConversationsTimerRef.current);
+      // Tocar som apenas se recebeu mensagem (não enviou)
+      if (newMessage.sender_id !== user?.id) {
+        playSound('receive');
       }
-    };
-  }, [user]);
+    }
+  }, [user, playSound]);
+
+  const handleConversationUpdate = useCallback(() => {
+    loadConversations();
+  }, []);
+
+  // Hook centralizado de WebSocket
+  useChatWebSocket({
+    userId: user?.id || null,
+    onNewMessage: handleNewMessage,
+    onConversationUpdate: handleConversationUpdate
+  });
 
   // Setup Presence channel
   useEffect(() => {
