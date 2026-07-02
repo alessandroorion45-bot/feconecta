@@ -232,21 +232,24 @@ const Testimonies = () => {
       content_length: newTestimony.content.trim().length
     });
 
+    // Usar client direto sem types para evitar erro 403
     const { data, error } = await supabase
       .from("testimonies")
-      .insert([{
+      .insert({
         user_id: user.id,
         title: newTestimony.title.trim(),
         content: newTestimony.content.trim(),
-      }])
-      .select();
+      });
 
     if (error) {
-      console.error('[Testimonies] Erro ao inserir testemunho:', {
+      console.error('[Testimonies] ❌ ERRO AO INSERIR:', {
         code: error.code,
         message: error.message,
         details: error.details,
-        hint: error.hint
+        hint: error.hint,
+        user_id: user.id,
+        session_user: session?.user?.id,
+        match: session?.user?.id === user.id
       });
 
       let errorMessage = "Não foi possível publicar o depoimento";
