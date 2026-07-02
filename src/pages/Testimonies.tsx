@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Heart, MessageCircle, Sparkles, Plus, Share2, Loader2, Mic, Volume2 } from "lucide-react";
+import { Heart, MessageCircle, Sparkles, Share2, Loader2, Mic, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
@@ -530,9 +530,10 @@ const Testimonies = () => {
           </div>
         </div>
 
-        <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {user && (
-            <div className="flex gap-2 sm:gap-3">
+        {/* Botões de Ação - SEMPRE VISÍVEIS */}
+        <div className="mb-6 flex justify-center">
+          <div className="flex gap-3 sm:gap-4">
+            {user && (
               <Dialog open={audioDialogOpen} onOpenChange={setAudioDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="lg" className="gap-2 border-2 border-amber-300 hover:bg-amber-50 hover:border-amber-400 transition-all duration-300 group">
@@ -554,19 +555,30 @@ const Testimonies = () => {
                   />
                 </DialogContent>
               </Dialog>
+            )}
 
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-600 hover:via-orange-600 hover:to-yellow-600 text-white shadow-xl hover:shadow-2xl gap-2 font-bold transition-all duration-300 transform hover:scale-105">
-                    <Sparkles className="h-5 w-5 animate-pulse" />
-                    <span className="hidden sm:inline">Compartilhar Testemunho</span>
-                    <span className="sm:hidden">Publicar</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Compartilhar Testemunho</DialogTitle>
-                  </DialogHeader>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-600 hover:via-orange-600 hover:to-yellow-600 text-white shadow-xl hover:shadow-2xl gap-2 font-bold transition-all duration-300 transform hover:scale-105">
+                  <Sparkles className="h-5 w-5 animate-pulse" />
+                  <span className="hidden sm:inline">Compartilhar Testemunho</span>
+                  <span className="sm:hidden">Publicar</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Compartilhar Testemunho</DialogTitle>
+                </DialogHeader>
+                {!user ? (
+                  <div className="text-center py-6">
+                    <p className="text-muted-foreground mb-4">
+                      Você precisa estar logado para compartilhar seu testemunho
+                    </p>
+                    <Button onClick={() => window.location.href = '/auth'} className="bg-gradient-primary">
+                      Fazer Login
+                    </Button>
+                  </div>
+                ) : (
                   <div className="space-y-4">
                     <Input
                       placeholder="Título do testemunho"
@@ -590,10 +602,10 @@ const Testimonies = () => {
                       Publicar
                     </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
+                )}
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="space-y-6">
