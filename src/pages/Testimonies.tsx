@@ -494,23 +494,50 @@ const Testimonies = () => {
     <div className="min-h-screen bg-gradient-hero flex flex-col">
       <Header />
       <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 md:py-8">
-        <div className="mb-4 sm:mb-6 md:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 bg-gradient-divine bg-clip-text text-transparent leading-tight pt-1">
-              Depoimentos
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Compartilhe como Deus tem agido em sua vida
+        {/* Hero Section Magnético */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/20 dark:to-orange-950/30 p-6 sm:p-8 mb-6 border-2 border-amber-200/50 dark:border-amber-800/30 shadow-xl">
+          {/* Elementos decorativos */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-yellow-400/10 to-orange-400/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-amber-400/10 to-yellow-400/10 rounded-full blur-3xl" />
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg animate-pulse">
+                <Sparkles className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-amber-700 via-orange-600 to-yellow-700 bg-clip-text text-transparent leading-tight">
+                  Testemunhos
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="h-1 w-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full animate-pulse" />
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                    Glória a Deus
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-base sm:text-lg text-amber-900 dark:text-amber-100 leading-relaxed font-medium mb-3">
+              ✨ Compartilhe como <span className="font-bold text-orange-700 dark:text-orange-400">Deus tem agido</span> em sua vida!
+            </p>
+
+            <p className="text-sm sm:text-base text-amber-800 dark:text-amber-200 leading-relaxed">
+              Seu testemunho pode <span className="font-semibold underline decoration-wavy decoration-orange-500">inspirar milhares</span> de pessoas!
+              Conte como Deus transformou, curou, libertou ou abençoou você.
+              Cada história é um <span className="font-bold text-orange-700 dark:text-orange-400">milagre vivo</span> que glorifica ao Senhor! 🙌
             </p>
           </div>
+        </div>
 
+        <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {user && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 sm:gap-3">
               <Dialog open={audioDialogOpen} onOpenChange={setAudioDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Mic className="h-4 w-4" />
-                    <span className="hidden sm:inline">Gravar Áudio</span>
+                  <Button variant="outline" size="lg" className="gap-2 border-2 border-amber-300 hover:bg-amber-50 hover:border-amber-400 transition-all duration-300 group">
+                    <Mic className="h-5 w-5 text-amber-600 group-hover:scale-110 transition-transform" />
+                    <span className="hidden sm:inline font-semibold">Gravar Áudio</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -530,9 +557,10 @@ const Testimonies = () => {
 
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-gradient-primary text-primary-foreground shadow-glow gap-2">
-                    <Plus className="h-4 w-4" />
-                    Novo Testemunho
+                  <Button size="lg" className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-600 hover:via-orange-600 hover:to-yellow-600 text-white shadow-xl hover:shadow-2xl gap-2 font-bold transition-all duration-300 transform hover:scale-105">
+                    <Sparkles className="h-5 w-5 animate-pulse" />
+                    <span className="hidden sm:inline">Compartilhar Testemunho</span>
+                    <span className="sm:hidden">Publicar</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -693,11 +721,27 @@ const Testimonies = () => {
           ))}
 
           {testimonies.length === 0 && (
-            <div className="text-center py-12">
-              <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground">
-                Nenhum testemunho ainda. Seja o primeiro a compartilhar!
+            <div className="text-center py-16 px-4">
+              <div className="relative inline-block mb-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-orange-400 rounded-full blur-2xl opacity-30 animate-pulse" />
+                <Sparkles className="relative h-20 w-20 text-amber-500 animate-bounce" />
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-400 mb-3">
+                Seja o Primeiro! ✨
+              </h3>
+              <p className="text-base sm:text-lg text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed">
+                Ainda não há testemunhos aqui. <span className="font-semibold text-amber-700 dark:text-amber-400">Compartilhe sua história</span> e inspire outras pessoas com o que Deus fez em sua vida! 🙌
               </p>
+              {user && (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="lg" className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-600 hover:via-orange-600 hover:to-yellow-600 text-white shadow-xl gap-2 font-bold animate-pulse">
+                      <Sparkles className="h-5 w-5" />
+                      Publicar Primeiro Testemunho
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+              )}
             </div>
           )}
         </div>
