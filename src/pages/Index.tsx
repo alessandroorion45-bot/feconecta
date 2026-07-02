@@ -65,15 +65,34 @@ const Index = () => {
       
       {/* Hero Section */}
       <section className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 md:py-20 text-center">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-4 sm:mb-6 inline-flex p-3 sm:p-4 rounded-2xl bg-gradient-primary shadow-glow">
-            <Church className="h-8 w-8 sm:h-12 sm:w-12 text-primary-foreground" />
+        <div className="mx-auto max-w-4xl">
+          {/* Logo Aliança MAGNÉTICO */}
+          <div className="mb-8 relative inline-block">
+            {/* Glow effects pulsantes */}
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 via-amber-500/30 to-orange-500/30 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-yellow-400/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
+
+            {/* Logo da Arca */}
+            <div className="relative">
+              <img
+                src="/alianca-logo.png"
+                alt="Aliança"
+                className="h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48 lg:h-56 lg:w-56 object-contain drop-shadow-2xl filter brightness-110 mix-blend-multiply animate-float"
+                style={{
+                  animation: 'float 3s ease-in-out infinite'
+                }}
+              />
+            </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-divine bg-clip-text text-transparent leading-tight pt-1 pb-1">
+
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 bg-gradient-to-r from-amber-600 via-yellow-600 to-orange-600 bg-clip-text text-transparent leading-tight pt-1 pb-1 drop-shadow-lg">
             Aliança
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 px-2 leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl text-amber-900 dark:text-amber-100 font-medium mb-3 px-2 leading-relaxed">
             Uma comunidade cristã moderna para compartilhar fé, testemunhos e comunhão
+          </p>
+          <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 px-2 leading-relaxed">
+            ✨ Junte-se a milhares de irmãos conectados em Cristo
           </p>
           {user ? (
             <div className="flex flex-col items-center gap-4 sm:gap-6">
