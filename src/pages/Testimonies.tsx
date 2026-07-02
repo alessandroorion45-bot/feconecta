@@ -9,12 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { useGamification } from "@/hooks/useGamification";
+import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import UserAvatar from "@/components/UserAvatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import AudioRecorder from "@/components/AudioRecorder";
-import type { User } from "@supabase/supabase-js";
 
 interface Testimony {
   id: string;
@@ -50,7 +50,7 @@ interface Comment {
 const MAX_COMMENT_LENGTH = 300;
 
 const Testimonies = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuth(); // Usar hook centralizado
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const { toast } = useToast();
   const { trackActivity } = useActivityTracking();
@@ -65,24 +65,12 @@ const Testimonies = () => {
   const [interactionLoading, setInteractionLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadTestimonies(session.user.id);
-      } else {
-        loadTestimonies();
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadTestimonies(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (user) {
+      loadTestimonies(user.id);
+    } else {
+      loadTestimonies();
+    }
+  }, [user]);
 
   // Real-time subscriptions
   useEffect(() => {
