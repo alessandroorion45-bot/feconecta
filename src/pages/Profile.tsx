@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense, useRef } from "react";
 import Header from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -70,12 +70,24 @@ const Profile = () => {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
+  const loadProfileRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      loadProfile(user.id);
+    const userId = user?.id;
+    if (!userId) {
+      loadProfileRef.current = null;
+      return;
     }
-  }, [user]);
+
+    // Guard: previne múltiplas chamadas para o mesmo userId
+    if (loadProfileRef.current === userId) {
+      return;
+    }
+
+    loadProfileRef.current = userId;
+    loadProfile(userId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Depende apenas do user.id, não do objeto user inteiro
 
   const loadProfile = async (userId: string) => {
     setLoading(true);
