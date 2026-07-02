@@ -227,11 +227,11 @@ export const DailyVerse = () => {
 
           {/* Texto do versículo */}
           <div className="relative">
-            <div className="absolute -left-4 -top-4 text-6xl text-primary/10 font-serif">"</div>
-            <p className="text-lg sm:text-xl leading-relaxed text-center px-4 py-6 font-serif">
+            <div className="absolute -left-4 -top-4 text-6xl text-primary/20 font-serif">"</div>
+            <p className="text-lg sm:text-xl leading-relaxed text-center px-4 py-6 font-serif text-foreground font-medium">
               {dailyVerse.text}
             </p>
-            <div className="absolute -right-4 -bottom-4 text-6xl text-primary/10 font-serif">"</div>
+            <div className="absolute -right-4 -bottom-4 text-6xl text-primary/20 font-serif">"</div>
           </div>
 
           {/* Ações */}
