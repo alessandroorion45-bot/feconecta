@@ -213,18 +213,24 @@ const Testimonies = () => {
       return;
     }
 
+    // IMPORTANTE: Usar session.user.id (não user.id) para garantir match com auth.uid()
+    const userId = session.user.id;
+
     console.log('[Testimonies] Tentando inserir testemunho:', {
-      user_id: user.id,
+      user_id: userId,
+      session_user: session.user.id,
+      state_user: user.id,
+      ids_match: session.user.id === user.id,
       session_valid: !!session,
       title: newTestimony.title.trim(),
       content_length: newTestimony.content.trim().length
     });
 
-    // Usar client direto sem types para evitar erro 403
+    // Usar session.user.id diretamente para garantir match com RLS
     const { data, error } = await supabase
       .from("testimonies")
       .insert({
-        user_id: user.id,
+        user_id: userId, // session.user.id
         title: newTestimony.title.trim(),
         content: newTestimony.content.trim(),
       });
