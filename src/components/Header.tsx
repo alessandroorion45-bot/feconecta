@@ -160,22 +160,16 @@ const Header = () => {
           )}
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
-            <div className="relative rounded-full overflow-hidden" style={{ animation: 'magnetic-float 3s ease-in-out infinite' }}>
+            <div className="relative">
               <img
                 src="/alianca-logo.png"
                 alt="Aliança"
-                className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 object-contain drop-shadow-2xl transform transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 filter brightness-110"
-                style={{
-                  animation: 'glow-pulse 2s ease-in-out infinite',
-                  mixBlendMode: 'multiply'
-                }}
+                className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 object-contain drop-shadow-2xl transform transition-all duration-500 group-hover:scale-110 filter brightness-110 mix-blend-multiply"
               />
-              {/* Glow effect pulsante */}
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 via-amber-500/30 to-orange-500/30 rounded-full blur-2xl group-hover:blur-3xl transition-all duration-500 -z-10 animate-pulse" />
-              {/* Ring externo */}
-              <div className="absolute inset-0 border-2 border-amber-400/40 rounded-full group-hover:scale-150 group-hover:opacity-0 transition-all duration-700 -z-10" />
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-amber-500/20 to-orange-500/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 -z-10" />
             </div>
-            <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent whitespace-nowrap leading-normal drop-shadow-lg group-hover:drop-shadow-2xl group-hover:scale-105 transition-all duration-300 tracking-tight">
+            <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent whitespace-nowrap leading-normal drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300 tracking-tight">
               Aliança
             </span>
           </Link>

@@ -7,6 +7,11 @@
    ============================================= */
 
 @layer utilities {
+  /* Mix blend mode para logos */
+  .mix-blend-multiply {
+    mix-blend-mode: multiply;
+  }
+
   /* Transições suaves globais */
   .transition-premium {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);

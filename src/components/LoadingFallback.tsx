@@ -40,8 +40,7 @@ export const LoadingFallback = ({ message = "Carregando...", showLogo = true }: 
             <img
               src="/alianca-logo.png"
               alt="Aliança"
-              className="h-24 w-24 sm:h-32 sm:w-32 object-contain drop-shadow-2xl filter brightness-110"
-              style={{ mixBlendMode: 'multiply' }}
+              className="h-24 w-24 sm:h-32 sm:w-32 object-contain drop-shadow-2xl filter brightness-110 mix-blend-multiply"
             />
 
             {/* Glow pulsante */}
