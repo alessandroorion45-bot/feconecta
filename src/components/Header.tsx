@@ -160,12 +160,15 @@ const Header = () => {
           )}
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
-            <div className="relative" style={{ animation: 'magnetic-float 3s ease-in-out infinite' }}>
+            <div className="relative rounded-full overflow-hidden" style={{ animation: 'magnetic-float 3s ease-in-out infinite' }}>
               <img
                 src="/alianca-logo.png"
                 alt="Aliança"
                 className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 object-contain drop-shadow-2xl transform transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 filter brightness-110"
-                style={{ animation: 'glow-pulse 2s ease-in-out infinite' }}
+                style={{
+                  animation: 'glow-pulse 2s ease-in-out infinite',
+                  mixBlendMode: 'multiply'
+                }}
               />
               {/* Glow effect pulsante */}
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 via-amber-500/30 to-orange-500/30 rounded-full blur-2xl group-hover:blur-3xl transition-all duration-500 -z-10 animate-pulse" />
