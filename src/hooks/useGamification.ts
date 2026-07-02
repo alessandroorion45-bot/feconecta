@@ -241,8 +241,11 @@ export function useGamification(userId?: string) {
 
       setUserStats(userData);
       return userData;
-    } catch (error) {
-      console.error('[Gamification] Erro ao buscar stats:', error);
+    } catch (error: any) {
+      // Silenciar erro 404 - é esperado quando usuário não tem stats ainda
+      if (error?.code !== 'PGRST116') {
+        console.error('[Gamification] Erro ao buscar stats:', error);
+      }
       return null;
     } finally {
       setLoading(false);

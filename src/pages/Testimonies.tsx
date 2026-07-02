@@ -239,13 +239,11 @@ const Testimonies = () => {
 
     console.log('[Testimonies] Perfil encontrado:', profileData);
 
-    const { data, error } = await supabase.from("testimonies").insert([
-      {
-        user_id: user.id,
-        title: newTestimony.title.trim(),
-        content: newTestimony.content.trim(),
-      },
-    ]).select();
+    const { data, error } = await (supabase.from("testimonies") as any).insert({
+      user_id: user.id,
+      title: newTestimony.title.trim(),
+      content: newTestimony.content.trim(),
+    }).select('*').single();
 
     if (error) {
       console.error('[Testimonies] Erro ao inserir testemunho:', {
