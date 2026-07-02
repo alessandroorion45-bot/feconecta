@@ -214,36 +214,32 @@ const Testimonies = () => {
       return;
     }
 
-    console.log('[Testimonies] Tentando inserir testemunho:', {
-      user_id: user.id,
-      title: newTestimony.title.trim(),
-      content_length: newTestimony.content.trim().length
-    });
-
-    // Verificar se o perfil existe antes de inserir
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, username")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || !profileData) {
-      console.error('[Testimonies] Perfil não encontrado:', profileError);
+    // Verificar sessão atual
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       toast({
-        title: "Erro no perfil",
-        description: "Seu perfil não foi encontrado. Tente fazer logout e login novamente.",
+        title: "Sessão expirada",
+        description: "Por favor, faça login novamente.",
         variant: "destructive",
       });
       return;
     }
 
-    console.log('[Testimonies] Perfil encontrado:', profileData);
-
-    const { data, error } = await (supabase.from("testimonies") as any).insert({
+    console.log('[Testimonies] Tentando inserir testemunho:', {
       user_id: user.id,
+      session_valid: !!session,
       title: newTestimony.title.trim(),
-      content: newTestimony.content.trim(),
-    }).select('*').single();
+      content_length: newTestimony.content.trim().length
+    });
+
+    const { data, error } = await supabase
+      .from("testimonies")
+      .insert([{
+        user_id: user.id,
+        title: newTestimony.title.trim(),
+        content: newTestimony.content.trim(),
+      }])
+      .select();
 
     if (error) {
       console.error('[Testimonies] Erro ao inserir testemunho:', {
