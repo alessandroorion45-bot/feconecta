@@ -41,8 +41,8 @@ const Leaderboard = () => {
     switch (activeTab) {
       case 'xp':
         // Ranking por XP total
-        query = supabase
-          .from('user_stats')
+        const xpQuery = supabase.from('user_stats' as any);
+        query = (xpQuery as any)
           .select('user_id, total_xp, level, title, profiles!user_stats_user_id_fkey(username, full_name, avatar_url)')
           .order('total_xp', { ascending: false })
           .limit(100);
@@ -50,8 +50,8 @@ const Leaderboard = () => {
 
       case 'streak':
         // Ranking por sequência atual
-        query = supabase
-          .from('user_stats')
+        const streakQuery = supabase.from('user_stats' as any);
+        query = (streakQuery as any)
           .select('user_id, current_streak, profiles!user_stats_user_id_fkey(username, full_name, avatar_url)')
           .order('current_streak', { ascending: false })
           .limit(100);
@@ -63,8 +63,7 @@ const Leaderboard = () => {
         weekStart.setDate(weekStart.getDate() - 7);
 
         // Aggregar XP da semana por usuário
-        query = supabase
-          .rpc('get_weekly_leaderboard', { week_start: weekStart.toISOString() });
+        query = (supabase.rpc as any)('get_weekly_leaderboard', { week_start: weekStart.toISOString() });
         break;
 
       case 'monthly':
@@ -73,8 +72,7 @@ const Leaderboard = () => {
         monthStart.setDate(1);
         monthStart.setHours(0, 0, 0, 0);
 
-        query = supabase
-          .rpc('get_monthly_leaderboard', { month_start: monthStart.toISOString() });
+        query = (supabase.rpc as any)('get_monthly_leaderboard', { month_start: monthStart.toISOString() });
         break;
     }
 
@@ -123,8 +121,8 @@ const Leaderboard = () => {
 
   const loadFallbackLeaderboard = async () => {
     // Fallback caso RPCs não existam
-    const { data } = await supabase
-      .from('user_stats')
+    const fallbackQuery = supabase.from('user_stats' as any);
+    const { data } = await (fallbackQuery as any)
       .select('user_id, total_xp, level, title, current_streak, profiles!user_stats_user_id_fkey(username, full_name, avatar_url)')
       .order(activeTab === 'streak' ? 'current_streak' : 'total_xp', { ascending: false })
       .limit(100);

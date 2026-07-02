@@ -8,7 +8,7 @@
  * - getWeeklyChallenges: Obtém desafios semanais
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -30,6 +30,7 @@ export function useGamification(userId?: string) {
   const { toast } = useToast();
   const [userStats, setUserStats] = useState<UserGamificationData | null>(null);
   const [loading, setLoading] = useState(false);
+  const statsFetchKeyRef = useRef<string | null>(null);
 
   // ============================================
   // FUNÇÃO CENTRAL: AWARD XP (COM MULTIPLICADOR VIP)
@@ -45,8 +46,8 @@ export function useGamification(userId?: string) {
 
     try {
       // Buscar multiplicador VIP do usuário
-      const { data: multiplierData } = await supabase.rpc('get_xp_multiplier', { user_id: userId });
-      const vipMultiplier = multiplierData || 1;
+      const { data: multiplierData } = await (supabase.rpc as any)('get_xp_multiplier', { user_id: userId });
+      const vipMultiplier = (multiplierData as number) || 1;
 
       const baseXP = XP_VALUES[action];
       const finalXP = Math.floor(baseXP * vipMultiplier);
@@ -54,7 +55,7 @@ export function useGamification(userId?: string) {
       console.log(`[Gamification] Concedendo XP: ${action} (+${baseXP} XP base × ${vipMultiplier} = ${finalXP} XP final)`);
 
       // Chamar função do banco de dados
-      const { data, error } = await supabase.rpc('award_xp', {
+      const { data, error } = await (supabase.rpc as any)('award_xp', {
         p_user_id: userId,
         p_action_key: action,
         p_metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
@@ -65,7 +66,7 @@ export function useGamification(userId?: string) {
         throw error;
       }
 
-      const reward = data[0] as XPReward;
+      const reward = (data as any)?.[0] as XPReward;
 
       console.log('[Gamification] XP concedido:', reward);
 
@@ -116,13 +117,13 @@ export function useGamification(userId?: string) {
     try {
       console.log('[Gamification] Atualizando streak...');
 
-      const { data, error } = await supabase.rpc('update_user_streak', {
+      const { data, error } = await (supabase.rpc as any)('update_user_streak', {
         p_user_id: userId,
       });
 
       if (error) throw error;
 
-      const streak = data[0] as StreakUpdate;
+      const streak = (data as any)?.[0] as StreakUpdate;
 
       console.log('[Gamification] Streak atualizado:', streak);
 
@@ -177,8 +178,8 @@ export function useGamification(userId?: string) {
       setLoading(true);
 
       // Buscar stats do usuário
-      const { data: stats, error: statsError } = await supabase
-        .from('user_stats')
+      const statsQuery = supabase.from('user_stats' as any);
+      const { data: stats, error: statsError } = await (statsQuery as any)
         .select('total_xp, level, title, current_streak, longest_streak')
         .eq('user_id', userId)
         .single();
@@ -189,8 +190,8 @@ export function useGamification(userId?: string) {
 
       // Se não tem stats, criar registro inicial
       if (!stats) {
-        const { error: insertError } = await supabase
-          .from('user_stats')
+        const insertQuery = supabase.from('user_stats' as any);
+        const { error: insertError } = await (insertQuery as any)
           .insert({
             user_id: userId,
             total_xp: 0,
@@ -217,8 +218,8 @@ export function useGamification(userId?: string) {
       }
 
       // Contar conquistas
-      const { count: achievementsCount } = await supabase
-        .from('user_achievements')
+      const achievementsQuery = supabase.from('user_achievements' as any);
+      const { count: achievementsCount } = await (achievementsQuery as any)
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId);
 
@@ -254,8 +255,8 @@ export function useGamification(userId?: string) {
   const getWeeklyChallenges = useCallback(async (): Promise<WeeklyChallenge[]> => {
     try {
       // Buscar desafios ativos
-      const { data: challenges, error } = await supabase
-        .from('weekly_challenges')
+      const challengesQuery = supabase.from('weekly_challenges' as any);
+      const { data: challenges, error } = await (challengesQuery as any)
         .select('*')
         .eq('is_active', true)
         .gte('end_date', new Date().toISOString())
@@ -263,19 +264,19 @@ export function useGamification(userId?: string) {
 
       if (error) throw error;
 
-      if (!userId || !challenges) return challenges || [];
+      if (!userId || !challenges) return (challenges as any) || [];
 
       // Buscar progresso do usuário nos desafios
-      const challengeIds = challenges.map((c) => c.id);
-      const { data: progress } = await supabase
-        .from('user_challenge_progress')
+      const challengeIds = challenges.map((c: any) => c.id);
+      const progressQuery = supabase.from('user_challenge_progress' as any);
+      const { data: progress } = await (progressQuery as any)
         .select('challenge_id, current_progress, completed')
         .eq('user_id', userId)
         .in('challenge_id', challengeIds);
 
       // Combinar desafios com progresso
-      const challengesWithProgress: WeeklyChallenge[] = challenges.map((challenge) => {
-        const userProgress = progress?.find((p) => p.challenge_id === challenge.id);
+      const challengesWithProgress: WeeklyChallenge[] = (challenges as any).map((challenge: any) => {
+        const userProgress = (progress as any)?.find((p: any) => p.challenge_id === challenge.id);
 
         return {
           ...challenge,
@@ -295,11 +296,20 @@ export function useGamification(userId?: string) {
   // BUSCAR STATS AO MONTAR
   // ============================================
   useEffect(() => {
-    if (userId) {
-      getUserStats();
+    if (!userId) {
+      statsFetchKeyRef.current = null;
+      return;
     }
+
+    const fetchKey = `user:${userId}`;
+    if (statsFetchKeyRef.current === fetchKey) {
+      return;
+    }
+
+    statsFetchKeyRef.current = fetchKey;
+    void getUserStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]); // ✅ Removido getUserStats para evitar loop infinito
+  }, [userId]); // Removido getUserStats das dependências - o ref guard já previne duplicatas
 
   // ============================================
   // HELPER: XP PARA PRÓXIMO NÍVEL

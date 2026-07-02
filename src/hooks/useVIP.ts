@@ -71,15 +71,19 @@ export function useVIP(): VIPStatus {
       setTier(tierData as VIPTier);
 
       // Buscar multiplicador XP
-      const { data: multiplierData, error: multiplierError } = await supabase
-        .rpc("get_xp_multiplier", { user_id: user.id });
+      const { data: multiplierData, error: multiplierError } = await (supabase.rpc as any)(
+        "get_xp_multiplier",
+        { user_id: user.id }
+      );
 
       if (multiplierError) throw multiplierError;
-      setXpMultiplier(multiplierData || 1);
+      setXpMultiplier((multiplierData as number) || 1);
 
       // Buscar benefícios
-      const { data: benefitsData, error: benefitsError } = await supabase
-        .rpc("get_user_vip_benefits", { input_user_id: user.id });
+      const { data: benefitsData, error: benefitsError } = await (supabase.rpc as any)(
+        "get_user_vip_benefits",
+        { input_user_id: user.id }
+      );
 
       if (benefitsError) throw benefitsError;
       setBenefits(benefitsData || []);

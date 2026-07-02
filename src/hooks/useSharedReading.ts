@@ -93,7 +93,10 @@ export const useSharedReading = (roomId?: string) => {
 
   // Create a new room
   const createRoom = async (roomName: string, isPublic: boolean, bookAbbrev: string, chapter: number) => {
-    if (!currentUserId) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user?.id) {
+      console.error('[SharedReading] Auth error ou user não autenticado:', authError);
       toast({
         title: '🔒 Login necessário',
         description: 'Você precisa estar logado para criar uma sala',
@@ -102,10 +105,12 @@ export const useSharedReading = (roomId?: string) => {
       return null;
     }
 
+    const activeUserId = user.id;
+
     const roomCode = generateRoomCode();
 
     console.log('[SharedReading] Criando sala:', {
-      host_id: currentUserId,
+      host_id: activeUserId,
       room_code: roomCode,
       room_name: roomName,
       book: bookAbbrev,
@@ -115,7 +120,7 @@ export const useSharedReading = (roomId?: string) => {
     const { data: roomData, error: roomError } = await supabase
       .from('shared_reading_rooms')
       .insert({
-        host_id: currentUserId,
+        host_id: activeUserId,
         room_code: roomCode,
         room_name: roomName,
         is_public: isPublic,
@@ -143,7 +148,7 @@ export const useSharedReading = (roomId?: string) => {
       .from('shared_reading_participants')
       .insert({
         room_id: roomData.id,
-        user_id: currentUserId,
+        user_id: activeUserId,
         is_host: true
       });
 

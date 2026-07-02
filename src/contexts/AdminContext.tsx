@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -31,6 +31,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const loadPermissionsRef = useRef<string | null>(null);
 
   // Derivados
   const isAdmin = userRole === "super_admin" || userRole === "admin" || userRole === "moderator";
@@ -188,8 +189,17 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    const userKey = user?.id || 'no-user';
+
+    // Guard: previne múltiplas chamadas para o mesmo user
+    if (loadPermissionsRef.current === userKey) {
+      return;
+    }
+
+    loadPermissionsRef.current = userKey;
     loadPermissions();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Depende apenas do user.id, não do objeto user inteiro
 
   const value: AdminContextType = {
     userRole,
