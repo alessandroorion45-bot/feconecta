@@ -288,11 +288,17 @@ const Testimonies = () => {
 
         toast({
           title: "Glória a Deus! 🙌",
-          description: "Seu testemunho foi compartilhado com sucesso",
+          description: "Seu testemunho foi compartilhado e já está visível para todos!",
         });
         setNewTestimony({ title: "", content: "" });
         setDialogOpen(false);
-        loadTestimonies(user.id);
+
+        // Recarregar TODOS os testemunhos (incluindo o que acabou de postar)
+        if (user) {
+          await loadTestimonies(user.id);
+        } else {
+          await loadTestimonies();
+        }
       }
     } finally {
       setSubmittingTestimony(false);
