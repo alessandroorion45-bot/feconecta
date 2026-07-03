@@ -63,6 +63,7 @@ const Testimonies = () => {
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [interactionLoading, setInteractionLoading] = useState<Record<string, boolean>>({});
+  const [submittingTestimony, setSubmittingTestimony] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -202,79 +203,85 @@ const Testimonies = () => {
       return;
     }
 
-    // Verificar sessão atual
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({
-        title: "Sessão expirada",
-        description: "Por favor, faça login novamente.",
-        variant: "destructive",
-      });
-      return;
-    }
+    setSubmittingTestimony(true);
 
-    // IMPORTANTE: Usar session.user.id (não user.id) para garantir match com auth.uid()
-    const userId = session.user.id;
-
-    console.log('[Testimonies] Tentando inserir testemunho:', {
-      user_id: userId,
-      session_user: session.user.id,
-      state_user: user.id,
-      ids_match: session.user.id === user.id,
-      session_valid: !!session,
-      title: newTestimony.title.trim(),
-      content_length: newTestimony.content.trim().length
-    });
-
-    // Usar session.user.id diretamente para garantir match com RLS
-    const { data, error } = await supabase
-      .from("testimonies")
-      .insert({
-        user_id: userId, // session.user.id
-        title: newTestimony.title.trim(),
-        content: newTestimony.content.trim(),
-      });
-
-    if (error) {
-      console.error('[Testimonies] ❌ ERRO AO INSERIR:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        user_id: user.id,
-        session_user: session?.user?.id,
-        match: session?.user?.id === user.id
-      });
-
-      let errorMessage = "Não foi possível publicar o depoimento";
-
-      if (error.code === '23503') {
-        errorMessage = "Erro: Perfil não encontrado no banco de dados";
-      } else if (error.code === '42501') {
-        errorMessage = "Erro de permissão. Tente fazer logout e login novamente.";
-      } else if (error.message) {
-        errorMessage = error.message;
+    try {
+      // Verificar sessão atual
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Sessão expirada",
+          description: "Por favor, faça login novamente.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      toast({
-        title: "Erro ao publicar",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } else {
-      console.log('[Testimonies] Testemunho inserido com sucesso:', data);
-      trackActivity("testimony_shared");
+      // IMPORTANTE: Usar session.user.id (não user.id) para garantir match com auth.uid()
+      const userId = session.user.id;
 
-      // Conceder XP por compartilhar testemunho
-      await awardXP('testimony_shared');
-
-      toast({
-        title: "Glória a Deus!",
-        description: "Seu testemunho foi compartilhado",
+      console.log('[Testimonies] Tentando inserir testemunho:', {
+        user_id: userId,
+        session_user: session.user.id,
+        state_user: user.id,
+        ids_match: session.user.id === user.id,
+        session_valid: !!session,
+        title: newTestimony.title.trim(),
+        content_length: newTestimony.content.trim().length
       });
-      setNewTestimony({ title: "", content: "" });
-      setDialogOpen(false);
-      loadTestimonies(user.id);
+
+      // Usar session.user.id diretamente para garantir match com RLS
+      const { data, error } = await supabase
+        .from("testimonies")
+        .insert({
+          user_id: userId, // session.user.id
+          title: newTestimony.title.trim(),
+          content: newTestimony.content.trim(),
+        });
+
+      if (error) {
+        console.error('[Testimonies] ❌ ERRO AO INSERIR:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          user_id: user.id,
+          session_user: session?.user?.id,
+          match: session?.user?.id === user.id
+        });
+
+        let errorMessage = "Não foi possível publicar o depoimento";
+
+        if (error.code === '23503') {
+          errorMessage = "Erro: Perfil não encontrado no banco de dados";
+        } else if (error.code === '42501') {
+          errorMessage = "Erro de permissão. Tente fazer logout e login novamente.";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        toast({
+          title: "Erro ao publicar",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        console.log('[Testimonies] ✅ Testemunho inserido com sucesso:', data);
+        trackActivity("testimony_shared");
+
+        // Conceder XP por compartilhar testemunho
+        await awardXP('testimony_shared');
+
+        toast({
+          title: "Glória a Deus! 🙌",
+          description: "Seu testemunho foi compartilhado com sucesso",
+        });
+        setNewTestimony({ title: "", content: "" });
+        setDialogOpen(false);
+        loadTestimonies(user.id);
+      }
+    } finally {
+      setSubmittingTestimony(false);
     }
   };
 
@@ -591,8 +598,16 @@ const Testimonies = () => {
                     <Button
                       onClick={handleCreateTestimony}
                       className="w-full bg-gradient-primary"
+                      disabled={submittingTestimony}
                     >
-                      Publicar
+                      {submittingTestimony ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Publicando...
+                        </>
+                      ) : (
+                        "Publicar"
+                      )}
                     </Button>
                   </div>
                 )}
