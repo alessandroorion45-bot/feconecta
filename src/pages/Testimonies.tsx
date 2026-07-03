@@ -140,6 +140,9 @@ const Testimonies = () => {
     console.log('[Testimonies] Carregando testemunhos...');
 
     try {
+      console.log('[Testimonies] 🔍 Iniciando query no Supabase...');
+      const startTime = performance.now();
+
       // Query SIMPLIFICADA (sem JOIN com profiles para evitar timeout)
       const queryPromise = supabase
         .from("testimonies")
@@ -147,13 +150,20 @@ const Testimonies = () => {
         .order("created_at", { ascending: false });
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('TESTIMONIES_QUERY_TIMEOUT')), 30000)
+        setTimeout(() => {
+          const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+          console.error(`[Testimonies] ⏰ TIMEOUT após ${elapsed}s`);
+          reject(new Error('TESTIMONIES_QUERY_TIMEOUT'));
+        }, 60000) // 60 segundos
       );
 
       const { data, error } = await Promise.race([
         queryPromise,
         timeoutPromise
       ]) as Awaited<ReturnType<typeof queryPromise>>;
+
+      const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+      console.log(`[Testimonies] ⏱️ Query levou ${elapsed}s`);
 
       if (error) {
         console.error('[Testimonies] ❌ ERRO ao carregar:', error);
