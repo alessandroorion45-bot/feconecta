@@ -57,10 +57,22 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      console.log('[AdminContext] Fetching roles DIRECTLY from user_roles table');
-      console.log('[AdminContext] User ID:', user.id);
+      // SIMPLIFICADO: Verificar se é super_admin pelo email
+      // Evita queries desnecessárias que podem dar timeout
+      const adminEmails = ['alessandroibama40@gmail.com'];
+      const isSuperAdminEmail = adminEmails.includes(user.email || '');
 
-      // Buscar roles do usuário DIRETAMENTE (sem RPC) - com timeout
+      if (isSuperAdminEmail) {
+        console.log('[AdminContext] Super admin detected by email');
+        setUserRole('super_admin');
+        setPermissions(['*']); // Todas as permissões
+        setLoading(false);
+        return;
+      }
+
+      // Para outros usuários, tentar buscar roles (com timeout curto de 3 segundos)
+      console.log('[AdminContext] Fetching roles from user_roles table');
+
       const rolesPromise = supabase
         .from('user_roles')
         .select('role, is_active, expires_at')
@@ -68,23 +80,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         .eq('is_active', true)
         .order('role', { ascending: true });
 
-      // Timeout de 20 segundos (aumentado após adicionar índices)
+      // Timeout REDUZIDO para 3 segundos
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('ROLES_QUERY_TIMEOUT')), 20000)
+        setTimeout(() => reject(new Error('ROLES_QUERY_TIMEOUT')), 3000)
       );
 
       const { data: rolesData, error: rolesError } = await Promise.race([
         rolesPromise,
         timeoutPromise
       ]).catch((err) => {
-        console.error('[AdminContext] Query timeout or error:', err);
+        console.warn('[AdminContext] Roles query timeout or error (usando fallback):', err);
         return { data: null, error: err };
       }) as { data: any; error: any };
 
-      if (rolesError) {
-        console.error('[AdminContext] Error fetching roles:', rolesError);
-        console.error('[AdminContext] Error details:', JSON.stringify(rolesError));
-        // Não falhar - usar fallback
+      if (rolesError || !rolesData) {
+        // Fallback: usuário comum
         console.log('[AdminContext] Using fallback: user role');
         setUserRole('user');
         setPermissions([]);
@@ -122,39 +132,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       console.log('[AdminContext] Highest role:', highestRole);
       setUserRole(highestRole);
 
-      // Buscar permissões DIRETAMENTE
-      console.log('[AdminContext] Fetching permissions DIRECTLY');
-
-      const { data: permissionsData, error: permissionsError } = await supabase
-        .from('user_roles')
-        .select(`
-          role,
-          role_permissions!inner (
-            permissions!inner (
-              name
-            )
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('is_active', true);
-
-      if (permissionsError) {
-        console.error('[AdminContext] Error fetching permissions:', permissionsError);
-        // Não falhar se permissões não carregarem
-      }
-
+      // Permissões baseadas no role (não precisa buscar do banco)
       const permissionNames: string[] = [];
-      if (permissionsData) {
-        permissionsData.forEach((roleItem: any) => {
-          if (roleItem.role_permissions) {
-            roleItem.role_permissions.forEach((rp: any) => {
-              if (rp.permissions?.name) {
-                permissionNames.push(rp.permissions.name);
-              }
-            });
-          }
-        });
+
+      if (highestRole === 'super_admin' || highestRole === 'admin') {
+        permissionNames.push('*'); // Todas as permissões
+      } else if (highestRole === 'moderator') {
+        permissionNames.push('moderate_content', 'view_reports');
+      } else if (highestRole === 'vip') {
+        permissionNames.push('vip_features');
       }
+
+      console.log('[AdminContext] Permissions assigned:', permissionNames);
 
       // Super admin tem TODAS as permissões
       if (highestRole === 'super_admin') {
