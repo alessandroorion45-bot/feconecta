@@ -39,10 +39,78 @@ TO authenticated
 USING (auth.uid() = user_id);
 
 -- =============================================
--- 2. USER_STATS: Auto-criar para usuários existentes e novos
+-- 2. USER_STATS: Criar tabela se não existir e auto-popular
 -- =============================================
 
--- Criar user_stats para usuários que não têm
+-- PASSO 1: Criar tabela user_stats se não existir
+CREATE TABLE IF NOT EXISTS public.user_stats (
+  user_id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  total_points integer NOT NULL DEFAULT 0,
+  level integer NOT NULL DEFAULT 1,
+  bible_chapters_read integer NOT NULL DEFAULT 0,
+  prayers_created integer NOT NULL DEFAULT 0,
+  prayers_interceded integer NOT NULL DEFAULT 0,
+  events_participated integer NOT NULL DEFAULT 0,
+  testimonies_shared integer NOT NULL DEFAULT 0,
+  current_streak integer NOT NULL DEFAULT 0,
+  longest_streak integer NOT NULL DEFAULT 0,
+  last_activity_date date,
+  updated_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+-- PASSO 2: Adicionar colunas de gamificação se não existirem
+ALTER TABLE public.user_stats
+ADD COLUMN IF NOT EXISTS total_xp INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS title TEXT DEFAULT 'Discípulo',
+ADD COLUMN IF NOT EXISTS streak_freeze_available BOOLEAN DEFAULT TRUE,
+ADD COLUMN IF NOT EXISTS last_streak_freeze_used DATE;
+
+-- PASSO 3: Habilitar RLS
+ALTER TABLE public.user_stats ENABLE ROW LEVEL SECURITY;
+
+-- PASSO 4: Criar policies para user_stats
+DROP POLICY IF EXISTS "Users can view their own stats" ON public.user_stats;
+DROP POLICY IF EXISTS "Users can view their own stats only" ON public.user_stats;
+DROP POLICY IF EXISTS "Stats são visíveis para todos" ON public.user_stats;
+
+CREATE POLICY "Users can view their own stats only"
+ON public.user_stats
+FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own stats"
+ON public.user_stats
+FOR UPDATE
+TO authenticated
+USING (auth.uid() = user_id);
+
+-- PASSO 5: Criar tabela user_streaks se não existir
+CREATE TABLE IF NOT EXISTS public.user_streaks (
+  user_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
+  current_streak INTEGER NOT NULL DEFAULT 0,
+  longest_streak INTEGER NOT NULL DEFAULT 0,
+  last_activity_date DATE,
+  last_login_date DATE,
+  streak_started_at DATE,
+  total_logins INTEGER NOT NULL DEFAULT 0,
+  streak_protected BOOLEAN DEFAULT FALSE,
+  streak_freeze_available BOOLEAN DEFAULT TRUE,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_streaks_current ON public.user_streaks(current_streak DESC);
+
+ALTER TABLE public.user_streaks ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own streaks" ON public.user_streaks;
+CREATE POLICY "Users can view their own streaks"
+ON public.user_streaks
+FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+
+-- PASSO 6: Criar user_stats para usuários existentes que não têm
 INSERT INTO public.user_stats (user_id, total_xp, level, title, current_streak, longest_streak)
 SELECT
   p.id as user_id,
@@ -53,7 +121,21 @@ SELECT
   0 as longest_streak
 FROM public.profiles p
 LEFT JOIN public.user_stats us ON us.user_id = p.id
-WHERE us.user_id IS NULL;
+WHERE us.user_id IS NULL
+ON CONFLICT (user_id) DO NOTHING;
+
+-- PASSO 7: Criar user_streaks para usuários existentes que não têm
+INSERT INTO public.user_streaks (user_id, current_streak, longest_streak, last_login_date, total_logins)
+SELECT
+  p.id as user_id,
+  0 as current_streak,
+  0 as longest_streak,
+  CURRENT_DATE as last_login_date,
+  0 as total_logins
+FROM public.profiles p
+LEFT JOIN public.user_streaks us ON us.user_id = p.id
+WHERE us.user_id IS NULL
+ON CONFLICT (user_id) DO NOTHING;
 
 -- Criar função trigger para auto-criar user_stats
 CREATE OR REPLACE FUNCTION public.create_user_stats_on_profile_creation()
@@ -66,11 +148,16 @@ BEGIN
   VALUES (NEW.id, 0, 1, 'Discípulo', 0, 0)
   ON CONFLICT (user_id) DO NOTHING;
 
+  -- Criar user_streaks também (tabela pode não existir)
   INSERT INTO public.user_streaks (user_id, current_streak, longest_streak, last_login_date, total_logins)
   VALUES (NEW.id, 0, 0, CURRENT_DATE, 0)
   ON CONFLICT (user_id) DO NOTHING;
 
   RETURN NEW;
+EXCEPTION
+  WHEN undefined_table THEN
+    -- Se user_streaks não existe, apenas ignora
+    RETURN NEW;
 END;
 $$;
 
