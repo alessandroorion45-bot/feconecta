@@ -139,25 +139,36 @@ const Testimonies = () => {
   const loadTestimonies = async (userId?: string) => {
     console.log('[Testimonies] Carregando testemunhos...');
 
-    const { data, error } = await supabase
-      .from("testimonies")
-      .select(`
-        *,
-        profiles:user_id (username, full_name, avatar_url)
-      `)
-      .order("created_at", { ascending: false });
+    try {
+      // Query com timeout de 30s
+      const queryPromise = supabase
+        .from("testimonies")
+        .select(`
+          *,
+          profiles:user_id (username, full_name, avatar_url)
+        `)
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error('[Testimonies] ❌ ERRO ao carregar:', error);
-      toast({
-        title: "Erro ao carregar testemunhos",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TESTIMONIES_QUERY_TIMEOUT')), 30000)
+      );
 
-    console.log('[Testimonies] ✅ Testemunhos carregados:', data?.length || 0);
+      const { data, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]) as Awaited<ReturnType<typeof queryPromise>>;
+
+      if (error) {
+        console.error('[Testimonies] ❌ ERRO ao carregar:', error);
+        toast({
+          title: "Erro ao carregar testemunhos",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('[Testimonies] ✅ Testemunhos carregados:', data?.length || 0);
 
     if (data) {
       // Get counts for each testimony
@@ -226,6 +237,23 @@ const Testimonies = () => {
       }
 
       setTestimonies(testimoniesWithStatus);
+    }
+    } catch (error: any) {
+      console.error('[Testimonies] ❌ EXCEÇÃO ao carregar:', error);
+
+      if (error?.message === 'TESTIMONIES_QUERY_TIMEOUT') {
+        toast({
+          title: "⏰ Timeout ao carregar",
+          description: "A conexão está muito lenta. Tente novamente.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro inesperado",
+          description: error?.message || "Erro desconhecido",
+          variant: "destructive",
+        });
+      }
     }
   };
 
