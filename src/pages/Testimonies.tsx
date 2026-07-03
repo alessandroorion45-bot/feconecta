@@ -220,9 +220,37 @@ const Testimonies = () => {
     setSubmittingTestimony(true);
 
     try {
-      // Verificar sessão atual
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      // Verificar sessão atual COM TIMEOUT
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('SESSION_TIMEOUT')), 3000)
+      );
+
+      let currentSession;
+      try {
+        const result = await Promise.race([sessionPromise, timeoutPromise]);
+        currentSession = (result as any).data.session;
+      } catch (err: any) {
+        if (err?.message === 'SESSION_TIMEOUT') {
+          console.warn('[Testimonies] Session timeout - usando user.id do contexto');
+          // Se timeout, usar diretamente o user do contexto
+          if (!user?.id) {
+            toast({
+              title: "Erro de autenticação",
+              description: "Faça login novamente.",
+              variant: "destructive",
+            });
+            return;
+          }
+        } else {
+          throw err;
+        }
+      }
+
+      // Se não conseguiu pegar session mas tem user no contexto, usar ele
+      if (!currentSession && user?.id) {
+        console.log('[Testimonies] Usando user.id do contexto:', user.id);
+      } else if (!currentSession || !currentSession.user) {
         toast({
           title: "Sessão expirada",
           description: "Por favor, faça login novamente.",
@@ -231,15 +259,14 @@ const Testimonies = () => {
         return;
       }
 
-      // IMPORTANTE: Usar session.user.id (não user.id) para garantir match com auth.uid()
-      const userId = session.user.id;
+      // IMPORTANTE: Usar session.user.id (ou user.id se session timeout)
+      const userId = currentSession?.user?.id || user.id;
 
       console.log('[Testimonies] Tentando inserir testemunho:', {
         user_id: userId,
-        session_user: session.user.id,
+        session_user: currentSession?.user?.id,
         state_user: user.id,
-        ids_match: session.user.id === user.id,
-        session_valid: !!session,
+        session_valid: !!currentSession,
         title: newTestimony.title.trim(),
         content_length: newTestimony.content.trim().length
       });
@@ -260,8 +287,8 @@ const Testimonies = () => {
           details: error.details,
           hint: error.hint,
           user_id: user.id,
-          session_user: session?.user?.id,
-          match: session?.user?.id === user.id
+          session_user: currentSession?.user?.id,
+          match: currentSession?.user?.id === user.id
         });
 
         let errorMessage = "Não foi possível publicar o depoimento";
