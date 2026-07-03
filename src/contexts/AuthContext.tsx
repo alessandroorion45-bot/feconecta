@@ -45,9 +45,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         }
 
-        // Get session with timeout REDUZIDO (5 segundos - suficiente para verificar)
+        // Get session with timeout (30 segundos para conexões lentas)
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 5000)
+          setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 30000)
         );
 
         const sessionPromise = supabase.auth.getSession();

@@ -149,7 +149,7 @@ const Profile = () => {
           const timeoutDuration = ((performance.now() - startTime) / 1000).toFixed(2);
           console.error(`⏰ TIMEOUT após ${timeoutDuration}s`);
           reject(new Error('PROFILE_TIMEOUT'));
-        }, 10000) // 10 segundos (era 30s)
+        }, 60000) // 60 segundos (para conexões lentas)
       );
 
       // Executar AMBAS as queries em PARALELO
