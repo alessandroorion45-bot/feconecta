@@ -140,13 +140,10 @@ const Testimonies = () => {
     console.log('[Testimonies] Carregando testemunhos...');
 
     try {
-      // Query com timeout de 30s
+      // Query SIMPLIFICADA (sem JOIN com profiles para evitar timeout)
       const queryPromise = supabase
         .from("testimonies")
-        .select(`
-          *,
-          profiles:user_id (username, full_name, avatar_url)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       const timeoutPromise = new Promise((_, reject) =>
@@ -726,9 +723,9 @@ const Testimonies = () => {
               <CardHeader className="relative z-10">
                 <PostAuthorBadges
                   userId={testimony.user_id}
-                  username={testimony.profiles?.username}
-                  fullName={testimony.profiles?.full_name}
-                  avatarUrl={testimony.profiles?.avatar_url}
+                  username={testimony.profiles?.username || "Usuário"}
+                  fullName={testimony.profiles?.full_name || "Membro da Comunidade"}
+                  avatarUrl={testimony.profiles?.avatar_url || null}
                 />
               </CardHeader>
 
