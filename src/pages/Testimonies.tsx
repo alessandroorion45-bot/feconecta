@@ -79,6 +79,28 @@ const Testimonies = () => {
       .channel("testimonies-realtime")
       .on(
         "postgres_changes",
+        { event: "INSERT", schema: "public", table: "testimonies" },
+        async (payload) => {
+          // Novo testemunho adicionado (de qualquer usuário)
+          console.log('[Testimonies] 🔔 Novo testemunho via Realtime:', payload);
+
+          // Recarregar lista completa para pegar todos os dados
+          if (user) {
+            await loadTestimonies(user.id);
+          } else {
+            await loadTestimonies();
+          }
+
+          // Toast de notificação
+          toast({
+            title: "Novo testemunho! 🙌",
+            description: "Alguém compartilhou uma história de fé",
+            duration: 3000,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "testimony_likes" },
         () => {
           if (user) loadTestimonies(user.id);
@@ -100,7 +122,7 @@ const Testimonies = () => {
           // Update comments count in real-time
           if (user) loadTestimonies(user.id);
           else loadTestimonies();
-          
+
           // If viewing comments for this testimony, reload them
           if (commentsOpen && payload.new && (payload.new as any).testimony_id === commentsOpen) {
             loadComments(commentsOpen);
