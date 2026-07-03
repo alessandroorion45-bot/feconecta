@@ -115,6 +115,8 @@ const Testimonies = () => {
   }, [user, commentsOpen]);
 
   const loadTestimonies = async (userId?: string) => {
+    console.log('[Testimonies] Carregando testemunhos...');
+
     const { data, error } = await supabase
       .from("testimonies")
       .select(`
@@ -123,7 +125,19 @@ const Testimonies = () => {
       `)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
+    if (error) {
+      console.error('[Testimonies] ❌ ERRO ao carregar:', error);
+      toast({
+        title: "Erro ao carregar testemunhos",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('[Testimonies] ✅ Testemunhos carregados:', data?.length || 0);
+
+    if (data) {
       // Get counts for each testimony
       const testimonyIds = data.map((t) => t.id);
 
@@ -618,8 +632,15 @@ const Testimonies = () => {
 
         <div className="space-y-6">
           {testimonies.map((testimony) => (
-            <Card key={testimony.id} className="shadow-medium">
-              <CardHeader>
+            <Card key={testimony.id} className="relative overflow-hidden shadow-xl border-2 border-amber-200/50 dark:border-amber-800/30 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300">
+              {/* Faixa decorativa dourada */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500 animate-pulse" />
+
+              {/* Elementos decorativos de fundo */}
+              <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-amber-400/10 to-orange-400/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-4 left-4 w-24 h-24 bg-gradient-to-tr from-yellow-400/10 to-amber-400/10 rounded-full blur-2xl" />
+
+              <CardHeader className="relative z-10">
                 <PostAuthorBadges
                   userId={testimony.user_id}
                   username={testimony.profiles?.username}
@@ -627,30 +648,65 @@ const Testimonies = () => {
                   avatarUrl={testimony.profiles?.avatar_url}
                 />
               </CardHeader>
-              <CardContent>
-                <h3 className="text-xl font-bold mb-2">{testimony.title}</h3>
-                
-                {/* Audio player for audio testimonies */}
+
+              <CardContent className="relative z-10">
+                {/* Título com destaque GLORIOSO */}
+                <div className="mb-4 relative">
+                  <div className="absolute -left-3 top-0 w-1 h-full bg-gradient-to-b from-amber-500 to-orange-500 rounded-full" />
+                  <h3 className="text-2xl font-extrabold bg-gradient-to-r from-amber-700 via-orange-600 to-yellow-700 bg-clip-text text-transparent leading-tight pl-3">
+                    {testimony.title}
+                  </h3>
+                </div>
+
+                {/* Audio player ESTILIZADO */}
                 {testimony.audio_url ? (
-                  <div className="bg-muted/50 rounded-lg p-4 mb-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Volume2 className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Testemunho em Áudio</span>
+                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 rounded-xl p-5 mb-4 border-2 border-amber-200/50 dark:border-amber-800/30 shadow-lg">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg shadow-md">
+                        <Volume2 className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <span className="block text-sm font-bold text-amber-700 dark:text-amber-400">
+                          🎙️ Testemunho em Áudio
+                        </span>
+                        <span className="text-xs text-amber-600 dark:text-amber-500">
+                          Ouça como Deus agiu!
+                        </span>
+                      </div>
                     </div>
                     <audio
                       controls
                       src={testimony.audio_url}
-                      className="w-full h-10"
+                      className="w-full h-12"
                       aria-label="Ouvir testemunho"
                     >
                       Seu navegador não suporta áudio.
                     </audio>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {testimony.content}
-                  </p>
+                  <div className="relative">
+                    <p className="text-foreground/90 text-base leading-relaxed whitespace-pre-wrap pl-3 border-l-2 border-amber-300 dark:border-amber-700/50">
+                      {testimony.content}
+                    </p>
+                  </div>
                 )}
+
+                {/* Badge "Glória a Deus" */}
+                <div className="mt-4 flex items-center gap-2 flex-wrap">
+                  <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 rounded-full border border-amber-300 dark:border-amber-700">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                      Glória a Deus!
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(testimony.created_at).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </span>
+                </div>
               </CardContent>
               <CardFooter className="flex gap-2 sm:gap-4 flex-wrap">
                 {/* Like Button */}
