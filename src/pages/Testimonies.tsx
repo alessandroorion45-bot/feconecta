@@ -140,14 +140,11 @@ const Testimonies = () => {
     console.log('[Testimonies] Carregando testemunhos...');
 
     try {
-      console.log('[Testimonies] 🔍 Iniciando query no Supabase...');
+      console.log('[Testimonies] 🔍 Iniciando RPC call (bypassa RLS)...');
       const startTime = performance.now();
 
-      // Query SIMPLIFICADA (sem JOIN com profiles para evitar timeout)
-      const queryPromise = supabase
-        .from("testimonies")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // RPC CALL - MUITO mais rápida que query com RLS!
+      const queryPromise = supabase.rpc('get_testimonies_fast');
 
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => {
