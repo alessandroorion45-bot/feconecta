@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -11,6 +11,9 @@ export interface Room {
   is_public: boolean;
   current_book_abbrev: string;
   current_chapter: number;
+  /** Intervalo de versículos: null = capítulo completo; start=end = versículo único */
+  verse_start?: number | null;
+  verse_end?: number | null;
   max_participants: number;
   status: 'waiting' | 'reading' | 'quiz' | 'results';
   quiz_questions: QuizQuestion[] | null;
@@ -71,6 +74,7 @@ export const useSharedReading = (roomId?: string) => {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const hasLoadedRef = useRef(false);
 
   // Get current user
   useEffect(() => {
@@ -92,7 +96,14 @@ export const useSharedReading = (roomId?: string) => {
   };
 
   // Create a new room
-  const createRoom = async (roomName: string, isPublic: boolean, bookAbbrev: string, chapter: number) => {
+  const createRoom = async (
+    roomName: string,
+    isPublic: boolean,
+    bookAbbrev: string,
+    chapter: number,
+    verseStart?: number | null,
+    verseEnd?: number | null,
+  ) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user?.id) {
@@ -117,19 +128,31 @@ export const useSharedReading = (roomId?: string) => {
       chapter,
     });
 
-    const { data: roomData, error: roomError } = await supabase
+    const basePayload = {
+      host_id: activeUserId,
+      room_code: roomCode,
+      room_name: roomName,
+      is_public: isPublic,
+      current_book_abbrev: bookAbbrev,
+      current_chapter: chapter,
+      status: 'waiting'
+    };
+
+    // Tenta com intervalo de versículos; se as colunas ainda não existirem
+    // no banco, refaz sem elas (capítulo completo)
+    let { data: roomData, error: roomError } = await (supabase as any)
       .from('shared_reading_rooms')
-      .insert({
-        host_id: activeUserId,
-        room_code: roomCode,
-        room_name: roomName,
-        is_public: isPublic,
-        current_book_abbrev: bookAbbrev,
-        current_chapter: chapter,
-        status: 'waiting'
-      })
+      .insert({ ...basePayload, verse_start: verseStart ?? null, verse_end: verseEnd ?? null })
       .select()
       .single();
+
+    if (roomError && /verse_start|verse_end|column/i.test(roomError.message || '')) {
+      ({ data: roomData, error: roomError } = await (supabase as any)
+        .from('shared_reading_rooms')
+        .insert(basePayload)
+        .select()
+        .single());
+    }
 
     if (roomError) {
       console.error('[SharedReading] Erro ao criar sala:', roomError);
@@ -250,7 +273,8 @@ export const useSharedReading = (roomId?: string) => {
   const loadRoomData = useCallback(async () => {
     if (!roomId) return;
 
-    setLoading(true);
+    // Spinner só na primeira carga; recargas (polling/realtime) são silenciosas
+    if (!hasLoadedRef.current) setLoading(true);
 
     // Load room
     const { data: roomData } = await supabase
@@ -316,6 +340,7 @@ export const useSharedReading = (roomId?: string) => {
       setReactions(reactionsData);
     }
 
+    hasLoadedRef.current = true;
     setLoading(false);
   }, [roomId]);
 
@@ -361,7 +386,14 @@ export const useSharedReading = (roomId?: string) => {
 
     setChannel(newChannel);
 
+    // Fallback de sincronização: se o Realtime não estiver ativo para essas
+    // tabelas no servidor, o polling mantém todos os participantes em dia
+    const pollInterval = setInterval(() => {
+      loadRoomData();
+    }, 7000);
+
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(newChannel);
     };
   }, [roomId, loadRoomData]);
@@ -370,11 +402,22 @@ export const useSharedReading = (roomId?: string) => {
   const markFinishedReading = async () => {
     if (!roomId || !currentUserId) return;
 
-    await supabase
+    const { error } = await supabase
       .from('shared_reading_participants')
       .update({ finished_reading: true })
       .eq('room_id', roomId)
       .eq('user_id', currentUserId);
+
+    if (error) {
+      console.error('[SharedReading] Erro ao marcar leitura concluída:', error);
+      toast({ title: 'Erro', description: 'Não foi possível registrar. Tente novamente.', variant: 'destructive' });
+      return;
+    }
+
+    // Atualização local imediata (não depende do Realtime)
+    setParticipants(prev => prev.map(p =>
+      p.user_id === currentUserId ? { ...p, finished_reading: true } : p
+    ));
   };
 
   // Save final reflection ("O que Deus falou ao seu coração?")
@@ -409,9 +452,14 @@ export const useSharedReading = (roomId?: string) => {
   const publishCompletionToFeed = async () => {
     if (!room || !currentUserId || !room.is_public) return;
     try {
+      const range = room.verse_start
+        ? room.verse_start === room.verse_end
+          ? `:${room.verse_start}`
+          : `:${room.verse_start}-${room.verse_end}`
+        : '';
       await supabase.from('posts').insert({
         user_id: currentUserId,
-        content: `📖 Nosso grupo "${room.room_name}" concluiu a leitura de ${room.current_book_abbrev.toUpperCase()} capítulo ${room.current_chapter} na Leitura Bíblica Compartilhada! 🙏\n\nQuer ler com a gente? Entre com o código ${room.room_code} na Leitura em Grupo.`,
+        content: `📖 Nosso grupo "${room.room_name}" concluiu a leitura de ${room.current_book_abbrev.toUpperCase()} ${room.current_chapter}${range} na Leitura Bíblica Compartilhada! 🙏\n\nQuer ler com a gente? Entre com o código ${room.room_code} na Leitura em Grupo.`,
       });
     } catch {
       // Publicação no feed é melhor-esforço; não interrompe o fluxo da sala
@@ -422,24 +470,41 @@ export const useSharedReading = (roomId?: string) => {
   const updateRoomStatus = async (status: Room['status']) => {
     if (!roomId || !currentUserId || room?.host_id !== currentUserId) return;
 
-    await supabase
+    const { error } = await supabase
       .from('shared_reading_rooms')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', roomId);
+
+    if (error) {
+      console.error('[SharedReading] Erro ao atualizar status da sala:', error);
+      toast({
+        title: 'Erro ao iniciar',
+        description: error.message || 'Não foi possível atualizar a sala. Tente novamente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Atualização local imediata: a tela muda mesmo sem Realtime ativo
+    setRoom(prev => (prev ? { ...prev, status } : prev));
   };
 
   // Set quiz questions (host only)
   const setQuizQuestions = async (questions: QuizQuestion[]) => {
     if (!roomId || !currentUserId || room?.host_id !== currentUserId) return;
 
-    await supabase
+    const { error } = await supabase
       .from('shared_reading_rooms')
-      .update({ 
+      .update({
         quiz_questions: questions as any,
         status: 'quiz',
         updated_at: new Date().toISOString()
       })
       .eq('id', roomId);
+
+    if (!error) {
+      setRoom(prev => (prev ? { ...prev, quiz_questions: questions, status: 'quiz' } : prev));
+    }
   };
 
   // Submit quiz answer
@@ -510,6 +575,9 @@ export const useSharedReading = (roomId?: string) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', roomId);
+
+    // Recarrega tudo localmente (não depende do Realtime)
+    await loadRoomData();
   };
 
   // Retry chapter (host only)
@@ -538,6 +606,9 @@ export const useSharedReading = (roomId?: string) => {
       .delete()
       .eq('room_id', roomId)
       .eq('chapter', room?.current_chapter || 1);
+
+    // Recarrega tudo localmente (não depende do Realtime)
+    await loadRoomData();
   };
 
   // Leave room
@@ -560,7 +631,7 @@ export const useSharedReading = (roomId?: string) => {
         participant_count:shared_reading_participants(count)
       `)
       .eq('is_public', true)
-      .eq('status', 'waiting')
+      .in('status', ['waiting', 'reading'])
       .order('created_at', { ascending: false })
       .limit(20);
 

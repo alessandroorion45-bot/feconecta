@@ -54,6 +54,18 @@ export const SharedReadingText = ({
   const allFinished = participants.every(p => p.finished_reading);
   const hasFinishedReading = currentParticipant?.finished_reading;
 
+  // Intervalo de versículos escolhido na criação da sala (null = capítulo completo)
+  const verses = chapter
+    ? chapter.vers.filter(v =>
+        !room.verse_start || (v.number >= room.verse_start && v.number <= (room.verse_end || room.verse_start))
+      )
+    : [];
+  const rangeLabel = room.verse_start
+    ? room.verse_start === (room.verse_end || room.verse_start)
+      ? `:${room.verse_start}`
+      : `:${room.verse_start}-${room.verse_end}`
+    : '';
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
@@ -63,10 +75,12 @@ export const SharedReadingText = ({
             <div>
               <CardTitle className="text-xl flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-emerald-500" />
-                {chapter?.name || 'Carregando...'} {room.current_chapter}
+                {chapter?.name || 'Carregando...'} {room.current_chapter}{rangeLabel}
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Leia o capítulo e clique em "Terminei de ler" quando estiver pronto
+                {room.verse_start
+                  ? 'Leia os versículos e clique em "Terminei de ler" quando estiver pronto'
+                  : 'Leia o capítulo e clique em "Terminei de ler" quando estiver pronto'}
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={onLeave}>
@@ -125,7 +139,7 @@ export const SharedReadingText = ({
               </div>
             ) : chapter ? (
               <div className="prose prose-lg dark:prose-invert max-w-none">
-                {chapter.vers.map((verse, index) => (
+                {verses.map((verse, index) => (
                   <motion.p
                     key={verse.number}
                     initial={{ opacity: 0, y: 10 }}

@@ -27,6 +27,9 @@ export const SharedReadingLobby = ({ onJoinRoom }: SharedReadingLobbyProps) => {
   const [isPublic, setIsPublic] = useState(true);
   const [selectedBook, setSelectedBook] = useState('gn');
   const [selectedChapter, setSelectedChapter] = useState(1);
+  const [readingMode, setReadingMode] = useState<'chapter' | 'verse' | 'range'>('chapter');
+  const [verseStart, setVerseStart] = useState(1);
+  const [verseEnd, setVerseEnd] = useState(1);
 
   // Join room form
   const [roomCode, setRoomCode] = useState('');
@@ -47,8 +50,20 @@ export const SharedReadingLobby = ({ onJoinRoom }: SharedReadingLobbyProps) => {
 
   const handleCreateRoom = async () => {
     if (!roomName.trim()) return;
+
+    // Intervalo de versículos conforme o modo escolhido
+    let vStart: number | null = null;
+    let vEnd: number | null = null;
+    if (readingMode === 'verse') {
+      vStart = verseStart;
+      vEnd = verseStart;
+    } else if (readingMode === 'range') {
+      vStart = Math.min(verseStart, verseEnd);
+      vEnd = Math.max(verseStart, verseEnd);
+    }
+
     setLoading(true);
-    const room = await createRoom(roomName, isPublic, selectedBook, selectedChapter);
+    const room = await createRoom(roomName, isPublic, selectedBook, selectedChapter, vStart, vEnd);
     setLoading(false);
     if (room) {
       onJoinRoom(room.id);
@@ -171,8 +186,8 @@ export const SharedReadingLobby = ({ onJoinRoom }: SharedReadingLobbyProps) => {
 
                 <div className="space-y-2">
                   <Label>Capítulo</Label>
-                  <Select 
-                    value={selectedChapter.toString()} 
+                  <Select
+                    value={selectedChapter.toString()}
                     onValueChange={(v) => setSelectedChapter(parseInt(v))}
                   >
                     <SelectTrigger>
@@ -188,6 +203,62 @@ export const SharedReadingLobby = ({ onJoinRoom }: SharedReadingLobbyProps) => {
                   </Select>
                 </div>
               </div>
+
+              {/* Modo de leitura */}
+              <div className="space-y-2">
+                <Label>O que vamos ler?</Label>
+                <Select value={readingMode} onValueChange={(v) => setReadingMode(v as typeof readingMode)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="chapter">📖 Capítulo completo</SelectItem>
+                    <SelectItem value="verse">📌 Versículo único</SelectItem>
+                    <SelectItem value="range">📑 Intervalo de versículos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {readingMode === 'verse' && (
+                <div className="space-y-2">
+                  <Label htmlFor="verse-single">Versículo</Label>
+                  <Input
+                    id="verse-single"
+                    type="number"
+                    min={1}
+                    max={176}
+                    value={verseStart}
+                    onChange={(e) => setVerseStart(Math.max(1, parseInt(e.target.value) || 1))}
+                  />
+                </div>
+              )}
+
+              {readingMode === 'range' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="verse-start">Versículo inicial</Label>
+                    <Input
+                      id="verse-start"
+                      type="number"
+                      min={1}
+                      max={176}
+                      value={verseStart}
+                      onChange={(e) => setVerseStart(Math.max(1, parseInt(e.target.value) || 1))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="verse-end">Versículo final</Label>
+                    <Input
+                      id="verse-end"
+                      type="number"
+                      min={1}
+                      max={176}
+                      value={verseEnd}
+                      onChange={(e) => setVerseEnd(Math.max(1, parseInt(e.target.value) || 1))}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                 <div className="space-y-0.5">

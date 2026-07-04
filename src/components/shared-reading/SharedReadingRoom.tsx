@@ -57,7 +57,11 @@ export const SharedReadingRoom = ({ roomId, onLeave }: SharedReadingRoomProps) =
       // Fetch chapter text
       const { bibleApi } = await import('@/services/bibleApi');
       const chapter = await bibleApi.getChapter(room.current_book_abbrev, room.current_chapter);
-      const verseTexts = chapter.vers.map(v => `${v.number}. ${v.verse}`).join('\n');
+      // Quiz apenas sobre o trecho escolhido (versículo único ou intervalo)
+      const selectedVerses = chapter.vers.filter(v =>
+        !room.verse_start || (v.number >= room.verse_start && v.number <= (room.verse_end || room.verse_start))
+      );
+      const verseTexts = selectedVerses.map(v => `${v.number}. ${v.verse}`).join('\n');
 
       // Call edge function to generate quiz
       const response = await fetch(
