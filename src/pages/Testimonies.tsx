@@ -158,11 +158,7 @@ const Testimonies = () => {
           console.log('[Testimonies] 📦 Carregado do cache! (instantâneo)');
           setTestimonies(cachedData.data);
           loadingRef.current = false;
-          // Ainda busca no background para atualizar
-          setTimeout(() => {
-            loadingRef.current = false;
-            loadTestimonies(userId);
-          }, 1000);
+          // NÃO chama loadTestimonies() de novo - previne loop!
           return;
         }
       } catch (e) {
@@ -171,18 +167,22 @@ const Testimonies = () => {
     }
 
     try {
-      console.log('[Testimonies] 🔍 Iniciando RPC call (bypassa RLS)...');
+      console.log('[Testimonies] 🔍 Buscando testemunhos (SELECT simples)...');
       const startTime = performance.now();
 
-      // RPC CALL - MUITO mais rápida que query com RLS!
-      const queryPromise = (supabase as any).rpc('get_testimonies_fast');
+      // SELECT simples - sem RPC (mais confiável)
+      const queryPromise = supabase
+        .from("testimonies")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
 
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => {
           const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
           console.error(`[Testimonies] ⏰ TIMEOUT após ${elapsed}s`);
           reject(new Error('TESTIMONIES_QUERY_TIMEOUT'));
-        }, 60000) // 60 segundos
+        }, 10000) // 10 segundos (reduzido)
       );
 
       const { data, error } = await Promise.race([
