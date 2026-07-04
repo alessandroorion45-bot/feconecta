@@ -153,14 +153,21 @@ const Testimonies = () => {
       try {
         const cachedData = JSON.parse(cached);
         const cacheAge = Date.now() - cachedData.timestamp;
-        // Cache válido por 30 segundos
-        if (cacheAge < 30000) {
-          console.log('[Testimonies] 📦 Carregado do cache! (instantâneo)');
-          setTestimonies(cachedData.data);
+
+        // SEMPRE usa cache se existir (mesmo velho)
+        console.log(`[Testimonies] 📦 Carregado do cache! (idade: ${Math.floor(cacheAge/1000)}s)`);
+        setTestimonies(cachedData.data);
+
+        // Se cache recente (< 5 minutos), não tenta buscar do servidor
+        if (cacheAge < 300000) {
           loadingRef.current = false;
-          // NÃO chama loadTestimonies() de novo - previne loop!
+          console.log('[Testimonies] ✅ Cache recente, pulando query do servidor');
           return;
         }
+
+        // Cache velho: mostra mas tenta atualizar no background
+        console.log('[Testimonies] ⚠️ Cache velho, tentando atualizar...');
+        // Continua para tentar buscar do servidor
       } catch (e) {
         console.warn('[Testimonies] Cache inválido, ignorando');
       }
@@ -288,15 +295,38 @@ const Testimonies = () => {
     } catch (error: any) {
       console.error('[Testimonies] ❌ EXCEÇÃO ao carregar:', error);
 
+      // Se deu timeout/erro E tem cache, usa o cache (mesmo velho)
+      const cacheKey = `testimonies_cache_${userId || 'public'}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const cachedData = JSON.parse(cached);
+          console.log('[Testimonies] 🔄 Usando cache offline (servidor indisponível)');
+          setTestimonies(cachedData.data);
+
+          toast({
+            title: "Modo Offline",
+            description: `Mostrando ${cachedData.data.length} testemunhos do cache. Servidor lento.`,
+            variant: "default",
+          });
+
+          loadingRef.current = false;
+          return;
+        } catch (e) {
+          console.warn('[Testimonies] Cache corrompido');
+        }
+      }
+
+      // Sem cache: mostra erro
       if (error?.message === 'TESTIMONIES_QUERY_TIMEOUT') {
         toast({
-          title: "⏰ Timeout ao carregar",
-          description: "A conexão está muito lenta. Tente novamente.",
+          title: "⏰ Conexão muito lenta",
+          description: "Não foi possível carregar. Verifique sua internet.",
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Erro inesperado",
+          title: "Erro ao carregar",
           description: error?.message || "Erro desconhecido",
           variant: "destructive",
         });
