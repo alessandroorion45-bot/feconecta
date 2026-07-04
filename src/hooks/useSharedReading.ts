@@ -372,7 +372,14 @@ export const useSharedReading = (roomId?: string) => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'shared_reading_quiz_answers', filter: `room_id=eq.${roomId}` },
         (payload) => {
-          setAnswers(prev => [...prev, payload.new as QuizAnswer]);
+          const incoming = payload.new as QuizAnswer;
+          // Substitui eventual entrada otimista local (mesmo usuário/pergunta)
+          setAnswers(prev => {
+            const filtered = prev.filter(a =>
+              !(a.user_id === incoming.user_id && a.chapter === incoming.chapter && a.question_index === incoming.question_index)
+            );
+            return [...filtered, incoming];
+          });
         }
       )
       .on(
@@ -522,18 +529,37 @@ export const useSharedReading = (roomId?: string) => {
   const submitAnswer = async (questionIndex: number, selectedAnswer: string, isCorrect: boolean) => {
     if (!roomId || !currentUserId || !room) return;
 
-    await supabase
+    const payload = {
+      room_id: roomId,
+      user_id: currentUserId,
+      chapter: room.current_chapter,
+      question_index: questionIndex,
+      selected_answer: selectedAnswer,
+      is_correct: isCorrect
+    };
+
+    let { error } = await supabase
       .from('shared_reading_quiz_answers')
-      .upsert({
-        room_id: roomId,
-        user_id: currentUserId,
-        chapter: room.current_chapter,
-        question_index: questionIndex,
-        selected_answer: selectedAnswer,
-        is_correct: isCorrect
-      }, {
-        onConflict: 'room_id,user_id,chapter,question_index'
-      });
+      .upsert(payload, { onConflict: 'room_id,user_id,chapter,question_index' });
+
+    if (error) {
+      // Banco remoto sem a constraint UNIQUE do ON CONFLICT: insert simples
+      ({ error } = await supabase.from('shared_reading_quiz_answers').insert(payload));
+    }
+
+    if (error) {
+      console.error('[SharedReading] Erro ao salvar resposta:', error);
+      toast({ title: 'Erro ao salvar resposta', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    // Atualização local imediata (não depende do Realtime), sem duplicar
+    setAnswers(prev => {
+      const filtered = prev.filter(a =>
+        !(a.user_id === currentUserId && a.chapter === room.current_chapter && a.question_index === questionIndex)
+      );
+      return [...filtered, { id: `local-${questionIndex}-${Date.now()}`, ...payload } as QuizAnswer];
+    });
   };
 
   // Add reaction
