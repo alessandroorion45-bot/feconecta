@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, MessageCircle, Sparkles, Share2, Volume2, Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -538,7 +538,7 @@ const TestimonyDetail = () => {
                 Comentários ({testimony.comments_count || 0})
               </DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-80">
+            <div className="max-h-80 overflow-y-auto">
               {loadingComments ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -582,7 +582,7 @@ const TestimonyDetail = () => {
                   ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
             {user ? (
               <div className="space-y-2 mt-4 border-t pt-4">
                 <div className="flex gap-2">

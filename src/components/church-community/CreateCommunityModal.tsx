@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Church, Loader2, Music, Users, Heart, Baby, Globe, BookOpen, HandHeart, Radio } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import LocationPicker from "./LocationPicker";
 
 interface CreateCommunityModalProps {
@@ -186,7 +185,9 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[60vh] pr-4">
+        {/* Scroll nativo: ScrollArea (Radix Presence) dentro de Dialog entra em
+            loop infinito de refs quando o conteúdo fica na altura-limite (React #185) */}
+        <div className="max-h-[60vh] overflow-y-auto pr-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome da Comunidade *</Label>
@@ -281,7 +282,7 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
               </Button>
             </div>
           </form>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

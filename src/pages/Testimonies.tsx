@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import UserAvatar from "@/components/UserAvatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import AudioRecorder from "@/components/AudioRecorder";
 
 interface Testimony {
@@ -996,7 +996,7 @@ const Testimonies = () => {
                 Comentários ({currentTestimony?.comments_count || 0})
               </DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-80">
+            <div className="max-h-80 overflow-y-auto">
               {loadingComments ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -1039,7 +1039,7 @@ const Testimonies = () => {
                   ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
             {user ? (
               <div className="space-y-2 mt-4 border-t pt-4">
                 <div className="flex gap-2">
