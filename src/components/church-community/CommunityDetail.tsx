@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Church, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone, Flame } from "lucide-react";
+import { ArrowLeft, Church, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone, Flame, TreeDeciduous } from "lucide-react";
 import RectAvatar from "@/components/RectAvatar";
 import CommunityMural from "./CommunityMural";
 import CommunityCampaigns from "./CommunityCampaigns";
+import CommunityTree from "./CommunityTree";
 import VotingList from "./VotingList";
 import LeaderEvaluations from "./LeaderEvaluations";
 import CommunityMembers from "./CommunityMembers";
@@ -184,6 +185,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
               <Megaphone className="h-4 w-4" />
               Mural
             </TabsTrigger>
+            <TabsTrigger value="tree" className="gap-2">
+              <TreeDeciduous className="h-4 w-4" />
+              Árvore
+            </TabsTrigger>
             <TabsTrigger value="campaigns" className="gap-2">
               <Flame className="h-4 w-4" />
               Campanhas
@@ -219,6 +224,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
 
         <TabsContent value="mural" className="mt-6">
           <CommunityMural communityId={communityId} userId={userId} myRole={myRole} />
+        </TabsContent>
+
+        <TabsContent value="tree" className="mt-6">
+          <CommunityTree communityId={communityId} userId={userId} />
         </TabsContent>
 
         <TabsContent value="campaigns" className="mt-6">
