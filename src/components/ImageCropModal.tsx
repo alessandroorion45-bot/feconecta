@@ -1,6 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
-import "react-image-crop/dist/ReactCrop.css";
+import { useState, useCallback } from "react";
+import Cropper, { Area } from "react-easy-crop";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { ZoomIn, ZoomOut, Save, X, RotateCcw } from "lucide-react";
+import { ZoomIn, ZoomOut, Save, X, RotateCcw, RotateCw, Move } from "lucide-react";
 
 interface ImageCropModalProps {
   open: boolean;
@@ -21,26 +20,12 @@ interface ImageCropModalProps {
   title: string;
 }
 
-function centerAspectCrop(
-  mediaWidth: number,
-  mediaHeight: number,
-  aspect: number
-) {
-  return centerCrop(
-    makeAspectCrop(
-      {
-        unit: "%",
-        width: 90,
-      },
-      aspect,
-      mediaWidth,
-      mediaHeight
-    ),
-    mediaWidth,
-    mediaHeight
-  );
-}
-
+/**
+ * Recorte estilo Instagram/WhatsApp: a moldura fica FIXA e o usuário
+ * arrasta a imagem por baixo (mouse ou toque), com zoom por slider,
+ * roda do mouse ou gesto de pinça, e rotação em passos de 90°.
+ * O resultado salvo é exatamente o que aparece dentro da moldura.
+ */
 export const ImageCropModal = ({
   open,
   onOpenChange,
@@ -49,47 +34,67 @@ export const ImageCropModal = ({
   onCropComplete,
   title,
 }: ImageCropModalProps) => {
-  const [crop, setCrop] = useState<Crop>();
-  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-  const [scale, setScale] = useState(1);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const onImageLoad = useCallback(
-    (e: React.SyntheticEvent<HTMLImageElement>) => {
-      const { width, height } = e.currentTarget;
-      setCrop(centerAspectCrop(width, height, aspectRatio));
-    },
-    [aspectRatio]
-  );
+  const onCropChange = setCrop;
+  const onZoomChange = setZoom;
 
-  const resetCrop = () => {
-    if (imgRef.current) {
-      const { width, height } = imgRef.current;
-      setCrop(centerAspectCrop(width, height, aspectRatio));
-      setScale(1);
-    }
+  const onCropAreaComplete = useCallback((_: Area, areaPixels: Area) => {
+    setCroppedAreaPixels(areaPixels);
+  }, []);
+
+  const reset = () => {
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setRotation(0);
   };
 
   const getCroppedImg = useCallback(async (): Promise<Blob | null> => {
-    const image = imgRef.current;
-    if (!image || !completedCrop) return null;
+    if (!croppedAreaPixels) return null;
 
+    const image = new Image();
+    image.src = imageSrc;
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = reject;
+    });
+
+    const radians = (rotation * Math.PI) / 180;
+
+    // Canvas intermediário com a imagem rotacionada
+    const rotatedCanvas = document.createElement("canvas");
+    const rotatedCtx = rotatedCanvas.getContext("2d");
+    if (!rotatedCtx) return null;
+
+    const isSideways = rotation % 180 !== 0;
+    rotatedCanvas.width = isSideways ? image.naturalHeight : image.naturalWidth;
+    rotatedCanvas.height = isSideways ? image.naturalWidth : image.naturalHeight;
+
+    rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+    rotatedCtx.rotate(radians);
+    rotatedCtx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
+
+    // Recorte final exatamente na área da moldura
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-
-    canvas.width = completedCrop.width * scaleX;
-    canvas.height = completedCrop.height * scaleY;
+    // Limita o tamanho final (economia de banda/storage)
+    const MAX_DIMENSION = 1280;
+    const scaleDown = Math.min(1, MAX_DIMENSION / Math.max(croppedAreaPixels.width, croppedAreaPixels.height));
+    canvas.width = Math.round(croppedAreaPixels.width * scaleDown);
+    canvas.height = Math.round(croppedAreaPixels.height * scaleDown);
 
     ctx.drawImage(
-      image,
-      completedCrop.x * scaleX,
-      completedCrop.y * scaleY,
-      completedCrop.width * scaleX,
-      completedCrop.height * scaleY,
+      rotatedCanvas,
+      croppedAreaPixels.x,
+      croppedAreaPixels.y,
+      croppedAreaPixels.width,
+      croppedAreaPixels.height,
       0,
       0,
       canvas.width,
@@ -97,108 +102,118 @@ export const ImageCropModal = ({
     );
 
     return new Promise((resolve) => {
-      canvas.toBlob(
-        (blob) => resolve(blob),
-        "image/jpeg",
-        0.9
-      );
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
     });
-  }, [completedCrop]);
+  }, [croppedAreaPixels, imageSrc, rotation]);
 
   const handleSave = async () => {
-    const croppedBlob = await getCroppedImg();
-    if (croppedBlob) {
-      onCropComplete(croppedBlob);
-      onOpenChange(false);
+    setSaving(true);
+    try {
+      const croppedBlob = await getCroppedImg();
+      if (croppedBlob) {
+        onCropComplete(croppedBlob);
+        onOpenChange(false);
+        reset();
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogContent className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {title}
-          </DialogTitle>
-          <DialogDescription>
-            Ajuste a posição e o zoom da imagem. Arraste para reposicionar.
+          <DialogTitle className="flex items-center gap-2">{title}</DialogTitle>
+          <DialogDescription className="flex items-center gap-1.5">
+            <Move className="h-3.5 w-3.5" />
+            Arraste a imagem para posicionar. Use a roda do mouse ou o controle para dar zoom.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Crop Area */}
-          <div className="relative bg-muted rounded-lg overflow-hidden flex items-center justify-center min-h-[200px]">
-            <ReactCrop
+          {/* Área de recorte: moldura fixa, imagem móvel */}
+          <div className="relative w-full h-[340px] bg-black/90 rounded-lg overflow-hidden touch-none">
+            <Cropper
+              image={imageSrc}
               crop={crop}
-              onChange={(_, percentCrop) => setCrop(percentCrop)}
-              onComplete={(c) => setCompletedCrop(c)}
+              zoom={zoom}
+              rotation={rotation}
               aspect={aspectRatio}
-              className="max-h-[300px]"
-            >
-              <img
-                ref={imgRef}
-                src={imageSrc}
-                alt="Imagem para recorte"
-                onLoad={onImageLoad}
-                style={{
-                  transform: `scale(${scale})`,
-                  transformOrigin: "center",
-                  maxHeight: "300px",
-                  width: "auto",
-                }}
-                className="max-w-full"
-              />
-            </ReactCrop>
-          </div>
-
-          {/* Zoom Control */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground flex items-center gap-1">
-                <ZoomOut className="h-4 w-4" />
-                Zoom
-              </span>
-              <span className="text-muted-foreground flex items-center gap-1">
-                <ZoomIn className="h-4 w-4" />
-              </span>
-            </div>
-            <Slider
-              value={[scale]}
-              onValueChange={([value]) => setScale(value)}
-              min={0.5}
-              max={2}
-              step={0.1}
-              className="w-full"
+              onCropChange={onCropChange}
+              onZoomChange={onZoomChange}
+              onCropComplete={onCropAreaComplete}
+              showGrid
+              zoomWithScroll
+              minZoom={1}
+              maxZoom={4}
+              style={{
+                cropAreaStyle: {
+                  border: "2px solid rgba(255,255,255,0.9)",
+                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.6)",
+                },
+              }}
             />
-            <p className="text-xs text-center text-muted-foreground">
-              {Math.round(scale * 100)}%
-            </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
+          {/* Zoom */}
+          <div className="flex items-center gap-3">
+            <ZoomOut className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Slider
+              value={[zoom]}
+              onValueChange={([value]) => setZoom(value)}
+              min={1}
+              max={4}
+              step={0.05}
+              className="flex-1"
+            />
+            <ZoomIn className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-xs text-muted-foreground w-12 text-right">
+              {Math.round(zoom * 100)}%
+            </span>
+          </div>
+
+          {/* Rotação */}
+          <div className="flex items-center justify-center gap-2">
             <Button
+              type="button"
               variant="outline"
-              onClick={resetCrop}
-              className="flex-1 gap-2"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setRotation((r) => (r - 90 + 360) % 360)}
             >
+              <RotateCcw className="h-4 w-4" />
+              Girar
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setRotation((r) => (r + 90) % 360)}
+            >
+              <RotateCw className="h-4 w-4" />
+              Girar
+            </Button>
+          </div>
+
+          {/* Ações */}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={reset} className="flex-1 gap-2">
               <RotateCcw className="h-4 w-4" />
               Resetar
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1 gap-2"
-            >
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 gap-2">
               <X className="h-4 w-4" />
               Cancelar
             </Button>
             <Button
               onClick={handleSave}
+              disabled={saving}
               className="flex-1 gap-2 bg-gradient-primary text-primary-foreground"
             >
               <Save className="h-4 w-4" />
-              Salvar
+              {saving ? "Salvando..." : "Salvar"}
             </Button>
           </div>
         </div>
