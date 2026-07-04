@@ -146,6 +146,30 @@ const Testimonies = () => {
     loadingRef.current = true;
     console.log('[Testimonies] Carregando testemunhos...');
 
+    // CACHE: Tentar carregar do localStorage primeiro
+    const cacheKey = `testimonies_cache_${userId || 'public'}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        const cacheAge = Date.now() - cachedData.timestamp;
+        // Cache válido por 30 segundos
+        if (cacheAge < 30000) {
+          console.log('[Testimonies] 📦 Carregado do cache! (instantâneo)');
+          setTestimonies(cachedData.data);
+          loadingRef.current = false;
+          // Ainda busca no background para atualizar
+          setTimeout(() => {
+            loadingRef.current = false;
+            loadTestimonies(userId);
+          }, 1000);
+          return;
+        }
+      } catch (e) {
+        console.warn('[Testimonies] Cache inválido, ignorando');
+      }
+    }
+
     try {
       console.log('[Testimonies] 🔍 Iniciando RPC call (bypassa RLS)...');
       const startTime = performance.now();
@@ -248,6 +272,18 @@ const Testimonies = () => {
       }
 
       setTestimonies(testimoniesWithStatus);
+
+      // Salvar no cache para próxima vez
+      try {
+        const cacheKey = `testimonies_cache_${userId || 'public'}`;
+        localStorage.setItem(cacheKey, JSON.stringify({
+          timestamp: Date.now(),
+          data: testimoniesWithStatus
+        }));
+        console.log('[Testimonies] 💾 Cache atualizado!');
+      } catch (e) {
+        console.warn('[Testimonies] Falha ao salvar cache:', e);
+      }
     }
     } catch (error: any) {
       console.error('[Testimonies] ❌ EXCEÇÃO ao carregar:', error);
