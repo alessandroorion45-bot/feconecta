@@ -100,34 +100,33 @@ const Testimonies = () => {
           });
         }
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "testimony_likes" },
-        () => {
-          if (user) loadTestimonies(user.id);
-          else loadTestimonies();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "testimony_glories" },
-        () => {
-          if (user) loadTestimonies(user.id);
-          else loadTestimonies();
-        }
-      )
+      // DESABILITADO temporariamente: reload completo a cada like/glory/comment é muito pesado
+      // TODO: implementar atualização incremental apenas do contador
+      // .on(
+      //   "postgres_changes",
+      //   { event: "*", schema: "public", table: "testimony_likes" },
+      //   () => {
+      //     if (user) loadTestimonies(user.id);
+      //     else loadTestimonies();
+      //   }
+      // )
+      // .on(
+      //   "postgres_changes",
+      //   { event: "*", schema: "public", table: "testimony_glories" },
+      //   () => {
+      //     if (user) loadTestimonies(user.id);
+      //     else loadTestimonies();
+      //   }
+      // )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "testimony_comments" },
         (payload) => {
-          // Update comments count in real-time
-          if (user) loadTestimonies(user.id);
-          else loadTestimonies();
-
-          // If viewing comments for this testimony, reload them
+          // Only reload comments if viewing them
           if (commentsOpen && payload.new && (payload.new as any).testimony_id === commentsOpen) {
             loadComments(commentsOpen);
           }
+          // Não recarrega toda lista - muito pesado!
         }
       )
       .subscribe();
