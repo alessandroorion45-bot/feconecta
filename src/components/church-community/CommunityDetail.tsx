@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Church, Users, Vote, Star, Plus, Settings, Heart, Shield } from "lucide-react";
+import { ArrowLeft, Church, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone, Flame } from "lucide-react";
 import RectAvatar from "@/components/RectAvatar";
+import CommunityMural from "./CommunityMural";
+import CommunityCampaigns from "./CommunityCampaigns";
 import VotingList from "./VotingList";
 import LeaderEvaluations from "./LeaderEvaluations";
 import CommunityMembers from "./CommunityMembers";
@@ -35,11 +37,12 @@ interface CommunityDetailProps {
 const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) => {
   const [community, setCommunity] = useState<Community | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [myRole, setMyRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateVoting, setShowCreateVoting] = useState(false);
   const [showManageLeaders, setShowManageLeaders] = useState(false);
   const [showAdminSettings, setShowAdminSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState("votings");
+  const [activeTab, setActiveTab] = useState("mural");
 
   useEffect(() => {
     loadCommunity();
@@ -66,6 +69,7 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
 
       if (!memberError && membership) {
         setIsAdmin(membership.role === "admin");
+        setMyRole(membership.role);
       }
     } catch (error) {
       console.error("Error loading community:", error);
@@ -176,6 +180,14 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <TabsList className="flex-wrap h-auto">
+            <TabsTrigger value="mural" className="gap-2">
+              <Megaphone className="h-4 w-4" />
+              Mural
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="gap-2">
+              <Flame className="h-4 w-4" />
+              Campanhas
+            </TabsTrigger>
             <TabsTrigger value="votings" className="gap-2">
               <Vote className="h-4 w-4" />
               Votações
@@ -204,6 +216,14 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
             </Button>
           )}
         </div>
+
+        <TabsContent value="mural" className="mt-6">
+          <CommunityMural communityId={communityId} userId={userId} myRole={myRole} />
+        </TabsContent>
+
+        <TabsContent value="campaigns" className="mt-6">
+          <CommunityCampaigns communityId={communityId} userId={userId} myRole={myRole} />
+        </TabsContent>
 
         <TabsContent value="votings" className="mt-6">
           <VotingList communityId={communityId} userId={userId} />

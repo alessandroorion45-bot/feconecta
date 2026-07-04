@@ -19,11 +19,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Users, Crown, Shield, User, Trash2, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, Crown, Trash2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MemberMinistryBadges from "./MemberMinistryBadges";
 import RectAvatar from "@/components/RectAvatar";
+import { COMMUNITY_ROLES, getRoleInfo } from "@/lib/communityRoles";
 
 interface Member {
   id: string;
@@ -168,28 +170,62 @@ const CommunityMembers = ({ communityId, communityName, userId, isAdmin }: Commu
   };
 
   const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "admin":
-        return (
-          <Badge className="bg-amber-500 text-white flex items-center gap-1">
-            <Crown className="h-3 w-3" />
-            Admin
-          </Badge>
-        );
-      case "leader":
-        return (
-          <Badge className="bg-blue-500 text-white flex items-center gap-1">
-            <Shield className="h-3 w-3" />
-            Líder
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <User className="h-3 w-3" />
-            Membro
-          </Badge>
-        );
+    const info = getRoleInfo(role);
+    if (role === "admin") {
+      return (
+        <Badge className="bg-amber-500 text-white flex items-center gap-1">
+          <Crown className="h-3 w-3" />
+          {info.label}
+        </Badge>
+      );
+    }
+    if (role === "member" || !role) {
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <span>{info.emoji}</span>
+          {info.label}
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-blue-500 text-white flex items-center gap-1">
+        <span>{info.emoji}</span>
+        {info.label}
+      </Badge>
+    );
+  };
+
+  const handleChangeRole = async (member: Member, newRole: string) => {
+    try {
+      const { error } = await supabase
+        .from("church_community_members")
+        .update({ role: newRole })
+        .eq("id", member.id);
+
+      if (error) throw error;
+
+      setMembers(prev => prev.map(m => (m.id === member.id ? { ...m, role: newRole } : m)));
+
+      await supabase.from("notifications").insert({
+        user_id: member.user_id,
+        actor_id: userId,
+        type: "community_role",
+        content: `Você agora é ${getRoleInfo(newRole).label} na comunidade "${communityName || "Igreja"}".`,
+        reference_id: communityId,
+      });
+
+      toast({
+        title: "✅ Função atualizada",
+        description: `${member.profile?.full_name} agora é ${getRoleInfo(newRole).label}.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar função",
+        description: error.message?.includes("policy")
+          ? "Aplique a atualização do banco (APLICAR_COMUNIDADE_SQL.sql)"
+          : error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -279,6 +315,30 @@ const CommunityMembers = ({ communityId, communityName, userId, isAdmin }: Commu
                       @{member.profile?.username || "usuario"}
                     </p>
                     <MemberMinistryBadges ministries={member.ministries} maxShow={2} />
+
+                    {/* Admin: alterar função do membro */}
+                    {isAdmin && member.user_id !== userId && (
+                      <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                        <Select
+                          value={member.role || "member"}
+                          onValueChange={(v) => handleChangeRole(member, v)}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {COMMUNITY_ROLES.map((r) => (
+                              <SelectItem key={r.value} value={r.value}>
+                                <span className="flex items-center gap-2">
+                                  <span>{r.emoji}</span>
+                                  {r.label}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
 
                   {/* Admin: Remove member button */}
