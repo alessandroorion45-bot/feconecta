@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ const Testimonies = () => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [interactionLoading, setInteractionLoading] = useState<Record<string, boolean>>({});
   const [submittingTestimony, setSubmittingTestimony] = useState(false);
+  const loadingRef = useRef(false);
 
   useEffect(() => {
     if (user) {
@@ -137,6 +138,13 @@ const Testimonies = () => {
   }, [user, commentsOpen]);
 
   const loadTestimonies = async (userId?: string) => {
+    // Prevenir múltiplas chamadas simultâneas
+    if (loadingRef.current) {
+      console.log('[Testimonies] ⏸️ Já está carregando, ignorando chamada duplicada');
+      return;
+    }
+
+    loadingRef.current = true;
     console.log('[Testimonies] Carregando testemunhos...');
 
     try {
@@ -144,7 +152,7 @@ const Testimonies = () => {
       const startTime = performance.now();
 
       // RPC CALL - MUITO mais rápida que query com RLS!
-      const queryPromise = supabase.rpc('get_testimonies_fast');
+      const queryPromise = (supabase as any).rpc('get_testimonies_fast');
 
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => {
@@ -258,6 +266,8 @@ const Testimonies = () => {
           variant: "destructive",
         });
       }
+    } finally {
+      loadingRef.current = false;
     }
   };
 
