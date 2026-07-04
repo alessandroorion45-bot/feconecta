@@ -114,7 +114,6 @@ export const CACHE_TTL = {
   PROFILE: 10, // 10 minutos
   FRIENDS: 5, // 5 minutos
   RANKING: 10, // 10 minutos
-  EVENTS: 15, // 15 minutos
   CHAT: 1, // 1 minuto (tempo real)
   GROUPS: 10, // 10 minutos
 } as const;

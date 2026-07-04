@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
-import { Book, Heart, Church, Calendar, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, Music, HelpCircle, Smile, Search as SearchIcon, Star, BookMarked, MapPin } from "lucide-react";
+import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, Music, HelpCircle, Smile, Search as SearchIcon, Star, BookMarked, MapPin } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -109,7 +109,6 @@ const Header = () => {
                   <MenuItem path="/friends" icon={<Users className="h-5 w-5" />} label="Amigos" currentPath={currentPath} onClick={handleNavClick} />
                   <MenuItem path="/testimonies" icon={<Heart className="h-5 w-5" />} label="Depoimentos" currentPath={currentPath} onClick={handleNavClick} />
                   <MenuItem path="/prayers" icon={<Church className="h-5 w-5" />} label="Orações" currentPath={currentPath} onClick={handleNavClick} />
-                  <MenuItem path="/events" icon={<Calendar className="h-5 w-5" />} label="Eventos" currentPath={currentPath} onClick={handleNavClick} />
 
                   <MenuSection title="Ferramentas" />
                   <MenuItem path="/quiz" icon={<Brain className="h-5 w-5" />} label="Quiz" currentPath={currentPath} onClick={handleNavClick} iconColor="text-indigo-500" />
@@ -182,7 +181,6 @@ const Header = () => {
               { path: "/bible", icon: <Book className="h-4 w-4 shrink-0" />, label: "Bíblia" },
               { path: "/testimonies", icon: <Heart className="h-4 w-4 shrink-0" />, label: "Depoimentos" },
               { path: "/prayers", icon: <Church className="h-4 w-4 shrink-0" />, label: "Orações" },
-              { path: "/events", icon: <Calendar className="h-4 w-4 shrink-0" />, label: "Eventos" },
               { path: "/feed", icon: <Share2 className="h-4 w-4 shrink-0" />, label: "Feed" },
               { path: "/chat", icon: <MessageSquare className="h-4 w-4 shrink-0" />, label: "Chat" },
               { path: "/friends", icon: <Users className="h-4 w-4 shrink-0" />, label: "Amigos" },

@@ -25,7 +25,6 @@ const Bible = lazy(() => import("./pages/Bible"));
 const Testimonies = lazy(() => import("./pages/Testimonies"));
 const TestimonyDetail = lazy(() => import("./pages/TestimonyDetail"));
 const Prayers = lazy(() => import("./pages/Prayers"));
-const Events = lazy(() => import("./pages/Events"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const Ranking = lazy(() => import("./pages/Ranking"));
@@ -91,7 +90,6 @@ const routes: RouteObject[] = [
   { path: "/testimonies", element: <Testimonies /> },
   { path: "/testemunho/:id", element: <TestimonyDetail /> },
   { path: "/prayers", element: <ProtectedRoute><Prayers /></ProtectedRoute> },
-  { path: "/events", element: <ProtectedRoute><Events /></ProtectedRoute> },
   { path: "/profile", element: <ProtectedRoute><Profile /></ProtectedRoute> },
   { path: "/profile/:userId", element: <UserProfile /> },
   { path: "/achievements", element: <ProtectedRoute><Achievements /></ProtectedRoute> },

@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingFallback from "@/components/LoadingFallback";
-import { Book, Heart, Church, Calendar, Sparkles, User, Gamepad2, MessageSquare, Music, BookOpen, HelpCircle, Search, MapPin, Star, Users, Brain, Smile, BookMarked } from "lucide-react";
+import { Book, Heart, Church, Sparkles, User, Gamepad2, MessageSquare, Music, BookOpen, HelpCircle, Search, MapPin, Star, Users, Brain, Smile, BookMarked } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -38,7 +38,6 @@ const Index = () => {
     { icon: Book, title: "Bíblia Sagrada", description: "Leia e medite na Palavra de Deus com uma interface moderna", link: "/bible", gradient: "from-primary to-primary-glow" },
     { icon: Heart, title: "Depoimentos", description: "Compartilhe testemunhos e veja como Deus age na vida dos irmãos", link: "/testimonies", gradient: "from-accent to-accent/70" },
     { icon: Church, title: "Orações", description: "Publique pedidos de oração e interceda pelos irmãos", link: "/prayers", gradient: "from-secondary to-secondary-glow" },
-    { icon: Calendar, title: "Eventos", description: "Descubra e participe de eventos cristãos na sua região", link: "/events", gradient: "from-primary to-accent" },
     { icon: Gamepad2, title: "Palavra Viva", description: "Caça-palavras bíblico interativo para aprender brincando", link: "/palavra-viva", gradient: "from-secondary to-primary" },
     { icon: BookOpen, title: "Plano de Leitura", description: "Planos de 30, 90 dias ou anual com progresso e lembretes", link: "/bible", gradient: "from-primary to-secondary" },
     { icon: MessageSquare, title: "Chat da Comunidade", description: "Converse com irmãos em chats privados e grupos temáticos", link: "/chat", gradient: "from-accent to-primary" },

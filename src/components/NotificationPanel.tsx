@@ -18,7 +18,6 @@ import {
   Heart, 
   Users, 
   Trophy,
-  Calendar,
   Star,
   ThumbsUp,
   Sparkles
@@ -56,8 +55,6 @@ const NotificationPanel = () => {
         return <Heart className="h-4 w-4 text-purple-500" />;
       case "prayer_comment":
         return <MessageCircle className="h-4 w-4 text-purple-500" />;
-      case "event_join":
-        return <Calendar className="h-4 w-4 text-green-500" />;
       case "achievement":
         return <Trophy className="h-4 w-4 text-yellow-500" />;
       case "friend_testimonial":
@@ -109,10 +106,6 @@ const NotificationPanel = () => {
       case "prayer_interaction":
       case "prayer_comment":
         navigate("/prayers");
-        setOpen(false);
-        break;
-      case "event_join":
-        navigate("/events");
         setOpen(false);
         break;
       case "achievement":
