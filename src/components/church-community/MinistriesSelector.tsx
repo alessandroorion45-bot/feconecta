@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Heart } from "lucide-react";
+import { Loader2, Save, Heart, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const MINISTRIES = [
   { id: "louvor", name: "Ministério de Louvor", emoji: "🎶" },
@@ -135,10 +135,16 @@ const MinistriesSelector = ({ communityId, userId, onUpdate }: MinistriesSelecto
               }`}
               onClick={() => toggleMinistry(ministry.id)}
             >
-              <Checkbox 
-                checked={selectedMinistries.includes(ministry.id)}
-                onCheckedChange={() => toggleMinistry(ministry.id)}
-              />
+              {/* Indicador visual puro (Checkbox Radix dentro de card clicável
+                  dispara toggle duplo e entra em loop de Presence — React #185) */}
+              <div
+                className={cn(
+                  "h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center transition-colors",
+                  selectedMinistries.includes(ministry.id) && "bg-primary text-primary-foreground"
+                )}
+              >
+                {selectedMinistries.includes(ministry.id) && <Check className="h-3 w-3" />}
+              </div>
               <span className="text-xl">{ministry.emoji}</span>
               <span className="text-sm font-medium flex-1">{ministry.name}</span>
             </div>

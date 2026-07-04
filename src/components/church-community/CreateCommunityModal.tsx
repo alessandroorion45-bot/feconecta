@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Church, Loader2, Music, Users, Heart, Baby, Globe, BookOpen, HandHeart, Radio } from "lucide-react";
+import { Church, Loader2, Music, Users, Heart, Baby, Globe, BookOpen, HandHeart, Radio, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import LocationPicker from "./LocationPicker";
 
 interface CreateCommunityModalProps {
@@ -247,10 +247,15 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
                     }`}
                     onClick={() => toggleMinistry(ministry.id)}
                   >
-                    <Checkbox
-                      checked={selectedMinistries.includes(ministry.id)}
-                      onCheckedChange={() => toggleMinistry(ministry.id)}
-                    />
+                    {/* Indicador visual puro (evita loop de Presence do Checkbox — React #185) */}
+                    <div
+                      className={cn(
+                        "h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center transition-colors",
+                        selectedMinistries.includes(ministry.id) && "bg-primary text-primary-foreground"
+                      )}
+                    >
+                      {selectedMinistries.includes(ministry.id) && <Check className="h-3 w-3" />}
+                    </div>
                     <span className="text-lg">{ministry.emoji}</span>
                     <span className="text-sm">{ministry.name}</span>
                   </div>
