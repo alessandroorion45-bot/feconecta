@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import UserAvatar from '@/components/UserAvatar';
 import { Room, Participant, Reaction } from '@/hooks/useSharedReading';
 import { bibleApi, BibleChapter } from '@/services/bibleApi';
-import { Check, Loader2, BookOpen, LogOut, Sparkles } from 'lucide-react';
+import { Check, Loader2, BookOpen, LogOut, Sparkles, Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ReactionBar } from './ReactionBar';
 
@@ -16,6 +18,8 @@ interface SharedReadingTextProps {
   participants: Participant[];
   currentParticipant?: Participant;
   onFinishReading: () => void;
+  /** Salva a compreensão da leitura (obrigatória antes de concluir) */
+  onSubmitComprehension?: (text: string) => Promise<boolean>;
   generatingQuiz: boolean;
   reactions: Reaction[];
   onReaction: (reaction: string) => void;
@@ -27,6 +31,7 @@ export const SharedReadingText = ({
   participants,
   currentParticipant,
   onFinishReading,
+  onSubmitComprehension,
   generatingQuiz,
   reactions,
   onReaction,
@@ -34,6 +39,28 @@ export const SharedReadingText = ({
 }: SharedReadingTextProps) => {
   const [chapter, setChapter] = useState<BibleChapter | null>(null);
   const [loading, setLoading] = useState(true);
+  const [comprehensionOpen, setComprehensionOpen] = useState(false);
+  const [comprehension, setComprehension] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleFinishClick = () => {
+    if (onSubmitComprehension) {
+      setComprehensionOpen(true);
+    } else {
+      onFinishReading();
+    }
+  };
+
+  const handleSubmitComprehension = async () => {
+    if (!onSubmitComprehension || !comprehension.trim()) return;
+    setSubmitting(true);
+    const ok = await onSubmitComprehension(comprehension.trim());
+    setSubmitting(false);
+    if (ok) {
+      setComprehensionOpen(false);
+      onFinishReading();
+    }
+  };
 
   useEffect(() => {
     const loadChapter = async () => {
@@ -200,7 +227,7 @@ export const SharedReadingText = ({
               ? 'bg-emerald-500 hover:bg-emerald-600'
               : 'bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90'
           }`}
-          onClick={onFinishReading}
+          onClick={handleFinishClick}
           disabled={hasFinishedReading}
         >
           {hasFinishedReading ? (
@@ -216,6 +243,59 @@ export const SharedReadingText = ({
           )}
         </Button>
       )}
+
+      {/* Diálogo de compreensão da leitura (obrigatório para concluir) */}
+      <Dialog open={comprehensionOpen} onOpenChange={setComprehensionOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-amber-500" />
+              O que você compreendeu desta leitura?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Compartilhe em poucas palavras o que essa passagem falou com você.
+              Sua compreensão ficará registrada e aparecerá no ranking da comunidade.
+            </p>
+            <div className="relative">
+              <Textarea
+                placeholder="Ex: Deus se revela nos momentos comuns da vida, como fez com Moisés no deserto..."
+                value={comprehension}
+                onChange={(e) => setComprehension(e.target.value)}
+                rows={4}
+                maxLength={300}
+                className="resize-none"
+              />
+              <span className="absolute bottom-2 right-2 text-xs text-muted-foreground">
+                {comprehension.length}/300
+              </span>
+            </div>
+            <Button
+              onClick={handleSubmitComprehension}
+              disabled={submitting || comprehension.trim().length < 10}
+              className="w-full bg-gradient-to-r from-primary to-purple-600"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Concluir Leitura
+                </>
+              )}
+            </Button>
+            {comprehension.trim().length > 0 && comprehension.trim().length < 10 && (
+              <p className="text-xs text-muted-foreground text-center">
+                Escreva pelo menos 10 caracteres
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -33,6 +33,20 @@ interface SharedReadingAchievement {
   earned_at?: string;
 }
 
+interface CommunityComprehension {
+  id: string;
+  user_id: string;
+  reflection: string;
+  chapter: number;
+  book_abbrev?: string | null;
+  created_at: string;
+  profile?: {
+    full_name: string;
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
 interface SharedReadingRankingProps {
   userId?: string;
   compact?: boolean;
@@ -43,6 +57,7 @@ export const SharedReadingRanking = ({ userId, compact = false }: SharedReadingR
   const [userStats, setUserStats] = useState<SharedReadingStat | null>(null);
   const [userAchievements, setUserAchievements] = useState<SharedReadingAchievement[]>([]);
   const [allAchievements, setAllAchievements] = useState<SharedReadingAchievement[]>([]);
+  const [comprehensions, setComprehensions] = useState<CommunityComprehension[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -115,6 +130,30 @@ export const SharedReadingRanking = ({ userId, compact = false }: SharedReadingR
             }));
           setUserAchievements(earnedAchievements);
         }
+      }
+
+      // Compreensões da comunidade (registradas ao concluir cada leitura)
+      try {
+        const { data: reflectionsData } = await (supabase as any)
+          .from('shared_reading_reflections')
+          .select('id, user_id, reflection, chapter, book_abbrev, created_at')
+          .order('created_at', { ascending: false })
+          .limit(15);
+
+        if (reflectionsData?.length) {
+          const rUserIds = [...new Set(reflectionsData.map((r: any) => r.user_id))];
+          const { data: rProfiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, username, avatar_url')
+            .in('id', rUserIds as string[]);
+          const rProfileMap = new Map((rProfiles || []).map(p => [p.id, p]));
+          setComprehensions(reflectionsData.map((r: any) => ({
+            ...r,
+            profile: rProfileMap.get(r.user_id),
+          })));
+        }
+      } catch {
+        // Tabela/política ainda não aplicada — seção simplesmente não aparece
       }
 
       setLoading(false);
@@ -333,6 +372,58 @@ export const SharedReadingRanking = ({ userId, compact = false }: SharedReadingR
               )}
             </CardContent>
           </Card>
+
+          {/* Compreensões da Comunidade */}
+          {comprehensions.length > 0 && (
+            <Card className="mt-6 bg-gradient-to-br from-amber-500/5 to-orange-500/5 border-amber-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  💭 Compreensões da Comunidade
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  O que os leitores compreenderam nas últimas leituras
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {comprehensions.map((c, index) => (
+                    <motion.div
+                      key={c.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`flex gap-3 p-3 rounded-lg ${
+                        c.user_id === currentUserId
+                          ? 'bg-primary/10 border border-primary/30'
+                          : 'bg-background/60'
+                      }`}
+                    >
+                      <UserAvatar
+                        src={c.profile?.avatar_url}
+                        fallback={c.profile?.full_name?.[0] || '?'}
+                        size="sm"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">
+                            {c.profile?.full_name || 'Leitor'}
+                            {c.user_id === currentUserId && <span className="text-primary ml-1">(você)</span>}
+                          </span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            <BookOpen className="h-3 w-3 mr-1" />
+                            {c.book_abbrev ? `${c.book_abbrev.toUpperCase()} ${c.chapter}` : `Capítulo ${c.chapter}`}
+                          </Badge>
+                        </div>
+                        <p className="text-sm mt-1 text-muted-foreground italic">
+                          "{c.reflection}"
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Medals Tab */}

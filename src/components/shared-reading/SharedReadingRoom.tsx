@@ -135,6 +135,7 @@ export const SharedReadingRoom = ({ roomId, onLeave }: SharedReadingRoomProps) =
             participants={participants}
             currentParticipant={currentParticipant}
             onFinishReading={markFinishedReading}
+            onSubmitComprehension={saveReflection}
             generatingQuiz={generatingQuiz}
             reactions={reactions}
             onReaction={addReaction}

@@ -424,16 +424,27 @@ export const useSharedReading = (roomId?: string) => {
   const saveReflection = async (reflection: string, favoriteVerse?: string, application?: string) => {
     if (!roomId || !currentUserId || !room) return false;
 
-    const { error } = await (supabase as any)
+    const payload: any = {
+      room_id: roomId,
+      user_id: currentUserId,
+      chapter: room.current_chapter,
+      reflection: reflection.trim(),
+      favorite_verse: favoriteVerse?.trim() || null,
+      application: application?.trim() || null,
+      book_abbrev: room.current_book_abbrev,
+    };
+
+    let { error } = await (supabase as any)
       .from('shared_reading_reflections')
-      .upsert({
-        room_id: roomId,
-        user_id: currentUserId,
-        chapter: room.current_chapter,
-        reflection: reflection.trim(),
-        favorite_verse: favoriteVerse?.trim() || null,
-        application: application?.trim() || null,
-      }, { onConflict: 'room_id,user_id,chapter' });
+      .upsert(payload, { onConflict: 'room_id,user_id,chapter' });
+
+    if (error && /book_abbrev|column/i.test(error.message || '')) {
+      // Coluna book_abbrev pode não existir ainda — tenta sem ela
+      delete payload.book_abbrev;
+      ({ error } = await (supabase as any)
+        .from('shared_reading_reflections')
+        .upsert(payload, { onConflict: 'room_id,user_id,chapter' }));
+    }
 
     if (error) {
       toast({
