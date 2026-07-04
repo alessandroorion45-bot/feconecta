@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import UserAvatar from '@/components/UserAvatar';
 import { Room, Participant, QuizQuestion, QuizAnswer, Reaction } from '@/hooks/useSharedReading';
-import { 
-  Trophy, Check, X, ArrowRight, RotateCcw, LogOut, 
-  Sparkles, Star, Crown, Medal, PartyPopper 
+import {
+  Trophy, Check, X, ArrowRight, RotateCcw, LogOut,
+  Sparkles, Star, Crown, Medal, PartyPopper, HeartHandshake
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReactionBar } from './ReactionBar';
@@ -23,6 +25,7 @@ interface SharedReadingResultsProps {
   onLeave: () => void;
   reactions: Reaction[];
   onReaction: (reaction: string) => void;
+  onSaveReflection?: (reflection: string, favoriteVerse?: string, application?: string) => Promise<boolean>;
 }
 
 export const SharedReadingResults = ({
@@ -36,9 +39,23 @@ export const SharedReadingResults = ({
   onRetry,
   onLeave,
   reactions,
-  onReaction
+  onReaction,
+  onSaveReflection
 }: SharedReadingResultsProps) => {
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reflection, setReflection] = useState('');
+  const [favoriteVerse, setFavoriteVerse] = useState('');
+  const [application, setApplication] = useState('');
+  const [reflectionSaved, setReflectionSaved] = useState(false);
+  const [savingReflection, setSavingReflection] = useState(false);
+
+  const handleSaveReflection = async () => {
+    if (!onSaveReflection || !reflection.trim()) return;
+    setSavingReflection(true);
+    const ok = await onSaveReflection(reflection, favoriteVerse, application);
+    if (ok) setReflectionSaved(true);
+    setSavingReflection(false);
+  };
 
   // Calculate results per participant
   const getParticipantResults = (userId: string) => {
@@ -282,6 +299,58 @@ export const SharedReadingResults = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Reflexão final */}
+      {onSaveReflection && (
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <HeartHandshake className="h-5 w-5 text-primary" />
+              O que Deus falou ao seu coração nesta leitura?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {reflectionSaved ? (
+              <div className="text-center py-4">
+                <p className="text-2xl mb-2">🙏</p>
+                <p className="text-sm text-muted-foreground">
+                  Sua reflexão foi registrada no histórico da sala. Deus abençoe!
+                </p>
+              </div>
+            ) : (
+              <>
+                <Textarea
+                  placeholder="Compartilhe o que essa leitura tocou em você..."
+                  value={reflection}
+                  onChange={(e) => setReflection(e.target.value)}
+                  rows={3}
+                  maxLength={1000}
+                  className="resize-none"
+                />
+                <Input
+                  placeholder="Versículo que mais chamou sua atenção (opcional)"
+                  value={favoriteVerse}
+                  onChange={(e) => setFavoriteVerse(e.target.value)}
+                  maxLength={120}
+                />
+                <Input
+                  placeholder="Como pretende colocar em prática? (opcional)"
+                  value={application}
+                  onChange={(e) => setApplication(e.target.value)}
+                  maxLength={300}
+                />
+                <Button
+                  onClick={handleSaveReflection}
+                  disabled={savingReflection || !reflection.trim()}
+                  className="w-full bg-gradient-to-r from-primary to-accent"
+                >
+                  {savingReflection ? 'Salvando...' : '💾 Registrar Reflexão'}
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Reactions */}
       <ReactionBar reactions={reactions} onReaction={onReaction} participants={participants} />

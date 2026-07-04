@@ -21,6 +21,7 @@ export const SharedReadingRoom = ({ roomId, onLeave }: SharedReadingRoomProps) =
     loading,
     currentUserId,
     markFinishedReading,
+    saveReflection,
     updateRoomStatus,
     setQuizQuestions,
     submitAnswer,
@@ -165,6 +166,7 @@ export const SharedReadingRoom = ({ roomId, onLeave }: SharedReadingRoomProps) =
             onLeave={handleLeave}
             reactions={reactions}
             onReaction={addReaction}
+            onSaveReflection={saveReflection}
           />
         )}
       </motion.div>

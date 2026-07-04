@@ -175,6 +175,33 @@ export const useSharedReading = (roomId?: string) => {
       return null;
     }
 
+    // RPC SECURITY DEFINER: funciona para salas privadas e aplica o
+    // limite de 7 participantes no servidor
+    const { data: rpcData, error: rpcError } = await (supabase.rpc as any)('join_reading_room', {
+      p_code: code.toUpperCase(),
+    });
+
+    if (!rpcError && rpcData) {
+      const roomData = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+      if (roomData) {
+        toast({ title: 'Bem-vindo!', description: `Você entrou na sala "${roomData.room_name}"` });
+        return roomData;
+      }
+    }
+
+    if (rpcError) {
+      const msg = rpcError.message || '';
+      if (msg.includes('room_full')) {
+        toast({ title: 'Sala cheia', description: 'Esta sala já atingiu o limite de 7 participantes', variant: 'destructive' });
+        return null;
+      }
+      if (msg.includes('room_not_found')) {
+        toast({ title: 'Erro', description: 'Sala não encontrada', variant: 'destructive' });
+        return null;
+      }
+      // RPC ainda não existe no banco — cai para o fluxo antigo
+    }
+
     const { data: roomData, error: roomError } = await supabase
       .from('shared_reading_rooms')
       .select('*')
@@ -192,7 +219,7 @@ export const useSharedReading = (roomId?: string) => {
       .select('*', { count: 'exact', head: true })
       .eq('room_id', roomData.id);
 
-    if (count && count >= roomData.max_participants) {
+    if (count && count >= Math.min(roomData.max_participants || 7, 7)) {
       toast({ title: 'Sala cheia', description: 'Esta sala já atingiu o limite de 7 participantes', variant: 'destructive' });
       return null;
     }
@@ -350,6 +377,47 @@ export const useSharedReading = (roomId?: string) => {
       .eq('user_id', currentUserId);
   };
 
+  // Save final reflection ("O que Deus falou ao seu coração?")
+  const saveReflection = async (reflection: string, favoriteVerse?: string, application?: string) => {
+    if (!roomId || !currentUserId || !room) return false;
+
+    const { error } = await (supabase as any)
+      .from('shared_reading_reflections')
+      .upsert({
+        room_id: roomId,
+        user_id: currentUserId,
+        chapter: room.current_chapter,
+        reflection: reflection.trim(),
+        favorite_verse: favoriteVerse?.trim() || null,
+        application: application?.trim() || null,
+      }, { onConflict: 'room_id,user_id,chapter' });
+
+    if (error) {
+      toast({
+        title: 'Erro ao salvar reflexão',
+        description: 'Aplique a atualização do banco (APLICAR_LEITURA_SQL.sql)',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    toast({ title: '🙏 Reflexão registrada!', description: 'Sua reflexão foi salva no histórico da sala' });
+    return true;
+  };
+
+  // Publica a conclusão do capítulo no Feed (apenas salas públicas)
+  const publishCompletionToFeed = async () => {
+    if (!room || !currentUserId || !room.is_public) return;
+    try {
+      await supabase.from('posts').insert({
+        user_id: currentUserId,
+        content: `📖 Nosso grupo "${room.room_name}" concluiu a leitura de ${room.current_book_abbrev.toUpperCase()} capítulo ${room.current_chapter} na Leitura Bíblica Compartilhada! 🙏\n\nQuer ler com a gente? Entre com o código ${room.room_code} na Leitura em Grupo.`,
+      });
+    } catch {
+      // Publicação no feed é melhor-esforço; não interrompe o fluxo da sala
+    }
+  };
+
   // Update room status (host only)
   const updateRoomStatus = async (status: Room['status']) => {
     if (!roomId || !currentUserId || room?.host_id !== currentUserId) return;
@@ -408,6 +476,9 @@ export const useSharedReading = (roomId?: string) => {
   // Advance to next chapter (host only)
   const advanceToNextChapter = async () => {
     if (!roomId || !currentUserId || room?.host_id !== currentUserId) return;
+
+    // Publica a conclusão no Feed antes de avançar (sala pública)
+    await publishCompletionToFeed();
 
     // Award points/stats to all participants
     for (const participant of participants) {
@@ -506,6 +577,7 @@ export const useSharedReading = (roomId?: string) => {
     createRoom,
     joinRoomByCode,
     markFinishedReading,
+    saveReflection,
     updateRoomStatus,
     setQuizQuestions,
     submitAnswer,
