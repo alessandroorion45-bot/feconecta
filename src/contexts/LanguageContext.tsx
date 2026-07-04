@@ -140,7 +140,6 @@ type TranslationKey =
   | 'nav.home'
   | 'nav.bible'
   | 'nav.prayers'
-  | 'nav.events'
   | 'nav.testimonies'
   | 'nav.friends'
   | 'nav.profile'
@@ -165,8 +164,6 @@ type TranslationKey =
   | 'friends.fromYourCountry'
   | 'friends.fromOtherCountries'
   | 'friends.friendLimit'
-  | 'events.nearYou'
-  | 'events.otherCountries'
   | 'settings.language'
   | 'settings.changeLanguage'
   | 'settings.languageUpdated';
@@ -196,7 +193,6 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'nav.home': 'Início',
     'nav.bible': 'Bíblia',
     'nav.prayers': 'Orações',
-    'nav.events': 'Eventos',
     'nav.testimonies': 'Testemunhos',
     'nav.friends': 'Amigos',
     'nav.profile': 'Perfil',
@@ -221,8 +217,6 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'friends.fromYourCountry': 'Do seu país',
     'friends.fromOtherCountries': 'De outros países',
     'friends.friendLimit': 'Você atingiu o limite de 10.000 amigos',
-    'events.nearYou': 'Eventos no seu país',
-    'events.otherCountries': 'Eventos em outros países',
     'settings.language': 'Idioma',
     'settings.changeLanguage': 'Alterar idioma',
     'settings.languageUpdated': 'Idioma atualizado com sucesso',
@@ -251,7 +245,6 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'nav.home': 'Inicio',
     'nav.bible': 'Biblia',
     'nav.prayers': 'Oraciones',
-    'nav.events': 'Eventos',
     'nav.testimonies': 'Testimonios',
     'nav.friends': 'Amigos',
     'nav.profile': 'Perfil',
@@ -276,8 +269,6 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'friends.fromYourCountry': 'De tu país',
     'friends.fromOtherCountries': 'De otros países',
     'friends.friendLimit': 'Has alcanzado el límite de 10.000 amigos',
-    'events.nearYou': 'Eventos en tu país',
-    'events.otherCountries': 'Eventos en otros países',
     'settings.language': 'Idioma',
     'settings.changeLanguage': 'Cambiar idioma',
     'settings.languageUpdated': 'Idioma actualizado correctamente',
@@ -306,7 +297,6 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'nav.home': 'Home',
     'nav.bible': 'Bible',
     'nav.prayers': 'Prayers',
-    'nav.events': 'Events',
     'nav.testimonies': 'Testimonies',
     'nav.friends': 'Friends',
     'nav.profile': 'Profile',
@@ -331,8 +321,6 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'friends.fromYourCountry': 'From your country',
     'friends.fromOtherCountries': 'From other countries',
     'friends.friendLimit': 'You have reached the 10,000 friend limit',
-    'events.nearYou': 'Events in your country',
-    'events.otherCountries': 'Events in other countries',
     'settings.language': 'Language',
     'settings.changeLanguage': 'Change language',
     'settings.languageUpdated': 'Language updated successfully',
@@ -361,7 +349,6 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'nav.home': 'Home',
     'nav.bible': 'Bijbel',
     'nav.prayers': 'Gebeden',
-    'nav.events': 'Evenementen',
     'nav.testimonies': 'Getuigenissen',
     'nav.friends': 'Vrienden',
     'nav.profile': 'Profiel',
@@ -386,8 +373,6 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'friends.fromYourCountry': 'Uit je land',
     'friends.fromOtherCountries': 'Uit andere landen',
     'friends.friendLimit': 'Je hebt de limiet van 10.000 vrienden bereikt',
-    'events.nearYou': 'Evenementen in je land',
-    'events.otherCountries': 'Evenementen in andere landen',
     'settings.language': 'Taal',
     'settings.changeLanguage': 'Taal wijzigen',
     'settings.languageUpdated': 'Taal succesvol bijgewerkt',
@@ -483,22 +468,28 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadUserPreferences();
 
     // Listen for auth state changes to reload preferences
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('country, preferred_language, set_language_manually')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profile) {
-          await applyUserLanguage(
-            session.user.id, 
-            profile.country, 
-            profile.preferred_language,
-            profile.set_language_manually ?? false
-          );
-        }
+        const userId = session.user.id;
+        // NUNCA usar await com chamadas Supabase dentro deste callback:
+        // ele roda segurando o lock interno de auth e qualquer query aqui
+        // trava (deadlock) todas as requisições seguintes do app.
+        setTimeout(async () => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('country, preferred_language, set_language_manually')
+            .eq('id', userId)
+            .single();
+
+          if (profile) {
+            await applyUserLanguage(
+              userId,
+              profile.country,
+              profile.preferred_language,
+              profile.set_language_manually ?? false
+            );
+          }
+        }, 0);
       }
     });
 

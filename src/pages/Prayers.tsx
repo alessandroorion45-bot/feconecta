@@ -331,8 +331,8 @@ const Prayers = () => {
 
       trackActivity("prayer_created");
 
-      // Conceder XP por criar oração
-      await awardXP('prayer_created');
+      // Conceder XP por criar oração (não bloqueia a publicação se a gamificação falhar)
+      void awardXP('prayer_created');
 
       toast({
         title: "Oração publicada! 🙏",
