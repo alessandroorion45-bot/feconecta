@@ -44,6 +44,8 @@ interface AdminSettingsModalProps {
   communityId: string;
   communityName: string;
   userId: string;
+  /** Somente o CRIADOR da comunidade pode excluí-la */
+  isCreator?: boolean;
   onCommunityDeleted: () => void;
 }
 
@@ -53,6 +55,7 @@ const AdminSettingsModal = ({
   communityId,
   communityName,
   userId,
+  isCreator = false,
   onCommunityDeleted,
 }: AdminSettingsModalProps) => {
   const { toast } = useToast();
@@ -336,6 +339,7 @@ const AdminSettingsModal = ({
               </CardContent>
             </Card>
 
+            {isCreator && (
             <Card className="border-destructive/20">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2 text-destructive">
@@ -343,7 +347,7 @@ const AdminSettingsModal = ({
                   Excluir Comunidade
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  Esta ação é irreversível. Todos os dados serão perdidos.
+                  Esta ação é irreversível e exclusiva do criador da comunidade.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -361,6 +365,7 @@ const AdminSettingsModal = ({
                 </Button>
               </CardContent>
             </Card>
+            )}
           </div>
         </DialogContent>
       </Dialog>

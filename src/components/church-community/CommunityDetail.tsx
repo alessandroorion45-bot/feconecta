@@ -1,10 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone, Flame, TreeDeciduous } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ArrowLeft, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone,
+  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff,
+} from "lucide-react";
+import { ImageCropModal } from "@/components/ImageCropModal";
+import EditCommunityModal from "./EditCommunityModal";
 import CommunityMural from "./CommunityMural";
 import CommunityCampaigns from "./CommunityCampaigns";
 import CommunityTree from "./CommunityTree";
@@ -30,6 +43,8 @@ interface Community {
   created_at?: string;
   city?: string | null;
   state?: string | null;
+  banner_url?: string | null;
+  main_verse?: string | null;
 }
 
 interface CommunityDetailProps {
@@ -48,6 +63,74 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
   const [showAdminSettings, setShowAdminSettings] = useState(false);
   const [activeTab, setActiveTab] = useState("mural");
   const [heroStats, setHeroStats] = useState({ ministries: 0, campaigns: 0 });
+  const [showEditCommunity, setShowEditCommunity] = useState(false);
+  const [bannerCropOpen, setBannerCropOpen] = useState(false);
+  const [bannerImageSrc, setBannerImageSrc] = useState<string | null>(null);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const isCreator = community?.created_by === userId;
+
+  const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Arquivo inválido", description: "Selecione uma imagem (JPG, PNG ou WEBP).", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setBannerImageSrc(ev.target?.result as string);
+      setBannerCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (bannerInputRef.current) bannerInputRef.current.value = "";
+  };
+
+  const handleBannerCropped = async (blob: Blob) => {
+    setBannerUploading(true);
+    try {
+      const filePath = `community-banners/banner-${communityId}-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("community-photos")
+        .upload(filePath, blob, { contentType: "image/jpeg", upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("community-photos").getPublicUrl(filePath);
+
+      const { error } = await (supabase as any)
+        .from("church_communities")
+        .update({ banner_url: urlData.publicUrl })
+        .eq("id", communityId);
+      if (error) throw error;
+
+      setCommunity(prev => (prev ? { ...prev, banner_url: urlData.publicUrl } : prev));
+      toast({ title: "✅ Capa atualizada!", description: "A nova capa da comunidade foi salva." });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar capa",
+        description: /banner_url|column/i.test(error.message || "")
+          ? "Aplique APLICAR_COMUNIDADE4_SQL.sql para ativar a capa."
+          : error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setBannerUploading(false);
+      setBannerImageSrc(null);
+    }
+  };
+
+  const removeBanner = async () => {
+    const { error } = await (supabase as any)
+      .from("church_communities")
+      .update({ banner_url: null })
+      .eq("id", communityId);
+    if (!error) {
+      setCommunity(prev => (prev ? { ...prev, banner_url: null } : prev));
+      toast({ title: "Capa removida" });
+    }
+  };
 
   useEffect(() => {
     loadCommunity();
@@ -162,18 +245,91 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
 
       {/* Hero da Comunidade */}
       <Card className="overflow-hidden border-primary/20">
-        {/* Capa */}
-        <div className="relative h-32 sm:h-44">
-          {community.cover_image_url ? (
+        {/* Capa 16:9 */}
+        <div className="relative group/banner" style={{ aspectRatio: "16 / 6" }}>
+          {community.banner_url ? (
             <img
-              src={community.cover_image_url}
-              alt={community.name}
+              src={community.banner_url}
+              alt={`Capa de ${community.name}`}
+              loading="lazy"
               className="absolute inset-0 w-full h-full object-cover"
+              style={{ objectPosition: "center" }}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/15 to-amber-500/20" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/15 to-amber-500/20">
+              <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-20 select-none" aria-hidden>
+                ⛪
+              </div>
+            </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+
+          {/* Alterar/remover capa (somente criador, aparece no hover) */}
+          {isCreator && (
+            <div className="absolute top-2 right-12 flex gap-1.5 opacity-0 group-hover/banner:opacity-100 transition-opacity">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="gap-1.5 bg-background/80 backdrop-blur-sm shadow"
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={bannerUploading}
+              >
+                {bannerUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                Alterar Capa
+              </Button>
+              {community.banner_url && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1.5 bg-background/80 backdrop-blur-sm shadow text-destructive"
+                  onClick={removeBanner}
+                  title="Remover capa"
+                >
+                  <ImageOff className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Menu do criador */}
+          {isCreator && (
+            <div className="absolute top-2 right-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/80 backdrop-blur-sm shadow">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowEditCommunity(true)}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar Comunidade
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => bannerInputRef.current?.click()}>
+                    <Camera className="h-4 w-4 mr-2" />
+                    Alterar Capa
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowManageLeaders(true)}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Gerenciar Líderes
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setShowAdminSettings(true)} className="text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir Comunidade
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleBannerSelect}
+          />
         </div>
 
         <CardContent className="relative -mt-12 pb-4">
@@ -247,11 +403,13 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
       {/* Active Admin Transfer Voting */}
       <AdminTransferVoting communityId={communityId} userId={userId} />
 
-      {/* Spiritual Message */}
+      {/* Versículo da comunidade (escolhido pelo criador) ou mensagem padrão */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="py-3 text-center">
           <p className="text-primary text-sm italic">
-            "Todos sois iguais em Cristo Jesus." — Gálatas 3:28
+            {community.main_verse?.trim()
+              ? community.main_verse
+              : '"Todos sois iguais em Cristo Jesus." — Gálatas 3:28'}
           </p>
         </CardContent>
       </Card>
@@ -361,8 +519,32 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
         communityId={communityId}
         communityName={community.name}
         userId={userId}
+        isCreator={isCreator}
         onCommunityDeleted={onBack}
       />
+
+      {/* Edição da comunidade (somente criador) */}
+      <EditCommunityModal
+        open={showEditCommunity}
+        onOpenChange={setShowEditCommunity}
+        community={community}
+        onSaved={(patch) => setCommunity(prev => (prev ? { ...prev, ...patch } : prev))}
+      />
+
+      {/* Recorte da capa em 16:9 travado */}
+      {bannerImageSrc && (
+        <ImageCropModal
+          open={bannerCropOpen}
+          onOpenChange={(o) => {
+            setBannerCropOpen(o);
+            if (!o) setBannerImageSrc(null);
+          }}
+          imageSrc={bannerImageSrc}
+          aspectRatio={16 / 9}
+          onCropComplete={handleBannerCropped}
+          title="Recortar Capa da Comunidade (16:9)"
+        />
+      )}
     </div>
   );
 };
