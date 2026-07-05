@@ -13,7 +13,7 @@ import {
   MURAL_POST_TYPES, POST_TYPE_BY_VALUE,
   canPostWordOfWeek, canModerateMural, getRoleInfo,
 } from "@/lib/communityRoles";
-import { Send, Sparkles, Trash2, MessageCircle, Loader2, Megaphone } from "lucide-react";
+import { Send, Sparkles, Trash2, MessageCircle, Loader2, Megaphone, Share2, Bookmark } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -67,6 +67,33 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
   const [openComments, setOpenComments] = useState<string | null>(null);
   const [comments, setComments] = useState<MuralComment[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [wordSaved, setWordSaved] = useState(false);
+
+  const shareWordOfWeek = async (post: MuralPost) => {
+    const text = `✨ Palavra da Semana: ${post.title || ""}\n\n${post.verse_text ? `"${post.verse_text}" — ${post.verse_reference}\n\n` : ""}${post.content}`.slice(0, 500);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: post.title || "Palavra da Semana", text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "Copiado! 📋", description: "Cole onde quiser compartilhar" });
+      }
+    } catch { /* usuário cancelou */ }
+  };
+
+  const saveWordOfWeek = async (post: MuralPost) => {
+    try {
+      const { error } = await sb.from("feed_favorites").upsert(
+        { user_id: userId, item_type: "community_post", item_id: post.id },
+        { onConflict: "user_id,item_type,item_id" }
+      );
+      if (error) throw error;
+      setWordSaved(true);
+      toast({ title: "Salvo nos favoritos! ⭐" });
+    } catch {
+      toast({ title: "Não foi possível salvar", variant: "destructive" });
+    }
+  };
 
   const loadPosts = useCallback(async () => {
     const { data, error } = await sb
@@ -287,7 +314,7 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
                 <p className="text-sm whitespace-pre-wrap text-muted-foreground">{wordOfWeek.reflection_questions}</p>
               </div>
             )}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-1 pt-1 flex-wrap">
               <Button variant="ghost" size="sm" className={cn("gap-1.5", wordOfWeek.amened_by_me && "text-primary")}
                 onClick={() => toggleAmen(wordOfWeek)}>
                 🙏 Amém ({wordOfWeek.amen_count})
@@ -295,6 +322,15 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
               <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => toggleComments(wordOfWeek.id)}>
                 <MessageCircle className="h-4 w-4" />
                 {wordOfWeek.comment_count}
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => shareWordOfWeek(wordOfWeek)}>
+                <Share2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Compartilhar</span>
+              </Button>
+              <Button variant="ghost" size="sm" className={cn("gap-1.5", wordSaved && "text-yellow-500")}
+                onClick={() => saveWordOfWeek(wordOfWeek)}>
+                <Bookmark className={cn("h-4 w-4", wordSaved && "fill-current")} />
+                <span className="hidden sm:inline">Salvar</span>
               </Button>
             </div>
             {openComments === wordOfWeek.id && (

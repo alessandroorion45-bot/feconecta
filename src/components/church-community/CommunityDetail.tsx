@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Church, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone, Flame, TreeDeciduous } from "lucide-react";
-import RectAvatar from "@/components/RectAvatar";
+import { ArrowLeft, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone, Flame, TreeDeciduous } from "lucide-react";
 import CommunityMural from "./CommunityMural";
 import CommunityCampaigns from "./CommunityCampaigns";
 import CommunityTree from "./CommunityTree";
+import CommunityActivity from "./CommunityActivity";
 import VotingList from "./VotingList";
 import LeaderEvaluations from "./LeaderEvaluations";
 import CommunityMembers from "./CommunityMembers";
@@ -27,6 +27,9 @@ interface Community {
   cover_image_url: string | null;
   member_count: number;
   created_by: string;
+  created_at?: string;
+  city?: string | null;
+  state?: string | null;
 }
 
 interface CommunityDetailProps {
@@ -44,6 +47,7 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
   const [showManageLeaders, setShowManageLeaders] = useState(false);
   const [showAdminSettings, setShowAdminSettings] = useState(false);
   const [activeTab, setActiveTab] = useState("mural");
+  const [heroStats, setHeroStats] = useState({ ministries: 0, campaigns: 0 });
 
   useEffect(() => {
     loadCommunity();
@@ -72,6 +76,30 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
         setIsAdmin(membership.role === "admin");
         setMyRole(membership.role);
       }
+
+      // Estatísticas do hero (ministérios ativos e campanhas)
+      const [ministriesRes, campaignsRes] = await Promise.allSettled([
+        supabase
+          .from("church_community_members")
+          .select("ministries")
+          .eq("community_id", communityId)
+          .eq("is_active", true),
+        (supabase as any)
+          .from("community_campaigns")
+          .select("id", { count: "exact", head: true })
+          .eq("community_id", communityId)
+          .eq("is_active", true),
+      ]);
+      const ministrySet = new Set<string>();
+      if (ministriesRes.status === "fulfilled") {
+        (ministriesRes.value.data || []).forEach((m: any) =>
+          (m.ministries || []).forEach((min: string) => ministrySet.add(min))
+        );
+      }
+      setHeroStats({
+        ministries: ministrySet.size,
+        campaigns: campaignsRes.status === "fulfilled" ? (campaignsRes.value as any).count || 0 : 0,
+      });
     } catch (error) {
       console.error("Error loading community:", error);
     } finally {
@@ -132,10 +160,24 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
         )}
       </div>
 
-      {/* Community Info */}
-      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-        <CardHeader>
-          <div className="flex items-center gap-4">
+      {/* Hero da Comunidade */}
+      <Card className="overflow-hidden border-primary/20">
+        {/* Capa */}
+        <div className="relative h-32 sm:h-44">
+          {community.cover_image_url ? (
+            <img
+              src={community.cover_image_url}
+              alt={community.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/15 to-amber-500/20" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        </div>
+
+        <CardContent className="relative -mt-12 pb-4">
+          <div className="flex items-end gap-4 flex-wrap">
             <CommunityPhotoUpload
               communityId={community.id}
               currentImageUrl={community.cover_image_url}
@@ -143,26 +185,63 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
               isAdmin={isAdmin}
               onUpdate={(newUrl) => setCommunity(prev => prev ? { ...prev, cover_image_url: newUrl } : null)}
             />
-            <div className="flex-1">
-              <CardTitle className="text-2xl flex items-center gap-2">
+            <div className="flex-1 min-w-[200px] pb-1">
+              <h2 className="text-2xl font-bold flex items-center gap-2 flex-wrap">
                 {community.name}
-                {isAdmin && (
-                  <Badge className="bg-primary text-primary-foreground">Admin</Badge>
-                )}
-              </CardTitle>
-              <CardDescription className="text-base">{community.church_name}</CardDescription>
+                {isAdmin && <Badge className="bg-primary text-primary-foreground">Admin</Badge>}
+              </h2>
+              <p className="text-muted-foreground">
+                ⛪ {community.church_name}
+                {community.city && <span className="text-sm"> · {community.city}{community.state ? ` - ${community.state}` : ""}</span>}
+              </p>
             </div>
-            <Badge variant="secondary" className="text-lg px-3 py-1 flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              {community.member_count} membros
-            </Badge>
           </div>
-        </CardHeader>
-        {community.description && (
-          <CardContent>
-            <p className="text-muted-foreground">{community.description}</p>
-          </CardContent>
-        )}
+
+          {community.description && (
+            <p className="text-sm text-muted-foreground mt-3">{community.description}</p>
+          )}
+
+          {/* Estatísticas */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+            {[
+              { emoji: "👥", value: community.member_count, label: "Membros" },
+              { emoji: "🌿", value: heroStats.ministries, label: "Ministérios" },
+              { emoji: "🔥", value: heroStats.campaigns, label: "Campanhas" },
+              {
+                emoji: "🕊️",
+                value: community.created_at
+                  ? Math.max(1, Math.floor((Date.now() - new Date(community.created_at).getTime()) / 86_400_000))
+                  : "—",
+                label: "Dias de comunhão",
+              },
+            ].map(({ emoji, value, label }) => (
+              <div key={label} className="rounded-lg bg-muted/50 border border-border/50 px-3 py-2 text-center">
+                <div className="text-lg font-bold">{emoji} {value}</div>
+                <div className="text-[11px] text-muted-foreground">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Ações rápidas */}
+          <div className="flex gap-2 mt-4 flex-wrap">
+            <Button size="sm" className="gap-1.5 bg-gradient-to-r from-primary to-primary/80" onClick={() => setActiveTab("campaigns")}>
+              <Flame className="h-4 w-4" />
+              Campanhas
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setActiveTab("tree")}>
+              <TreeDeciduous className="h-4 w-4" />
+              Ver Árvore
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setActiveTab("ministries")}>
+              <Heart className="h-4 w-4" />
+              Ministérios
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setActiveTab("mural")}>
+              <Megaphone className="h-4 w-4" />
+              Mural
+            </Button>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Active Admin Transfer Voting */}
@@ -222,7 +301,8 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
           )}
         </div>
 
-        <TabsContent value="mural" className="mt-6">
+        <TabsContent value="mural" className="mt-6 space-y-4">
+          <CommunityActivity communityId={communityId} />
           <CommunityMural communityId={communityId} userId={userId} myRole={myRole} />
         </TabsContent>
 
