@@ -1,10 +1,81 @@
 -- =============================================
 -- DESAFIOS ESPIRITUAIS — Correções e semeadura
+-- 0) Cria as tabelas que nunca existiram no banco remoto
 -- 1) Políticas RLS (corrige 400/404/406 na página Desafios)
 -- 2) Semeia 365 dias de desafios diários (9 categorias, ciclo sem
 --    repetição em dias consecutivos; não sobrescreve dias existentes)
 -- 3) Desafios temporários (semanais/mensais) na aba Temporários
 -- =============================================
+
+-- ---------------------------------------------
+-- 0. Tabelas (idempotente — não altera as que já existem)
+-- ---------------------------------------------
+CREATE TABLE IF NOT EXISTS public.daily_biblical_challenges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  challenge_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  category TEXT NOT NULL DEFAULT 'geral',
+  challenge_text TEXT NOT NULL,
+  motivational_quote TEXT NOT NULL,
+  difficulty_level TEXT NOT NULL DEFAULT 'facil',
+  points_reward INTEGER NOT NULL DEFAULT 10,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.daily_challenge_completions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  challenge_id UUID NOT NULL REFERENCES public.daily_biblical_challenges(id) ON DELETE CASCADE,
+  points_earned INTEGER NOT NULL DEFAULT 0,
+  completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, challenge_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.challenges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  icon TEXT NOT NULL DEFAULT '🎯',
+  challenge_type TEXT NOT NULL DEFAULT 'weekly',
+  requirement_type TEXT NOT NULL DEFAULT 'count',
+  requirement_value INTEGER NOT NULL DEFAULT 1,
+  points_reward INTEGER NOT NULL DEFAULT 50,
+  badge_reward TEXT,
+  start_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  end_date TIMESTAMPTZ NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.user_challenges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  challenge_id UUID NOT NULL REFERENCES public.challenges(id) ON DELETE CASCADE,
+  current_progress INTEGER NOT NULL DEFAULT 0,
+  is_completed BOOLEAN NOT NULL DEFAULT false,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, challenge_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.user_badges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  badge_type TEXT NOT NULL,
+  badge_name TEXT NOT NULL,
+  badge_icon TEXT NOT NULL DEFAULT '🏅',
+  badge_color TEXT NOT NULL DEFAULT 'from-yellow-500 to-orange-500',
+  display_order INTEGER,
+  earned_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Colunas que podem faltar em tabelas antigas
+ALTER TABLE public.user_badges ADD COLUMN IF NOT EXISTS display_order INTEGER;
+
+CREATE INDEX IF NOT EXISTS idx_daily_challenges_date
+ON public.daily_biblical_challenges (challenge_date);
+
+CREATE INDEX IF NOT EXISTS idx_daily_completions_user
+ON public.daily_challenge_completions (user_id, completed_at DESC);
 
 -- ---------------------------------------------
 -- 1. Políticas
