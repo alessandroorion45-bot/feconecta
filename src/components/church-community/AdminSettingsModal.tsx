@@ -20,9 +20,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, UserCheck, AlertTriangle, Loader2 } from "lucide-react";
 import RectAvatar from "@/components/RectAvatar";
+
+const sb = supabase as any;
 
 interface Member {
   id: string;
@@ -62,6 +65,28 @@ const AdminSettingsModal = ({
   const [showTransferConfirm, setShowTransferConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
+  const [deleteCounts, setDeleteCounts] = useState<{ members: number; campaigns: number; votings: number; posts: number } | null>(null);
+
+  const nameMatches = confirmName.trim().toLowerCase() === communityName.trim().toLowerCase();
+
+  const loadDeleteCounts = async () => {
+    const countOf = async (table: string) => {
+      try {
+        const { count } = await sb.from(table).select("id", { count: "exact", head: true }).eq("community_id", communityId);
+        return count || 0;
+      } catch {
+        return 0;
+      }
+    };
+    const [members, campaigns, votings, posts] = await Promise.all([
+      countOf("church_community_members"),
+      countOf("community_campaigns"),
+      countOf("community_votings"),
+      countOf("community_posts"),
+    ]);
+    setDeleteCounts({ members, campaigns, votings, posts });
+  };
 
   useEffect(() => {
     if (open) {
@@ -132,7 +157,46 @@ const AdminSettingsModal = ({
         }
       }
 
-      // Delete the community (cascade will handle related data)
+      // Limpeza explícita dos dados vinculados (não depende de CASCADE no banco)
+      const relatedTables = [
+        "community_post_amens", // via posts (FK cascade), mas garante
+        "community_posts",
+        "community_campaign_checkins",
+        "community_campaign_participants",
+        "community_campaigns",
+        "community_votes",
+        "community_votings",
+        "community_comments",
+        "leader_evaluations",
+        "church_leaders",
+        "admin_transfer_votings",
+        "community_action_history",
+        "church_community_members",
+      ];
+      for (const table of relatedTables) {
+        try {
+          if (table === "community_votes") {
+            // votos não têm community_id: apaga pelos ids das votações
+            const { data: votings } = await sb.from("community_votings").select("id").eq("community_id", communityId);
+            const ids = (votings || []).map((v: any) => v.id);
+            if (ids.length) await sb.from("community_votes").delete().in("voting_id", ids);
+          } else if (table === "community_post_amens" || table === "community_campaign_checkins" || table === "community_campaign_participants") {
+            // dependem de FK cascade das tabelas-pai criadas hoje; nada a fazer aqui
+            continue;
+          } else {
+            await sb.from(table).delete().eq("community_id", communityId);
+          }
+        } catch {
+          // tabela pode não existir ou já ter cascade — segue em frente
+        }
+      }
+
+      // Notificações relacionadas à comunidade
+      try {
+        await sb.from("notifications").delete().eq("reference_id", communityId);
+      } catch { /* melhor-esforço */ }
+
+      // Delete the community
       const { error } = await supabase
         .from("church_communities")
         .delete()
@@ -286,7 +350,12 @@ const AdminSettingsModal = ({
                 <Button
                   variant="destructive"
                   className="w-full"
-                  onClick={() => setShowDeleteConfirm(true)}
+                  onClick={() => {
+                    setConfirmName("");
+                    setDeleteCounts(null);
+                    loadDeleteCounts();
+                    setShowDeleteConfirm(true);
+                  }}
                 >
                   Excluir Comunidade
                 </Button>
@@ -443,23 +512,50 @@ const AdminSettingsModal = ({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="h-5 w-5" />
-              Confirmação Final
+              Confirmação Final — {communityName}
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p className="font-semibold text-destructive">
-                Esta ação é IRREVERSÍVEL!
-              </p>
-              <p>
-                Todos os dados da comunidade, membros, votações e histórico serão
-                permanentemente excluídos.
-              </p>
+            <AlertDialogDescription className="space-y-3">
+              <span className="block font-semibold text-destructive">
+                Você tem certeza que deseja excluir esta comunidade? Esta ação é
+                permanente e removerá todos os dados relacionados.
+              </span>
+
+              {/* O que será excluído */}
+              <span className="grid grid-cols-2 gap-2 text-sm">
+                <span className="rounded-lg bg-muted/60 px-3 py-2">
+                  👥 <strong>{deleteCounts?.members ?? "…"}</strong> membros
+                </span>
+                <span className="rounded-lg bg-muted/60 px-3 py-2">
+                  🔥 <strong>{deleteCounts?.campaigns ?? "…"}</strong> campanhas
+                </span>
+                <span className="rounded-lg bg-muted/60 px-3 py-2">
+                  🗳️ <strong>{deleteCounts?.votings ?? "…"}</strong> votações
+                </span>
+                <span className="rounded-lg bg-muted/60 px-3 py-2">
+                  📢 <strong>{deleteCounts?.posts ?? "…"}</strong> publicações
+                </span>
+              </span>
+
+              <span className="block text-sm">
+                Para confirmar, digite o nome da comunidade:{" "}
+                <strong className="select-all">{communityName}</strong>
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <Input
+            placeholder={`Digite "${communityName}" para confirmar`}
+            value={confirmName}
+            onChange={(e) => setConfirmName(e.target.value)}
+            disabled={isDeleting}
+            className={nameMatches ? "border-destructive" : ""}
+          />
+
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteCommunity}
-              disabled={isDeleting}
+              disabled={isDeleting || !nameMatches}
               className="bg-destructive hover:bg-destructive/90"
             >
               {isDeleting ? (
