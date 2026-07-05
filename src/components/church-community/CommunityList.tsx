@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,8 @@ interface Community {
   description: string | null;
   church_name: string;
   cover_image_url: string | null;
+  banner_url?: string | null;
+  main_verse?: string | null;
   member_count: number;
   created_by: string;
   created_at: string;
@@ -197,84 +199,112 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
   };
 
   const CommunityCard = ({ community, showJoin = false }: { community: Community; showJoin?: boolean }) => (
-    <Card 
-      className="hover:shadow-lg transition-all cursor-pointer group border-border/50 hover:border-primary/30"
-      onClick={() => community.is_member && onSelectCommunity(community.id)}
+    <Card
+      className="community-card relative overflow-hidden cursor-pointer group border-border/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/50"
+      onClick={() => (community.is_member ? onSelectCommunity(community.id) : handleJoin(community.id))}
     >
-      <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <RectAvatar
-                src={community.cover_image_url}
-                fallback={community.name}
-                size="md"
-              />
-            <div>
-              <CardTitle className="text-lg group-hover:text-primary transition-colors flex items-center gap-2">
-                {community.name}
-                {community.member_role === "admin" && (
-                  <Crown className="h-4 w-4 text-secondary" />
-                )}
-              </CardTitle>
-              <CardDescription>{community.church_name}</CardDescription>
-            </div>
+      {/* Brilho que atravessa o card no hover */}
+      <div className="card-shine pointer-events-none absolute inset-0 z-20" aria-hidden />
+
+      {/* Capa */}
+      <div className="relative h-24 overflow-hidden">
+        {community.banner_url || community.cover_image_url ? (
+          <img
+            src={community.banner_url || community.cover_image_url!}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-purple-500/25 to-amber-500/30 transition-transform duration-500 group-hover:scale-110">
+            <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-25 select-none">⛪</span>
           </div>
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {community.member_count}
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
+
+        {/* Membros — chama para a comunhão */}
+        <Badge className="absolute top-2 right-2 gap-1 bg-background/85 text-foreground backdrop-blur-sm shadow border-0">
+          <Users className="h-3 w-3 text-primary" />
+          {community.member_count} {community.member_count === 1 ? "irmão" : "irmãos"}
+        </Badge>
+
+        {community.member_role === "admin" && (
+          <Badge className="absolute top-2 left-2 gap-1 bg-amber-500/90 text-white backdrop-blur-sm shadow border-0">
+            <Crown className="h-3 w-3" />
+            Sua igreja
           </Badge>
+        )}
+      </div>
+
+      {/* Identidade */}
+      <CardContent className="relative -mt-9 pb-4">
+        <div className="flex items-end gap-3">
+          <div className="rounded-xl ring-2 ring-background shadow-lg transition-transform duration-300 group-hover:scale-105">
+            <RectAvatar
+              src={community.cover_image_url}
+              fallback={community.name}
+              size="md"
+            />
+          </div>
+          <div className="min-w-0 flex-1 pb-0.5">
+            <h3 className="font-bold text-lg leading-tight truncate group-hover:text-primary transition-colors">
+              {community.name}
+            </h3>
+            <p className="text-xs text-muted-foreground truncate">⛪ {community.church_name}</p>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        {/* Community ID */}
-        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2 font-mono">
-          <Hash className="h-3 w-3" />
-          <span className="truncate">{community.id.slice(0, 8)}</span>
-        </div>
-        
-        {/* Location info */}
-        {(community.city || community.state) && (
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-            <MapPin className="h-3 w-3" />
-            <span>
+
+        {/* Localização + código */}
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          {(community.city || community.state) && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 rounded-full px-2 py-0.5">
+              <MapPin className="h-3 w-3 text-emerald-500" />
               {[community.city, community.state].filter(Boolean).join(", ")}
             </span>
-          </div>
-        )}
-        
-        {community.description && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {community.description}
-          </p>
-        )}
-        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+          )}
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 rounded-full px-2 py-0.5 font-mono">
+            <Hash className="h-3 w-3" />
+            {community.id.slice(0, 8)}
+          </span>
+        </div>
+
+        {/* Versículo ou descrição — o toque de curiosidade */}
+        <p className="text-sm text-muted-foreground italic mt-2 line-clamp-2 min-h-[20px]">
+          {community.main_verse?.trim()
+            ? `"${community.main_verse.replace(/^"|"$/g, "")}"`
+            : community.description || "Uma comunidade esperando por você... 🙏"}
+        </p>
+
+        {/* Chamado à ação */}
+        <div className="flex items-center gap-2 mt-3" onClick={e => e.stopPropagation()}>
           {showJoin ? (
-            <Button 
-              size="sm" 
+            <Button
+              className="flex-1 gap-2 bg-gradient-to-r from-primary via-primary to-purple-600 text-primary-foreground shadow-md transition-all group-hover:shadow-lg group-hover:shadow-primary/30"
               onClick={() => handleJoin(community.id)}
               disabled={joiningId === community.id}
             >
-              <LogIn className="h-4 w-4 mr-1" />
-              {joiningId === community.id ? "Entrando..." : "Entrar"}
+              <LogIn className="h-4 w-4" />
+              {joiningId === community.id ? "Entrando..." : "Fazer Parte"}
+              <span className="cta-arrow transition-transform duration-300">→</span>
             </Button>
           ) : (
             <>
-              <Button 
-                size="sm" 
-                variant="outline"
+              <Button
+                className="flex-1 gap-2 bg-gradient-to-r from-primary via-primary to-purple-600 text-primary-foreground shadow-md transition-all group-hover:shadow-lg group-hover:shadow-primary/30"
                 onClick={() => onSelectCommunity(community.id)}
               >
-                Acessar
+                Entrar na Comunidade
+                <span className="cta-arrow transition-transform duration-300">→</span>
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="icon"
                 variant="ghost"
-                className="text-destructive hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive shrink-0"
                 onClick={() => handleLeave(community.id)}
                 disabled={joiningId === community.id}
+                title="Sair da comunidade"
               >
-                <LogOut className="h-4 w-4 mr-1" />
-                Sair
+                <LogOut className="h-4 w-4" />
               </Button>
             </>
           )}
@@ -303,6 +333,16 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
 
   return (
     <Tabs defaultValue="my" className="w-full">
+      {/* Efeitos do card magnético */}
+      <style>{`
+        .card-shine {
+          background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
+          transform: translateX(-120%);
+          transition: transform 0.7s ease;
+        }
+        .community-card:hover .card-shine { transform: translateX(120%); }
+        .community-card:hover .cta-arrow { transform: translateX(4px); }
+      `}</style>
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <TabsList>
