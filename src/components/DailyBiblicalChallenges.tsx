@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { pickChallengeForDate, COMPLETION_MESSAGES, CATEGORY_LINKS } from "@/lib/challengeBank";
 
 interface DailyChallenge {
   id: string;
@@ -124,13 +125,38 @@ const DailyBiblicalChallenges = ({ userId }: DailyBiblicalChallengesProps) => {
     setLoading(true);
     
     const today = new Date().toISOString().split('T')[0];
-    
-    // Carregar desafio de hoje
-    const { data: todayData } = await supabase
+
+    // Carregar desafio de hoje (maybeSingle: sem 406 quando não existe)
+    let { data: todayData } = await supabase
       .from("daily_biblical_challenges")
       .select("*")
       .eq("challenge_date", today)
-      .single();
+      .limit(1)
+      .maybeSingle();
+
+    // Fallback: banco sem desafio para hoje → gera do banco local e
+    // registra no servidor (todos os usuários verão o mesmo desafio)
+    if (!todayData) {
+      const generated = pickChallengeForDate(today);
+      const { data: inserted } = await supabase
+        .from("daily_biblical_challenges")
+        .insert({ ...generated, challenge_date: today })
+        .select()
+        .maybeSingle();
+
+      if (inserted) {
+        todayData = inserted;
+      } else {
+        // Corrida com outro usuário ou INSERT bloqueado: relê
+        const { data: retry } = await supabase
+          .from("daily_biblical_challenges")
+          .select("*")
+          .eq("challenge_date", today)
+          .limit(1)
+          .maybeSingle();
+        todayData = retry;
+      }
+    }
 
     if (todayData) {
       setTodayChallenge(todayData);
@@ -255,7 +281,7 @@ const DailyBiblicalChallenges = ({ userId }: DailyBiblicalChallengesProps) => {
         .from("user_stats")
         .select("total_points")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (currentStats) {
         await supabase
@@ -277,9 +303,18 @@ const DailyBiblicalChallenges = ({ userId }: DailyBiblicalChallengesProps) => {
       const newStreak = currentStreak + 1;
       setCurrentStreak(newStreak);
 
+      // XP da gamificação (não bloqueia se falhar)
+      void (supabase.rpc as any)('award_xp', {
+        p_user_id: userId,
+        p_action_key: 'challenge_completed',
+        p_metadata: null,
+      });
+
+      // Mensagem de incentivo diferente a cada conclusão
+      const message = COMPLETION_MESSAGES[completions.length % COMPLETION_MESSAGES.length];
       toast({
         title: "Desafio completado! 🎉",
-        description: `Você ganhou ${todayChallenge.points_reward} pontos!`,
+        description: `+${todayChallenge.points_reward} pontos · ${message}`,
       });
 
       // Check for streak badges
@@ -328,6 +363,7 @@ Venha fortalecer sua fé também! 🙏`;
       case 'oracao': return <Heart className="h-5 w-5" />;
       case 'compartilhar': return <Share2 className="h-5 w-5" />;
       case 'acao': return <Zap className="h-5 w-5" />;
+      case 'quiz': return <Trophy className="h-5 w-5" />;
       default: return <Sparkles className="h-5 w-5" />;
     }
   };
@@ -338,6 +374,13 @@ Venha fortalecer sua fé também! 🙏`;
       case 'oracao': return 'Oração';
       case 'compartilhar': return 'Compartilhar';
       case 'acao': return 'Ação';
+      case 'quiz': return 'Quiz Bíblico';
+      case 'caca_palavras': return 'Caça-Palavras';
+      case 'estudo': return 'Estudo';
+      case 'comunidade': return 'Comunidade';
+      case 'gratidao': return 'Gratidão';
+      case 'evangelismo': return 'Evangelismo';
+      case 'igreja': return 'Igreja';
       default: return 'Geral';
     }
   };
@@ -528,14 +571,23 @@ Venha fortalecer sua fé também! 🙏`;
               <div className="flex flex-col sm:flex-row gap-2">
                 {!isChallengeCompleted(todayChallenge.id) ? (
                   <>
-                    {isPrayerChallenge(todayChallenge) && (
-                      <Button 
+                    {isPrayerChallenge(todayChallenge) ? (
+                      <Button
                         onClick={handlePrayerChallengeClick}
                         variant="outline"
                         className="flex-1 gap-2"
                       >
                         <ExternalLink className="h-4 w-4" />
                         Ir para Orações
+                      </Button>
+                    ) : CATEGORY_LINKS[todayChallenge.category] && (
+                      <Button
+                        onClick={() => navigate(CATEGORY_LINKS[todayChallenge.category].path)}
+                        variant="outline"
+                        className="flex-1 gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        {CATEGORY_LINKS[todayChallenge.category].label}
                       </Button>
                     )}
                     <Button 
