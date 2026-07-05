@@ -1,4 +1,5 @@
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Church, Plus, Search } from "lucide-react";
 import CommunityList from "@/components/church-community/CommunityList";
 import CommunityDetail from "@/components/church-community/CommunityDetail";
 import CreateCommunityModal from "@/components/church-community/CreateCommunityModal";
+import CommunityWelcomeModal from "@/components/church-community/CommunityWelcomeModal";
 
 const ChurchCommunity = () => {
   const { toast } = useToast();
@@ -18,6 +21,41 @@ const ChurchCommunity = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [joinTarget, setJoinTarget] = useState<{ id: string; name: string } | null>(null);
+
+  // Link de convite: /church-community?join=<id> (compartilhar/QR Code)
+  useEffect(() => {
+    const joinId = searchParams.get("join");
+    if (!joinId || !user) return;
+
+    (async () => {
+      const { data: membership } = await supabase
+        .from("church_community_members")
+        .select("id")
+        .eq("community_id", joinId)
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (membership) {
+        setSelectedCommunityId(joinId);
+      } else {
+        const { data: community } = await supabase
+          .from("church_communities")
+          .select("id, name")
+          .eq("id", joinId)
+          .maybeSingle();
+        if (community) {
+          setJoinTarget({ id: community.id, name: community.name });
+        } else {
+          toast({ title: "Convite inválido", description: "Comunidade não encontrada.", variant: "destructive" });
+        }
+      }
+      setSearchParams({}, { replace: true });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, user]);
 
   if (isLoading) {
     return (
@@ -100,6 +138,23 @@ const ChurchCommunity = () => {
         </main>
 
         {/* Create Modal */}
+        {/* Entrada via link/QR de convite */}
+        {joinTarget && user && (
+          <CommunityWelcomeModal
+            open={!!joinTarget}
+            onOpenChange={(o) => !o && setJoinTarget(null)}
+            communityId={joinTarget.id}
+            communityName={joinTarget.name}
+            userId={user.id}
+            onJoined={() => {
+              const id = joinTarget.id;
+              setJoinTarget(null);
+              setRefreshTrigger(prev => prev + 1);
+              setSelectedCommunityId(id);
+            }}
+          />
+        )}
+
         <CreateCommunityModal
           open={showCreateModal}
           onOpenChange={setShowCreateModal}

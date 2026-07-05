@@ -14,10 +14,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone,
-  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff,
+  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff, UserPlus,
 } from "lucide-react";
 import { ImageCropModal } from "@/components/ImageCropModal";
 import EditCommunityModal from "./EditCommunityModal";
+import CommunityInviteModal from "./CommunityInviteModal";
 import CommunityMural from "./CommunityMural";
 import CommunityCampaigns from "./CommunityCampaigns";
 import CommunityTree from "./CommunityTree";
@@ -64,6 +65,7 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
   const [activeTab, setActiveTab] = useState("mural");
   const [heroStats, setHeroStats] = useState({ ministries: 0, campaigns: 0 });
   const [showEditCommunity, setShowEditCommunity] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [bannerCropOpen, setBannerCropOpen] = useState(false);
   const [bannerImageSrc, setBannerImageSrc] = useState<string | null>(null);
   const [bannerUploading, setBannerUploading] = useState(false);
@@ -262,7 +264,16 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
               </div>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+          {/* Overlay leve: a imagem é o destaque; o degradê só ajuda a leitura */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.04) 30%, transparent 50%)",
+            }}
+          />
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 ring-1 ring-inset ring-black/10 pointer-events-none" />
 
           {/* Alterar/remover capa (somente criador, aparece no hover) */}
           {isCreator && (
@@ -301,6 +312,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowInvite(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Convidar Membros
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowEditCommunity(true)}>
                     <Pencil className="h-4 w-4 mr-2" />
                     Editar Comunidade
@@ -380,6 +395,12 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
 
           {/* Ações rápidas */}
           <div className="flex gap-2 mt-4 flex-wrap">
+            {isAdmin && (
+              <Button size="sm" className="gap-1.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white" onClick={() => setShowInvite(true)}>
+                <UserPlus className="h-4 w-4" />
+                Convidar Membros
+              </Button>
+            )}
             <Button size="sm" className="gap-1.5 bg-gradient-to-r from-primary to-primary/80" onClick={() => setActiveTab("campaigns")}>
               <Flame className="h-4 w-4" />
               Campanhas
@@ -521,6 +542,15 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
         userId={userId}
         isCreator={isCreator}
         onCommunityDeleted={onBack}
+      />
+
+      {/* Convidar membros */}
+      <CommunityInviteModal
+        open={showInvite}
+        onOpenChange={setShowInvite}
+        communityId={communityId}
+        communityName={community.name}
+        userId={userId}
       />
 
       {/* Edição da comunidade (somente criador) */}

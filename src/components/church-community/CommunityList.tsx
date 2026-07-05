@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Church, Users, LogIn, LogOut, Crown, MapPin, Hash, RefreshCw } from "lucide-react";
 import LocationFilter, { LocationFilters } from "./LocationFilter";
 import RectAvatar from "@/components/RectAvatar";
+import CommunityWelcomeModal from "./CommunityWelcomeModal";
 
 interface Community {
   id: string;
@@ -42,6 +43,7 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [locationFilters, setLocationFilters] = useState<LocationFilters>({ state: "", city: "" });
+  const [welcomeCommunity, setWelcomeCommunity] = useState<Community | null>(null);
 
   useEffect(() => {
     loadCommunities();
@@ -113,33 +115,10 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
     }
   };
 
-  const handleJoin = async (communityId: string) => {
-    setJoiningId(communityId);
-    try {
-      const { error } = await supabase
-        .from("church_community_members")
-        .insert({
-          community_id: communityId,
-          user_id: userId,
-          role: "member",
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "✅ Bem-vindo à comunidade!",
-        description: "Você agora faz parte desta comunidade.",
-      });
-      loadCommunities();
-    } catch (error: any) {
-      toast({
-        title: "Erro ao entrar",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setJoiningId(null);
-    }
+  // Abre o fluxo inteligente de boas-vindas (participação → ministérios → tempo)
+  const handleJoin = (communityId: string) => {
+    const community = communities.find(c => c.id === communityId) || myCommunities.find(c => c.id === communityId);
+    if (community) setWelcomeCommunity(community);
   };
 
   const handleLeave = async (communityId: string) => {
@@ -412,6 +391,23 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
           </div>
         )}
       </TabsContent>
+
+      {/* Fluxo inteligente de entrada */}
+      {welcomeCommunity && (
+        <CommunityWelcomeModal
+          open={!!welcomeCommunity}
+          onOpenChange={(o) => !o && setWelcomeCommunity(null)}
+          communityId={welcomeCommunity.id}
+          communityName={welcomeCommunity.name}
+          userId={userId}
+          onJoined={() => {
+            const id = welcomeCommunity.id;
+            setWelcomeCommunity(null);
+            loadCommunities();
+            onSelectCommunity(id);
+          }}
+        />
+      )}
     </Tabs>
   );
 };

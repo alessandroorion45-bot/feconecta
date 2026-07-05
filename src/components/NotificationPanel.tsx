@@ -55,6 +55,8 @@ const NotificationPanel = () => {
         return <Heart className="h-4 w-4 text-purple-500" />;
       case "prayer_comment":
         return <MessageCircle className="h-4 w-4 text-purple-500" />;
+      case "community_invite":
+        return <UserPlus className="h-4 w-4 text-emerald-500" />;
       case "achievement":
         return <Trophy className="h-4 w-4 text-yellow-500" />;
       case "friend_testimonial":
@@ -107,6 +109,13 @@ const NotificationPanel = () => {
       case "prayer_comment":
         navigate("/prayers");
         setOpen(false);
+        break;
+      case "community_invite":
+        // Abre o fluxo de boas-vindas da comunidade convidada
+        if (notification.reference_id) {
+          navigate(`/church-community?join=${notification.reference_id}`);
+          setOpen(false);
+        }
         break;
       case "achievement":
         navigate("/achievements");
