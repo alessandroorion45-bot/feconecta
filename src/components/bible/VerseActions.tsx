@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -272,18 +273,41 @@ export const VerseActions = ({
         />
       )}
 
-      {/* Comentários (FUNCIONA EM AMBOS OS MODOS) */}
-      {showComments && (
-        <div className={compact ? "mt-3" : ""}>
-          <VerseComments
-            book={book}
-            chapter={chapter}
-            verse={verse}
-            verseText={verseText}
-            onCountChange={(count) => setStats(prev => ({ ...prev, comments: count }))}
-          />
-        </div>
-      )}
+      {/* Comentários em modal magnético */}
+      <Dialog open={showComments} onOpenChange={setShowComments}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+          {/* Cabeçalho com o versículo em destaque */}
+          <DialogHeader className="px-6 pt-5 pb-4 bg-gradient-to-br from-primary/15 via-primary/5 to-accent/10 border-b border-primary/10 text-left">
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-primary" />
+              Reflexões da Comunidade
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div>
+                <blockquote className="mt-2 border-l-4 border-primary/50 pl-3 text-sm italic text-foreground/80 line-clamp-3">
+                  "{verseText}"
+                </blockquote>
+                <p className="text-xs font-semibold text-primary mt-1.5">
+                  📖 {book.toUpperCase()} {chapter}:{verse}
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Comentários (com rolagem própria) */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {showComments && (
+              <VerseComments
+                book={book}
+                chapter={chapter}
+                verse={verse}
+                verseText={verseText}
+                onCountChange={(count) => setStats(prev => ({ ...prev, comments: count }))}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de compartilhamento (FUNCIONA EM AMBOS OS MODOS) */}
       {showShare && (

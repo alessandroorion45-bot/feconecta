@@ -65,20 +65,49 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
   }, [book, chapter, verse, sortBy]);
 
   const loadComments = async () => {
-    // Carregar todos os comentários (pais e filhos)
+    // Sem join embutido (falha quando o FK não existe no banco remoto);
+    // perfis são buscados separadamente
     // @ts-ignore - Schema types not updated
-    const { data: allCommentsData } = await supabase
+    let { data: allCommentsData, error } = await supabase
       .from('verse_comments')
-      .select(`
-        *,
-        profiles(username, full_name, avatar_url)
-      `)
+      .select('*')
       .eq('book', book)
       .eq('chapter', chapter)
       .eq('verse', verse)
       .eq('is_hidden', false);
 
+    if (error) {
+      // Coluna is_hidden pode não existir no remoto — tenta sem o filtro
+      console.warn('[VerseComments] Recarregando sem is_hidden:', error.message);
+      // @ts-ignore
+      ({ data: allCommentsData, error } = await supabase
+        .from('verse_comments')
+        .select('*')
+        .eq('book', book)
+        .eq('chapter', chapter)
+        .eq('verse', verse));
+    }
+
+    if (error) {
+      console.error('[VerseComments] Erro ao carregar comentários:', error);
+      return;
+    }
     if (!allCommentsData) return;
+
+    // Buscar perfis dos autores em lote
+    const userIds = [...new Set(allCommentsData.map((c: any) => c.user_id))];
+    let profileMap = new Map<string, any>();
+    if (userIds.length) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds);
+      profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
+    }
+    allCommentsData = allCommentsData.map((c: any) => ({
+      ...c,
+      profiles: c.profiles || profileMap.get(c.user_id) || { username: 'usuario', full_name: 'Irmão(ã)', avatar_url: null },
+    }));
 
     // Organizar em árvore
     const commentsMap = new Map<string, Comment>();
