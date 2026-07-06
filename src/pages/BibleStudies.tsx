@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   Search, Video, Headphones, FileText, Clock, CheckCircle, Eye,
-  Heart, Share2
+  Heart, Share2, BookOpen
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
@@ -166,18 +166,25 @@ const BibleStudies = () => {
   };
 
   const incrementViews = async (studyId: string) => {
-    // Incrementar visualizações
-    await supabase.rpc('increment', {
-      row_id: studyId,
-      table_name: 'bible_studies',
-      column_name: 'views_count',
-    }).catch(() => {
-      // Fallback se RPC não existir
-      supabase
-        .from('bible_studies')
-        .update({ views_count: studies.find(s => s.id === studyId)!.views_count + 1 })
-        .eq('id', studyId);
-    });
+    // Incrementar visualizações (o builder do Supabase não tem .catch
+    // antes do await — usar try/await)
+    try {
+      const { error } = await (supabase.rpc as any)('increment', {
+        row_id: studyId,
+        table_name: 'bible_studies',
+        column_name: 'views_count',
+      });
+      if (error) throw error;
+    } catch {
+      // Fallback se a RPC não existir no banco
+      const study = studies.find(s => s.id === studyId);
+      if (study) {
+        await supabase
+          .from('bible_studies' as any)
+          .update({ views_count: study.views_count + 1 } as any)
+          .eq('id', studyId);
+      }
+    }
   };
 
   const toggleLike = (studyId: string) => {

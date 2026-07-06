@@ -194,12 +194,18 @@ async function fetchStudies(ctx: FetchCtx): Promise<FeedItem[]> {
 
 async function fetchDevotionals(ctx: FetchCtx): Promise<FeedItem[]> {
   if (ctx.friendIds) return [];
-  let q = sb.from('devotionals').select('id, title, date, verse_text, verse_reference, reflection, category');
-  if (ctx.search) q = q.or(`title.ilike.%${ctx.search}%,verse_text.ilike.%${ctx.search}%,verse_reference.ilike.%${ctx.search}%`);
-  let query = q.order('date', { ascending: false }).limit(PER_SOURCE);
-  if (ctx.cursor) query = query.lt('date', ctx.cursor);
-  const { data, error } = await query;
+  const build = (dateCol: string) => {
+    let q = sb.from('devotionals').select('*');
+    if (ctx.search) q = q.or(`title.ilike.%${ctx.search}%,verse_text.ilike.%${ctx.search}%,verse_reference.ilike.%${ctx.search}%`);
+    let query = q.order(dateCol, { ascending: false }).limit(PER_SOURCE);
+    if (ctx.cursor) query = query.lt(dateCol, ctx.cursor);
+    return query;
+  };
+  // A coluna "date" pode não existir no remoto — cai para created_at
+  let { data, error } = await build('date');
+  if (error) ({ data, error } = await build('created_at'));
   if (error) throw error;
+  data = (data || []).map((d: any) => ({ ...d, date: d.date || d.created_at }));
   return (data || []).map((d: any): FeedItem => ({
     key: `devotional:${d.id}`,
     type: 'devotional',

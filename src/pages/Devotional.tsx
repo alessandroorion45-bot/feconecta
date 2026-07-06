@@ -56,6 +56,8 @@ const Devotional = () => {
   const [completedToday, setCompletedToday] = useState(false);
   const [notes, setNotes] = useState("");
   const [showNotes, setShowNotes] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [totalCompleted, setTotalCompleted] = useState(0);
 
   const current = devotionals[currentIndex];
 
@@ -70,20 +72,32 @@ const Devotional = () => {
 
     console.log('[Devotional] Carregando devocionais:', { category: selectedCategory, timeOfDay });
 
-    let query = supabase
-      .from('devotionals')
-      .select('*')
-      .order('date', { ascending: false });
+    const buildQuery = (orderCol: string) => {
+      let query = (supabase as any)
+        .from('devotionals')
+        .select('*')
+        .order(orderCol, { ascending: false });
 
-    if (selectedCategory !== "Todos") {
-      query = query.eq('category', selectedCategory.toLowerCase());
+      if (selectedCategory !== "Todos") {
+        query = query.eq('category', selectedCategory.toLowerCase());
+      }
+      if (timeOfDay !== 'all') {
+        query = query.eq('time_of_day', timeOfDay);
+      }
+      return query.limit(100);
+    };
+
+    // A tabela remota pode não ter a coluna "date" — cai para created_at
+    let { data, error } = await buildQuery('date');
+    if (error) {
+      console.warn('[Devotional] Coluna date ausente, ordenando por created_at:', error.message);
+      ({ data, error } = await buildQuery('created_at'));
     }
-
-    if (timeOfDay !== 'all') {
-      query = query.eq('time_of_day', timeOfDay);
+    if (error) {
+      // Último recurso: sem ordenação
+      console.warn('[Devotional] Recarregando sem ordenação:', error.message);
+      ({ data, error } = await (supabase as any).from('devotionals').select('*').limit(100));
     }
-
-    const { data, error } = await query.limit(100);
 
     if (error) {
       console.error('[Devotional] Erro ao carregar:', error);
@@ -114,16 +128,56 @@ const Devotional = () => {
   const loadUserProgress = async () => {
     if (!user) return;
 
-    // Carregar favoritos e progresso do usuário
-    // TODO: Implementar tabela de favoritos e progresso no banco
+    // Conclusões do usuário (tolerante à tabela ainda não existir)
+    const { data, error } = await (supabase as any)
+      .from('devotional_completions')
+      .select('completed_at')
+      .eq('user_id', user.id)
+      .order('completed_at', { ascending: false })
+      .limit(365);
+
+    if (error || !data) return;
+
+    setTotalCompleted(data.length);
+
+    const today = new Date().toDateString();
+    setCompletedToday(data.some((c: any) => new Date(c.completed_at).toDateString() === today));
+
+    // Sequência de dias consecutivos
+    const days = [...new Set(data.map((c: any) => new Date(c.completed_at).toDateString()))];
+    let s = 0;
+    const cursor = new Date();
+    if (!days.includes(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
+    while (days.includes(cursor.toDateString())) {
+      s++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    setStreak(s);
   };
 
   const markAsComplete = async () => {
-    if (completedToday || !user) return;
+    if (completedToday || !user || !current) return;
 
     setCompletedToday(true);
 
-    console.log('[Devotional] Marcando como completo');
+    // Persiste a conclusão (com a reflexão pessoal, se escrita)
+    const { error } = await (supabase as any)
+      .from('devotional_completions')
+      .insert({
+        user_id: user.id,
+        devotional_id: current.id,
+        reflection: notes.trim() || null,
+      });
+
+    if (error && error.code !== '23505') {
+      console.warn('[Devotional] Conclusão não persistida (aplicar APLICAR_DEVOCIONAL_SQL.sql):', error.message);
+    } else {
+      setTotalCompleted(prev => prev + 1);
+      setStreak(prev => prev + (completedToday ? 0 : 1));
+    }
+
+    // XP da gamificação (ação já existente: daily_devotional)
+    void awardXP('daily_devotional');
 
     // TODO: Adicionar action 'devotional_completed' no sistema de gamificação
     // await awardXP('devotional_completed');
@@ -390,6 +444,18 @@ const Devotional = () => {
 
             {/* Ações */}
             <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t">
+              {/* Progresso do usuário */}
+              {user && (streak > 0 || totalCompleted > 0) && (
+                <div className="flex gap-2 flex-wrap mb-3">
+                  <Badge variant="secondary" className="gap-1">
+                    🔥 {streak} {streak === 1 ? "dia" : "dias"} seguidos
+                  </Badge>
+                  <Badge variant="secondary" className="gap-1">
+                    ✅ {totalCompleted} concluídos
+                  </Badge>
+                </div>
+              )}
+
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant={completedToday ? "default" : "outline"}
