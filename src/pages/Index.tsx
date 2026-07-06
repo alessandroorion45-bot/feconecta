@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingFallback from "@/components/LoadingFallback";
-import { Book, Heart, Church, Sparkles, User, Gamepad2, MessageSquare, Music, BookOpen, HelpCircle, Search, MapPin, Star, Users, Brain, Smile, BookMarked } from "lucide-react";
+import { Book, Heart, Church, Sparkles, User, Gamepad2, MessageSquare, BookOpen, HelpCircle, Search, MapPin, Star, Users, Brain, Smile, BookMarked } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -43,7 +43,6 @@ const Index = () => {
     { icon: MessageSquare, title: "Chat da Comunidade", description: "Converse com irmãos em chats privados e grupos temáticos", link: "/chat", gradient: "from-accent to-primary" },
     { icon: Sparkles, title: "Devocional Diário", description: "Versículo, reflexão e oração para cada dia", link: "/devotional", gradient: "from-primary-glow to-accent" },
     { icon: BookMarked, title: "Estudos Bíblicos", description: "Pregações em vídeo, áudio e texto para crescimento espiritual", link: "/studies", gradient: "from-secondary to-accent" },
-    { icon: Music, title: "Louvores", description: "Músicas cristãs, letras e louvor do dia para adorar", link: "/worship", gradient: "from-primary to-primary-glow" },
     { icon: Brain, title: "Quiz Bíblico", description: "Teste seus conhecimentos com perguntas interativas", link: "/quiz", gradient: "from-accent to-secondary" },
     { icon: HelpCircle, title: "Perguntas Bíblicas", description: "Tire dúvidas e aprenda com a comunidade", link: "/questions", gradient: "from-secondary to-primary" },
     { icon: Smile, title: "Mural de Gratidão", description: "Compartilhe gratidão e respostas de oração", link: "/gratitude", gradient: "from-accent to-accent/70" },

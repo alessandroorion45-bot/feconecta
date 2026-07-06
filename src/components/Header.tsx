@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
-import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, Music, HelpCircle, Smile, Search as SearchIcon, Star, BookMarked, MapPin } from "lucide-react";
+import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, HelpCircle, Smile, Search as SearchIcon, Star, BookMarked, MapPin } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -121,7 +121,6 @@ const Header = () => {
                   <MenuItem path="/favorite-verses" icon={<Heart className="h-5 w-5 fill-current" />} label="Versículos Favoritos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-red-500" />
                   <MenuItem path="/devotional" icon={<Sparkles className="h-5 w-5" />} label="Devocional Diário" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
                   <MenuItem path="/studies" icon={<BookMarked className="h-5 w-5" />} label="Estudos Bíblicos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-teal-500" />
-                  <MenuItem path="/worship" icon={<Music className="h-5 w-5" />} label="Louvores" currentPath={currentPath} onClick={handleNavClick} iconColor="text-pink-500" />
                   <MenuItem path="/questions" icon={<HelpCircle className="h-5 w-5" />} label="Perguntas Bíblicas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-blue-500" />
                   <MenuItem path="/dictionary" icon={<SearchIcon className="h-5 w-5" />} label="Dicionário Bíblico" currentPath={currentPath} onClick={handleNavClick} iconColor="text-indigo-500" />
                   <MenuItem path="/videos" icon={<Video className="h-5 w-5" />} label="Vídeos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-red-500" />
@@ -254,7 +253,6 @@ const Header = () => {
                     <MenuSection title="Estudo & Louvor" />
                     <MenuItem path="/devotional" icon={<Sparkles className="h-5 w-5" />} label="Devocional Diário" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
                     <MenuItem path="/studies" icon={<BookMarked className="h-5 w-5" />} label="Estudos Bíblicos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-teal-500" />
-                    <MenuItem path="/worship" icon={<Music className="h-5 w-5" />} label="Louvores" currentPath={currentPath} onClick={handleNavClick} iconColor="text-pink-500" />
                     <MenuItem path="/questions" icon={<HelpCircle className="h-5 w-5" />} label="Perguntas Bíblicas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-blue-500" />
                     <MenuItem path="/gratitude" icon={<Smile className="h-5 w-5" />} label="Mural de Gratidão" currentPath={currentPath} onClick={handleNavClick} iconColor="text-green-500" />
                     <MenuItem path="/dictionary" icon={<SearchIcon className="h-5 w-5" />} label="Dicionário Bíblico" currentPath={currentPath} onClick={handleNavClick} iconColor="text-indigo-500" />

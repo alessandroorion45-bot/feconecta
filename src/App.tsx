@@ -43,7 +43,6 @@ const WordSearch = lazy(() => import("./pages/WordSearch"));
 const Devotional = lazy(() => import("./pages/Devotional"));
 const BibleDictionary = lazy(() => import("./pages/BibleDictionary"));
 const BibleQuestions = lazy(() => import("./pages/BibleQuestions"));
-const Worship = lazy(() => import("./pages/Worship"));
 const BibleStudies = lazy(() => import("./pages/BibleStudies"));
 const GratitudeWall = lazy(() => import("./pages/GratitudeWall"));
 const SpiritualMentoring = lazy(() => import("./pages/SpiritualMentoring"));
@@ -107,7 +106,6 @@ const routes: RouteObject[] = [
   { path: "/devotional", element: <Devotional /> },
   { path: "/dictionary", element: <BibleDictionary /> },
   { path: "/questions", element: <ProtectedRoute><BibleQuestions /></ProtectedRoute> },
-  { path: "/worship", element: <ProtectedRoute><Worship /></ProtectedRoute> },
   { path: "/studies", element: <BibleStudies /> },
   { path: "/gratitude", element: <ProtectedRoute><GratitudeWall /></ProtectedRoute> },
   { path: "/mentoring", element: <ProtectedRoute><SpiritualMentoring /></ProtectedRoute> },

@@ -6,11 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageCircle, ThumbsUp, CheckCircle2, Send, HelpCircle, ChevronLeft, Trash2, ArrowUpDown } from "lucide-react";
+import { MessageCircle, ThumbsUp, CheckCircle2, Send, HelpCircle, ChevronLeft, Trash2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useGamification } from "@/hooks/useGamification";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import BibleRefText from "@/components/BibleRefText";
+
+/** Busca perfis em lote (joins embutidos falham no banco remoto) */
+async function attachProfiles<T extends { user_id: string }>(rows: T[]): Promise<(T & { profiles?: any })[]> {
+  const ids = [...new Set(rows.map(r => r.user_id))];
+  if (!ids.length) return rows;
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, username")
+    .in("id", ids);
+  const map = new Map((profiles || []).map(p => [p.id, p]));
+  return rows.map(r => ({ ...r, profiles: map.get(r.user_id) || { full_name: "Irmão(ã)", avatar_url: null, username: "usuario" } }));
+}
 
 interface Question {
   id: string;
@@ -36,11 +50,17 @@ interface Answer {
   profiles?: { full_name: string; avatar_url: string | null; username: string };
 }
 
-const CATEGORIES = ["Geral", "Teologia", "Profecia", "Vida Cristã", "Família", "Oração", "Louvor", "Batalha Espiritual", "Evangelismo"];
+const CATEGORIES = [
+  "Geral", "📖 Antigo Testamento", "✝️ Novo Testamento", "👑 Jesus", "🔥 Espírito Santo",
+  "🕊️ Salvação", "🙏 Oração", "🌱 Fé", "🤲 Perdão", "📖 Parábolas", "📜 Profecias",
+  "⚔️ Batalha Espiritual", "👨‍👩‍👧 Família", "💍 Casamento", "🎓 Jovens", "💰 Finanças",
+  "🌎 Evangelismo", "✨ Santidade", "⚖️ Pecado", "❤️ Amor",
+];
 
 const BibleQuestions = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { awardXP } = useGamification(user?.id);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
@@ -54,30 +74,41 @@ const BibleQuestions = () => {
   const [sortBy, setSortBy] = useState<"recent" | "popular" | "unanswered">("recent");
   const [submitting, setSubmitting] = useState(false);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [stats, setStats] = useState({ answered: 0, open: 0 });
 
   useEffect(() => { loadQuestions(); }, [sortBy]);
 
   const loadQuestions = async () => {
     setLoading(true);
-    let query = supabase.from("bible_questions").select("*, profiles:user_id(full_name, avatar_url, username)");
-    
+    let query = supabase.from("bible_questions").select("*");
+
     if (sortBy === "recent") query = query.order("created_at", { ascending: false });
     else if (sortBy === "popular") query = query.order("likes_count", { ascending: false });
     else if (sortBy === "unanswered") query = query.eq("answers_count", 0).order("created_at", { ascending: false });
 
     const { data } = await query.limit(50);
-    if (data) setQuestions(data as unknown as Question[]);
+    if (data) {
+      const enriched = await attachProfiles(data as any[]);
+      setQuestions(enriched as unknown as Question[]);
+      // Estatísticas do topo
+      const answered = (data as any[]).filter(q => (q.answers_count || 0) > 0).length;
+      setStats({ answered, open: data.length - answered });
+    }
     setLoading(false);
   };
 
   const loadAnswers = async (questionId: string) => {
     const { data } = await supabase
       .from("bible_question_answers")
-      .select("*, profiles:user_id(full_name, avatar_url, username)")
+      .select("*")
       .eq("question_id", questionId)
       .order("is_best", { ascending: false })
       .order("likes_count", { ascending: false });
-    if (data) setAnswers(data as unknown as Answer[]);
+    if (data) {
+      const enriched = await attachProfiles(data as any[]);
+      setAnswers(enriched as unknown as Answer[]);
+    }
 
     // Load user likes
     if (user) {
@@ -139,6 +170,8 @@ const BibleQuestions = () => {
 
     console.log('[BibleQuestions] Pergunta publicada com sucesso:', data);
 
+    void awardXP('bible_question_answered');
+
     toast({
       title: "✅ Pergunta publicada!",
       description: "Sua dúvida foi compartilhada com a comunidade (+5 XP)",
@@ -189,6 +222,8 @@ const BibleQuestions = () => {
     }
 
     console.log('[BibleQuestions] Resposta enviada com sucesso:', data);
+
+    void awardXP('bible_question_answered');
 
     toast({
       title: "✅ Resposta enviada!",
@@ -261,8 +296,8 @@ const BibleQuestions = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground leading-relaxed mb-3">{selectedQuestion.body}</p>
-              <div className="flex flex-wrap gap-2">
+              <BibleRefText text={selectedQuestion.body} className="text-muted-foreground leading-relaxed mb-3 block whitespace-pre-wrap" />
+              <div className="flex flex-wrap gap-2 mt-3">
                 <Badge>{selectedQuestion.category}</Badge>
                 {selectedQuestion.tags?.map(t => <Badge key={t} variant="outline">{t}</Badge>)}
               </div>
@@ -274,9 +309,9 @@ const BibleQuestions = () => {
           </h3>
 
           {answers.map(a => (
-            <Card key={a.id} className={`mb-3 ${a.is_best ? "ring-2 ring-green-500" : ""}`}>
+            <Card key={a.id} className={`mb-3 ${a.is_best ? "ring-2 ring-yellow-500 bg-gradient-to-br from-yellow-50/60 to-amber-50/40 dark:from-yellow-950/20 dark:to-amber-950/10" : ""}`}>
               <CardContent className="p-4">
-                {a.is_best && <Badge className="mb-2 bg-green-500"><CheckCircle2 className="h-3 w-3 mr-1" /> Melhor Resposta</Badge>}
+                {a.is_best && <Badge className="mb-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0"><CheckCircle2 className="h-3 w-3 mr-1" /> ⭐ Melhor Resposta</Badge>}
                 <div className="flex items-start gap-3 mb-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={a.profiles?.avatar_url || undefined} />
@@ -287,7 +322,7 @@ const BibleQuestions = () => {
                     <p className="text-xs text-muted-foreground">{formatDate(a.created_at)}</p>
                   </div>
                 </div>
-                <p className="text-muted-foreground leading-relaxed">{a.content}</p>
+                <BibleRefText text={a.content} className="text-muted-foreground leading-relaxed block whitespace-pre-wrap" />
                 <div className="flex items-center gap-2 mt-3">
                   <Button variant={userLikes.has(a.id) ? "default" : "ghost"} size="sm" onClick={() => toggleLikeAnswer(a.id)}>
                     <ThumbsUp className="h-4 w-4 mr-1" /> {a.likes_count}
@@ -316,7 +351,10 @@ const BibleQuestions = () => {
 
           <Card className="mt-4">
             <CardContent className="p-4">
-              <Textarea placeholder="Escreva sua resposta..." value={newAnswer} onChange={e => setNewAnswer(e.target.value)} className="mb-3" />
+              <Textarea placeholder="Escreva sua resposta com base na Palavra... (dica: cite referências como João 3:16 e elas viram links para a Bíblia)" value={newAnswer} onChange={e => setNewAnswer(e.target.value)} className="mb-2" rows={4} />
+              <p className="text-xs text-muted-foreground mb-3">
+                💡 Digite referências bíblicas (ex: <strong>Romanos 8:28</strong>) e elas ficarão clicáveis, abrindo a Bíblia direto na resposta.
+              </p>
               <Button onClick={submitAnswer} disabled={!newAnswer.trim() || submitting}>
                 <Send className="h-4 w-4 mr-2" /> {submitting ? "Enviando..." : "Responder"}
               </Button>
@@ -331,14 +369,44 @@ const BibleQuestions = () => {
     <div className="min-h-screen bg-gradient-hero">
       <Header />
       <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-divine bg-clip-text text-transparent mb-2">Perguntas Bíblicas</h1>
-          <p className="text-muted-foreground">Tire dúvidas e aprenda com a comunidade</p>
+        <div className="text-center mb-6">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-divine bg-clip-text text-transparent mb-2">❓ Perguntas Bíblicas</h1>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Faça sua pergunta, compartilhe conhecimento e cresça junto com a comunidade na Palavra de Deus.
+          </p>
+        </div>
+
+        {/* Cards de estatística */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {[
+            { emoji: "📖", value: stats.answered, label: "Respondidas", color: "text-emerald-500" },
+            { emoji: "❓", value: stats.open, label: "Em aberto", color: "text-amber-500" },
+            { emoji: "💬", value: stats.answered + stats.open, label: "Total", color: "text-primary" },
+          ].map(s => (
+            <Card key={s.label}>
+              <CardContent className="py-3 text-center">
+                <div className="text-xl mb-0.5">{s.emoji}</div>
+                <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
+                <div className="text-xs text-muted-foreground">{s.label}</div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <Button className="w-full mb-4" onClick={() => setShowNewQuestion(!showNewQuestion)}>
           <HelpCircle className="h-4 w-4 mr-2" /> Fazer uma Pergunta
         </Button>
+
+        {/* Busca */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por tema, palavra, versículo ou livro..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
         {showNewQuestion && (
           <Card className="mb-6 shadow-divine">
@@ -366,14 +434,22 @@ const BibleQuestions = () => {
 
         {loading ? (
           <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />)}</div>
-        ) : questions.length === 0 ? (
+        ) : (() => {
+          const q = search.trim().toLowerCase();
+          const filtered = !q ? questions : questions.filter(item =>
+            item.title.toLowerCase().includes(q) ||
+            item.body.toLowerCase().includes(q) ||
+            item.category.toLowerCase().includes(q) ||
+            (item.tags || []).some(t => t.toLowerCase().includes(q))
+          );
+          return filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <HelpCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>Nenhuma pergunta ainda. Seja o primeiro!</p>
+            <p>{search ? "Nenhuma pergunta encontrada para essa busca." : "Nenhuma pergunta ainda. Seja o primeiro!"}</p>
           </div>
         ) : (
           <div className="grid gap-3">
-            {questions.map(q => (
+            {filtered.map(q => (
               <Card key={q.id} className="cursor-pointer hover:shadow-divine transition-shadow" onClick={() => openQuestion(q)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -394,7 +470,8 @@ const BibleQuestions = () => {
               </Card>
             ))}
           </div>
-        )}
+        );
+        })()}
       </main>
     </div>
   );
