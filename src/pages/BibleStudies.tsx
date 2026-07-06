@@ -13,6 +13,19 @@ import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import BibleReferenceModal from "@/components/BibleReferenceModal";
+
+/** Versículo do dia (determinístico pela data — igual para todos) */
+const DAILY_VERSES = [
+  "João 3:16", "Salmos 23:1", "Filipenses 4:13", "Romanos 8:28",
+  "Isaías 41:10", "Provérbios 3:5-6", "Salmos 91:1-2", "Mateus 6:33",
+  "Jeremias 29:11", "Josué 1:9", "1 Coríntios 13:4-7", "Salmos 46:1",
+  "João 14:6", "Efésios 2:8-9",
+];
+const verseOfTheDay = () => {
+  const day = Math.floor(Date.now() / 86_400_000);
+  return DAILY_VERSES[day % DAILY_VERSES.length];
+};
 
 interface BibleStudy {
   id: string;
@@ -45,9 +58,10 @@ const typeLabels = {
 
 const CATEGORIES = [
   "Todos",
-  "Fé", "Oração", "Família", "Discipulado", "Santidade",
-  "Evangelismo", "Liderança", "Jovens", "Mulheres", "Homens",
-  "Trabalho", "Finanças", "Sabedoria", "Esperança", "Amor"
+  "Jesus", "Espírito Santo", "Fé", "Oração", "Perdão", "Ansiedade",
+  "Família", "Discipulado", "Santidade", "Evangelismo", "Liderança",
+  "Jovens", "Mulheres", "Homens", "Trabalho", "Finanças",
+  "Sabedoria", "Esperança", "Amor", "Personagens"
 ];
 
 const BibleStudies = () => {
@@ -64,6 +78,7 @@ const BibleStudies = () => {
   const [selectedStudy, setSelectedStudy] = useState<BibleStudy | null>(null);
   const [completedStudies, setCompletedStudies] = useState<Set<string>>(new Set());
   const [likedStudies, setLikedStudies] = useState<Set<string>>(new Set());
+  const [refModal, setRefModal] = useState<string | null>(null);
 
   // Carregar estudos do banco
   useEffect(() => {
@@ -118,7 +133,7 @@ const BibleStudies = () => {
 
     console.log('[BibleStudies] Carregando progresso do usuário');
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('user_study_completions')
       .select('study_id')
       .eq('user_id', user.id);
@@ -139,7 +154,7 @@ const BibleStudies = () => {
 
     console.log('[BibleStudies] Marcando estudo como completo:', studyId);
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_study_completions')
       .insert({
         user_id: user.id,
@@ -158,9 +173,12 @@ const BibleStudies = () => {
 
     setCompletedStudies(prev => new Set([...prev, studyId]));
 
+    // XP da gamificação (ação bible_study já existente)
+    void awardXP('bible_study');
+
     toast({
       title: "✅ Estudo completado!",
-      description: "Continue aprofundando seu conhecimento da Palavra! 📖",
+      description: "Continue aprofundando seu conhecimento da Palavra! 📖 +XP",
       className: "bg-green-50 border-green-200",
     });
   };
@@ -272,13 +290,21 @@ const BibleStudies = () => {
                   <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-300">
                     📖 Versículos Base
                   </h3>
-                  <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
                     {selectedStudy.verses.map((verse, idx) => (
-                      <p key={idx} className="text-blue-900 dark:text-blue-100 font-medium">
-                        • {verse}
-                      </p>
+                      <button
+                        key={idx}
+                        onClick={() => setRefModal(verse)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-3 py-1.5 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/70 hover:scale-105 transition-all"
+                        title="Clique para ler na Bíblia"
+                      >
+                        📖 {verse}
+                      </button>
                     ))}
                   </div>
+                  <p className="text-xs text-blue-700/70 dark:text-blue-300/70 mt-2">
+                    Toque em uma referência para ler o texto sem sair do estudo
+                  </p>
                 </div>
               )}
 
@@ -360,8 +386,48 @@ const BibleStudies = () => {
                   {completedStudies.size} estudos completados
                 </p>
               </div>
+
+              {/* Você também pode gostar */}
+              {(() => {
+                const related = studies
+                  .filter(s => s.id !== selectedStudy.id && s.category === selectedStudy.category)
+                  .slice(0, 3);
+                if (related.length === 0) return null;
+                return (
+                  <div className="border-t pt-6">
+                    <h3 className="font-bold text-lg mb-3">✨ Você também pode gostar</h3>
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      {related.map(s => (
+                        <button
+                          key={s.id}
+                          onClick={() => {
+                            setSelectedStudy(s);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          className="text-left rounded-lg border p-3 hover:border-primary/50 hover:shadow-md transition-all"
+                        >
+                          <p className="font-medium text-sm line-clamp-2">{s.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{s.description}</p>
+                          {completedStudies.has(s.id) && (
+                            <Badge variant="secondary" className="mt-2 text-[10px]">✓ Concluído</Badge>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
+
+          {/* Modal de referência bíblica */}
+          {refModal && (
+            <BibleReferenceModal
+              open={!!refModal}
+              onOpenChange={(o) => !o && setRefModal(null)}
+              reference={refModal}
+            />
+          )}
         </main>
       </div>
     );
@@ -381,6 +447,20 @@ const BibleStudies = () => {
             {studies.length} estudos profundos para crescimento espiritual
           </p>
         </div>
+
+        {/* Versículo do Dia */}
+        <button
+          onClick={() => setRefModal(verseOfTheDay())}
+          className="w-full mb-6 rounded-xl border border-primary/25 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 px-5 py-4 text-left hover:shadow-md hover:border-primary/40 transition-all group"
+        >
+          <p className="text-xs font-semibold text-primary mb-1">✨ VERSÍCULO DO DIA</p>
+          <p className="font-medium flex items-center justify-between gap-2">
+            📖 {verseOfTheDay()}
+            <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+              Toque para ler →
+            </span>
+          </p>
+        </button>
 
         {/* Barra de Pesquisa */}
         <div className="relative mb-6">
@@ -524,6 +604,15 @@ const BibleStudies = () => {
               );
             })}
           </div>
+        )}
+
+        {/* Modal de referência bíblica (versículo do dia) */}
+        {refModal && (
+          <BibleReferenceModal
+            open={!!refModal}
+            onOpenChange={(o) => !o && setRefModal(null)}
+            reference={refModal}
+          />
         )}
       </main>
     </div>
