@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import { QUIZ_FALLBACK } from "@/lib/quizBank";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,8 @@ interface Question {
   difficulty: string;
   category: string;
   points: number;
+  explanation?: string | null;
+  bible_reference?: string | null;
 }
 
 interface RankingUser {
@@ -49,6 +53,7 @@ const TIMER_SECONDS = 30;
 const Quiz = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { awardXP } = useGamification(user?.id);
 
   const [selectedDifficulty, setSelectedDifficulty] = useState("iniciante");
@@ -92,12 +97,34 @@ const Quiz = () => {
   }, [timerActive, showResult]); // ✅ Removido timeLeft para evitar re-criação do interval
 
   const loadRanking = async () => {
-    const { data } = await supabase
+    // Sem join embutido (falha quando o FK não existe no remoto);
+    // perfis são buscados em lote separadamente
+    const { data, error } = await supabase
       .from("quiz_scores")
-      .select("*, profiles:user_id(username, full_name, avatar_url)")
+      .select("*")
       .order("total_points", { ascending: false })
       .limit(20);
-    if (data) setRanking(data as any);
+
+    if (error) {
+      console.error("[Quiz] Erro ao carregar ranking:", error);
+      return;
+    }
+    if (!data?.length) {
+      setRanking([]);
+      return;
+    }
+
+    const userIds = [...new Set(data.map((r: any) => r.user_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, username, full_name, avatar_url")
+      .in("id", userIds);
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+    setRanking(data.map((r: any) => ({
+      ...r,
+      profiles: profileMap.get(r.user_id) || { username: "usuario", full_name: "Jogador", avatar_url: null },
+    })));
   };
 
   const startQuiz = async () => {
@@ -117,17 +144,19 @@ const Quiz = () => {
     const { data, error } = await query;
     setLoading(false);
 
-    if (error) {
-      console.error('[Quiz] Erro ao buscar perguntas:', error);
-      toast({
-        title: "Erro ao carregar",
-        description: "Não foi possível carregar as perguntas. Tente novamente.",
-        variant: "destructive"
-      });
-      return;
+    // O quiz NUNCA falha ao iniciar: se o banco estiver vazio ou com
+    // erro, usa o banco local de perguntas (mesmo nível)
+    let pool: Question[] = (data as Question[]) || [];
+    if (error || pool.length === 0) {
+      if (error) console.error('[Quiz] Erro ao buscar perguntas, usando banco local:', error);
+      pool = QUIZ_FALLBACK.filter(q => q.difficulty === selectedDifficulty);
+      if (selectedCategory !== "all") {
+        const byCategory = pool.filter(q => q.category === selectedCategory);
+        if (byCategory.length >= 3) pool = byCategory;
+      }
     }
 
-    if (!data || data.length === 0) {
+    if (pool.length === 0) {
       toast({
         title: "Sem perguntas disponíveis",
         description: "Tente outro nível ou tema.",
@@ -137,7 +166,7 @@ const Quiz = () => {
     }
 
     // Shuffle and pick 10
-    const shuffled = data.sort(() => Math.random() - 0.5).slice(0, 10);
+    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 10);
     setQuestions(shuffled);
     setCurrentQuestionIndex(0);
     setScore({ points: 0, correct: 0, total: 0 });
@@ -203,6 +232,15 @@ const Quiz = () => {
       if (timeLeft > 20) {
         pointsEarned = Math.floor(pointsEarned * 1.2);
       }
+
+      // Bônus de sequência: marcos de 5 e 10 acertos seguidos
+      if (newCombo === 5) {
+        pointsEarned += 50;
+        toast({ title: "🔥 5 acertos seguidos!", description: "+50 pontos de bônus!" });
+      } else if (newCombo === 10) {
+        pointsEarned += 100;
+        toast({ title: "🏆 10 acertos seguidos!", description: "+100 pontos de bônus! Incrível!" });
+      }
     } else {
       newCombo = 0;
       setCombo(0);
@@ -215,14 +253,16 @@ const Quiz = () => {
     };
     setScore(newScore);
 
-    // Save answer
-    await supabase.from("quiz_user_answers").insert({
-      user_id: user.id,
-      question_id: currentQuestion.id,
-      user_answer: selectedAnswer,
-      is_correct: correct,
-      points_earned: pointsEarned,
-    });
+    // Save answer (perguntas do banco local não têm registro no servidor)
+    if (!currentQuestion.id.startsWith("local-")) {
+      await supabase.from("quiz_user_answers").insert({
+        user_id: user.id,
+        question_id: currentQuestion.id,
+        user_answer: selectedAnswer,
+        is_correct: correct,
+        points_earned: pointsEarned,
+      });
+    }
 
     // Conceder XP pela resposta correta
     if (correct) {
@@ -265,7 +305,7 @@ const Quiz = () => {
           await awardXP('quiz_perfect');
         }
 
-        const { data: existing } = await supabase.from("quiz_scores").select("*").eq("user_id", user.id).single();
+        const { data: existing } = await supabase.from("quiz_scores").select("*").eq("user_id", user.id).maybeSingle();
         if (existing) {
           await supabase.from("quiz_scores").update({
             total_points: existing.total_points + score.points,
@@ -464,6 +504,37 @@ const Quiz = () => {
                       );
                     })}
                   </div>
+
+                  {/* Aprendizado: explicação e referência bíblica */}
+                  {showResult && (currentQuestion.explanation || currentQuestion.bible_reference) && (
+                    <div className={`rounded-lg border-l-4 p-4 mb-4 ${
+                      isCorrect
+                        ? "bg-green-50 dark:bg-green-900/15 border-green-500"
+                        : "bg-amber-50 dark:bg-amber-900/15 border-amber-500"
+                    }`}>
+                      <p className="text-sm font-semibold mb-1">
+                        {isCorrect ? "✅ Correto!" : "📖 Aprenda com esta:"}
+                      </p>
+                      {currentQuestion.explanation && (
+                        <p className="text-sm text-muted-foreground">{currentQuestion.explanation}</p>
+                      )}
+                      <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+                        {currentQuestion.bible_reference && (
+                          <span className="text-xs font-semibold text-primary">
+                            📖 {currentQuestion.bible_reference}
+                          </span>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => navigate("/bible")}
+                        >
+                          📖 Ler na Bíblia
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <div className="text-sm space-y-1">
