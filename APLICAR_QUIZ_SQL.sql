@@ -47,6 +47,13 @@ ALTER TABLE public.quiz_questions
   ADD COLUMN IF NOT EXISTS explanation TEXT,
   ADD COLUMN IF NOT EXISTS bible_reference TEXT;
 
+-- 1b. Remove CHECKs legados da tabela antiga do remoto que rejeitam
+--     os níveis usados pelo app (iniciante/profissional/especialista)
+ALTER TABLE public.quiz_questions DROP CONSTRAINT IF EXISTS quiz_questions_difficulty_check;
+ALTER TABLE public.quiz_questions DROP CONSTRAINT IF EXISTS quiz_questions_category_check;
+ALTER TABLE public.quiz_questions DROP CONSTRAINT IF EXISTS quiz_questions_correct_answer_check;
+ALTER TABLE public.quiz_scores DROP CONSTRAINT IF EXISTS quiz_scores_current_level_check;
+
 -- 2. Políticas
 ALTER TABLE public.quiz_questions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can view quiz questions" ON public.quiz_questions;
