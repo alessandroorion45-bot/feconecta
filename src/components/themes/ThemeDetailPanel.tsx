@@ -122,7 +122,7 @@ export const ThemeDetailPanel = ({
               {features.map((feature, index) => (
                 <div
                   key={index}
-                  className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+                  className="p-3 rounded-lg bg-muted border border-border"
                 >
                   <feature.icon className="w-4 h-4 mb-2 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">{feature.label}</p>
@@ -199,7 +199,7 @@ export const ThemeDetailPanel = ({
           )}
 
           {/* Action Button */}
-          <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-950 border-t pt-4 -mx-6 px-6">
+          <div className="sticky bottom-0 left-0 right-0 bg-card border-t pt-4 -mx-6 px-6">
             <Button
               size="lg"
               className={cn(

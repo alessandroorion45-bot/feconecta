@@ -217,7 +217,7 @@ export default function AdminDashboard() {
               onClick={() => navigate("/admin/settings")}
               className="p-4 border rounded-lg hover:bg-accent transition-colors text-left"
             >
-              <Settings className="h-6 w-6 mb-2 text-gray-600" />
+              <Settings className="h-6 w-6 mb-2 text-muted-foreground" />
               <h3 className="font-semibold">Configurações</h3>
               <p className="text-xs text-muted-foreground mt-1">
                 Ajustes da plataforma

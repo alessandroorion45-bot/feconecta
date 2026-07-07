@@ -17,8 +17,8 @@ export function GlassCard({ children, className, blur = "md" }: GlassCardProps) 
   return (
     <div
       className={cn(
-        "bg-white/10 dark:bg-black/10",
-        "border border-white/20 dark:border-white/10",
+        "bg-foreground/5",
+        "border border-foreground/10",
         "rounded-lg shadow-lg",
         blurClasses[blur],
         className

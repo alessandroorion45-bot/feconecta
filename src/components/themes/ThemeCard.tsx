@@ -41,8 +41,8 @@ export const ThemeCard = ({
         isActive
           ? "border-purple-500 ring-4 ring-purple-500/30"
           : isUnlocked
-          ? "border-gray-200 dark:border-gray-700 hover:border-purple-400"
-          : "border-gray-300 dark:border-gray-600 opacity-75 hover:opacity-100"
+          ? "border-border hover:border-purple-400"
+          : "border-border opacity-75 hover:opacity-100"
       )}
     >
       {/* Glow effect on hover */}
@@ -54,7 +54,7 @@ export const ThemeCard = ({
       />
 
       {/* Content */}
-      <div className="relative p-4 bg-white dark:bg-gray-900">
+      <div className="relative p-4 bg-card">
         {/* Preview */}
         <div className="mb-3">
           <ThemePreview theme={theme} size="md" />
@@ -144,7 +144,7 @@ export const ThemeCard = ({
 
       {/* Active indicator */}
       {isActive && (
-        <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-green-500 ring-2 ring-white dark:ring-gray-900 animate-pulse" />
+        <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-green-500 ring-2 ring-background animate-pulse" />
       )}
     </div>
   );

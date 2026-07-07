@@ -665,3 +665,227 @@ export const diamantePromessaThemeTokens: ThemeDesignTokens = {
   backdropBlur: '20px',
   glassMorphism: 'rgba(14, 165, 233, 0.15)',
 };
+
+// =====================================================
+// 11. CLÁSSICO - Minimalista, leve, elegante
+// =====================================================
+export const classicoThemeTokens: ThemeDesignTokens = {
+  primary: '#475569',
+  secondary: '#94a3b8',
+  accent: '#64748b',
+
+  background: '#ffffff',
+  backgroundSecondary: '#f8fafc',
+  surface: '#ffffff',
+  surfaceHover: '#f1f5f9',
+  overlay: 'rgba(15, 23, 42, 0.35)',
+
+  border: 'rgba(226, 232, 240, 1)',
+  borderHover: 'rgba(100, 116, 139, 0.35)',
+  borderFocus: '#475569',
+
+  text: '#1e293b',
+  textSecondary: '#475569',
+  textMuted: '#94a3b8',
+  textOnPrimary: '#ffffff',
+  textOnAccent: '#ffffff',
+
+  buttonPrimary: '#475569',
+  buttonSecondary: '#94a3b8',
+  buttonHover: '#334155',
+  inputBackground: '#ffffff',
+  inputBorder: '#e2e8f0',
+
+  glow: '#94a3b8',
+  glowIntensity: '0.15',
+  shadow: 'rgba(15, 23, 42, 0.06)',
+  shadowHover: 'rgba(15, 23, 42, 0.1)',
+
+  gradient: ['#475569', '#94a3b8'],
+  gradientHeader: 'linear-gradient(135deg, #475569 0%, #94a3b8 100%)',
+  gradientSidebar: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+  gradientCard: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+
+  headerBackground: '#ffffff',
+  sidebarBackground: '#f8fafc',
+  cardBackground: '#ffffff',
+  modalBackground: '#ffffff',
+  tooltipBackground: '#1e293b',
+
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+
+  particleColor: undefined,
+  backdropBlur: '6px',
+  glassMorphism: 'rgba(255, 255, 255, 0.6)',
+};
+
+// =====================================================
+// 12. SABEDORIA - Azul profundo, leitura confortável
+// =====================================================
+export const sabedoriaThemeTokens: ThemeDesignTokens = {
+  primary: '#1e40af',
+  secondary: '#64748b',
+  accent: '#3b82f6',
+
+  background: '#f8fafc',
+  backgroundSecondary: '#eef2f7',
+  surface: '#ffffff',
+  surfaceHover: '#eef2f7',
+  overlay: 'rgba(15, 23, 42, 0.45)',
+
+  border: 'rgba(203, 213, 225, 1)',
+  borderHover: 'rgba(30, 64, 175, 0.35)',
+  borderFocus: '#1e40af',
+
+  text: '#1e293b',
+  textSecondary: '#334155',
+  textMuted: '#64748b',
+  textOnPrimary: '#ffffff',
+  textOnAccent: '#ffffff',
+
+  buttonPrimary: '#1e40af',
+  buttonSecondary: '#64748b',
+  buttonHover: '#1e3a8a',
+  inputBackground: '#ffffff',
+  inputBorder: '#cbd5e1',
+
+  glow: '#3b82f6',
+  glowIntensity: '0.25',
+  shadow: 'rgba(30, 64, 175, 0.08)',
+  shadowHover: 'rgba(30, 64, 175, 0.14)',
+
+  gradient: ['#1e40af', '#3b82f6', '#64748b'],
+  gradientHeader: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+  gradientSidebar: 'linear-gradient(180deg, #eef2f7 0%, #f8fafc 100%)',
+  gradientCard: 'linear-gradient(135deg, #ffffff 0%, #eef2f7 100%)',
+
+  headerBackground: '#ffffff',
+  sidebarBackground: '#eef2f7',
+  cardBackground: '#ffffff',
+  modalBackground: '#ffffff',
+  tooltipBackground: '#1e293b',
+
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+
+  particleColor: '#3b82f6',
+  backdropBlur: '8px',
+  glassMorphism: 'rgba(30, 64, 175, 0.06)',
+};
+
+// =====================================================
+// 13. NOITE DE ORAÇÃO - Roxo profundo, glow violeta, silêncio
+// =====================================================
+export const noiteOracaoThemeTokens: ThemeDesignTokens = {
+  primary: '#7c3aed',
+  secondary: '#4c1d95',
+  accent: '#a78bfa',
+
+  background: '#0f0a1a',
+  backgroundSecondary: '#160f26',
+  surface: 'rgba(30, 20, 48, 0.75)',
+  surfaceHover: 'rgba(40, 27, 63, 0.85)',
+  overlay: 'rgba(5, 3, 12, 0.85)',
+
+  border: 'rgba(124, 58, 237, 0.25)',
+  borderHover: 'rgba(167, 139, 250, 0.4)',
+  borderFocus: '#a78bfa',
+
+  text: '#f5f3ff',
+  textSecondary: '#d8ceff',
+  textMuted: '#9d8fc7',
+  textOnPrimary: '#ffffff',
+  textOnAccent: '#1e1033',
+
+  buttonPrimary: '#7c3aed',
+  buttonSecondary: '#4c1d95',
+  buttonHover: '#6d28d9',
+  inputBackground: 'rgba(30, 20, 48, 0.6)',
+  inputBorder: 'rgba(124, 58, 237, 0.35)',
+
+  glow: '#a78bfa',
+  glowIntensity: '0.6',
+  shadow: 'rgba(0, 0, 0, 0.45)',
+  shadowHover: 'rgba(124, 58, 237, 0.35)',
+
+  gradient: ['#0f0a1a', '#4c1d95', '#7c3aed', '#a78bfa'],
+  gradientHeader: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #a78bfa 100%)',
+  gradientSidebar: 'linear-gradient(180deg, #160f26 0%, #0f0a1a 100%)',
+  gradientCard: 'linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(15,10,26,0.4) 100%)',
+
+  headerBackground: 'rgba(15, 10, 26, 0.9)',
+  sidebarBackground: '#160f26',
+  cardBackground: 'rgba(30, 20, 48, 0.6)',
+  modalBackground: '#160f26',
+  tooltipBackground: '#f5f3ff',
+
+  success: '#34d399',
+  warning: '#fbbf24',
+  error: '#f87171',
+  info: '#a78bfa',
+
+  particleColor: '#a78bfa',
+  backdropBlur: '18px',
+  glassMorphism: 'rgba(124, 58, 237, 0.12)',
+};
+
+// =====================================================
+// 14. PENTECOSTES - Vermelho, laranja, dourado, energia
+// =====================================================
+export const pentecostesThemeTokens: ThemeDesignTokens = {
+  primary: '#dc2626',
+  secondary: '#f97316',
+  accent: '#fbbf24',
+
+  background: '#fff7ed',
+  backgroundSecondary: '#fef1e0',
+  surface: '#fffaf3',
+  surfaceHover: '#fef1e0',
+  overlay: 'rgba(124, 45, 18, 0.5)',
+
+  border: 'rgba(251, 146, 60, 0.35)',
+  borderHover: 'rgba(220, 38, 38, 0.45)',
+  borderFocus: '#dc2626',
+
+  text: '#7c2d12',
+  textSecondary: '#9a3412',
+  textMuted: '#c2410c',
+  textOnPrimary: '#ffffff',
+  textOnAccent: '#7c2d12',
+
+  buttonPrimary: '#dc2626',
+  buttonSecondary: '#f97316',
+  buttonHover: '#b91c1c',
+  inputBackground: '#ffffff',
+  inputBorder: 'rgba(251, 146, 60, 0.4)',
+
+  glow: '#fbbf24',
+  glowIntensity: '0.55',
+  shadow: 'rgba(194, 65, 12, 0.15)',
+  shadowHover: 'rgba(220, 38, 38, 0.25)',
+
+  gradient: ['#dc2626', '#f97316', '#fbbf24'],
+  gradientHeader: 'linear-gradient(135deg, #dc2626 0%, #f97316 55%, #fbbf24 100%)',
+  gradientSidebar: 'linear-gradient(180deg, #fef1e0 0%, #fff7ed 100%)',
+  gradientCard: 'linear-gradient(135deg, rgba(220,38,38,0.08) 0%, rgba(251,191,36,0.12) 100%)',
+
+  headerBackground: 'rgba(255, 247, 237, 0.92)',
+  sidebarBackground: '#fef1e0',
+  cardBackground: '#fffaf3',
+  modalBackground: '#fff7ed',
+  tooltipBackground: '#7c2d12',
+
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#dc2626',
+  info: '#f97316',
+
+  particleColor: '#fbbf24',
+  backdropBlur: '10px',
+  glassMorphism: 'rgba(251, 146, 60, 0.12)',
+};

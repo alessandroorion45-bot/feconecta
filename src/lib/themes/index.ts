@@ -17,6 +17,10 @@ import {
   monteSiaoThemeTokens,
   jardimEdenThemeTokens,
   diamantePromessaThemeTokens,
+  classicoThemeTokens,
+  sabedoriaThemeTokens,
+  noiteOracaoThemeTokens,
+  pentecostesThemeTokens,
 } from './theme-definitions';
 
 export interface ThemeColors {
@@ -377,6 +381,136 @@ export const darkRoyalTheme: Theme = {
 };
 
 // =====================================================
+// 11. CLÁSSICO
+// =====================================================
+export const classicoTheme: Theme = {
+  key: "classico",
+  name: "Clássico",
+  description: "Minimalista, leve e elegante — branco limpo, poucas sombras",
+  colors: {
+    primary: "#475569",
+    secondary: "#94a3b8",
+    accent: "#64748b",
+    background: "#ffffff",
+    text: "#1e293b",
+    gradient: ["#475569", "#94a3b8"],
+  },
+  effects: {
+    animation: "subtle-fade",
+  },
+  rarity: 1,
+  cssVars: {
+    "--theme-primary": "#475569",
+    "--theme-secondary": "#94a3b8",
+    "--theme-accent": "#64748b",
+    "--theme-background": "#ffffff",
+    "--theme-text": "#1e293b",
+  },
+  designTokens: classicoThemeTokens,
+};
+
+// =====================================================
+// 12. SABEDORIA
+// =====================================================
+export const sabedoriaTheme: Theme = {
+  key: "sabedoria",
+  name: "Sabedoria",
+  description: "Azul profundo e cinza claro — elegância e conforto de leitura",
+  colors: {
+    primary: "#1e40af",
+    secondary: "#64748b",
+    accent: "#3b82f6",
+    background: "#f8fafc",
+    text: "#1e293b",
+    gradient: ["#1e40af", "#3b82f6", "#64748b"],
+  },
+  effects: {
+    glow: "soft-blue",
+    animation: "calm-focus",
+  },
+  rarity: 3,
+  tier: "standard",
+  cssVars: {
+    "--theme-primary": "#1e40af",
+    "--theme-secondary": "#64748b",
+    "--theme-accent": "#3b82f6",
+    "--theme-background": "#f8fafc",
+    "--theme-text": "#1e293b",
+    "--theme-gradient-start": "#1e40af",
+    "--theme-gradient-end": "#64748b",
+  },
+  designTokens: sabedoriaThemeTokens,
+};
+
+// =====================================================
+// 13. NOITE DE ORAÇÃO
+// =====================================================
+export const noiteOracaoTheme: Theme = {
+  key: "noite-oracao",
+  name: "Noite de Oração",
+  description: "Roxo profundo e azul escuro — glow violeta, atmosfera silenciosa",
+  colors: {
+    primary: "#7c3aed",
+    secondary: "#4c1d95",
+    accent: "#a78bfa",
+    background: "#0f0a1a",
+    text: "#f5f3ff",
+    gradient: ["#0f0a1a", "#4c1d95", "#7c3aed", "#a78bfa"],
+  },
+  effects: {
+    particles: "candlelight",
+    glow: "violet-glow",
+    animation: "silent-breathe",
+  },
+  rarity: 4,
+  tier: "gold",
+  cssVars: {
+    "--theme-primary": "#7c3aed",
+    "--theme-secondary": "#4c1d95",
+    "--theme-accent": "#a78bfa",
+    "--theme-background": "#0f0a1a",
+    "--theme-text": "#f5f3ff",
+    "--theme-gradient-start": "#4c1d95",
+    "--theme-gradient-end": "#a78bfa",
+  },
+  designTokens: noiteOracaoThemeTokens,
+};
+
+// =====================================================
+// 14. PENTECOSTES
+// =====================================================
+export const pentecostesTheme: Theme = {
+  key: "pentecostes",
+  name: "Pentecostes",
+  description: "Vermelho, laranja e dourado — energia e pequenas partículas de fogo",
+  colors: {
+    primary: "#dc2626",
+    secondary: "#f97316",
+    accent: "#fbbf24",
+    background: "#fff7ed",
+    text: "#7c2d12",
+    gradient: ["#dc2626", "#f97316", "#fbbf24"],
+  },
+  effects: {
+    particles: "fire-sparks",
+    glow: "flame-gold",
+    animation: "pentecost-flicker",
+  },
+  rarity: 4,
+  tier: "gold",
+  cssVars: {
+    "--theme-primary": "#dc2626",
+    "--theme-secondary": "#f97316",
+    "--theme-accent": "#fbbf24",
+    "--theme-background": "#fff7ed",
+    "--theme-text": "#7c2d12",
+    "--theme-gradient-start": "#dc2626",
+    "--theme-gradient-end": "#fbbf24",
+  },
+  designTokens: pentecostesThemeTokens,
+};
+
+// =====================================================
 // MAPA DE TEMAS
 // =====================================================
 export const themes: Record<string, Theme> = {
@@ -390,6 +524,10 @@ export const themes: Record<string, Theme> = {
   "jardim-eden": jardimEdenTheme,
   "diamante-promessa": diamantePromessaTheme,
   "dark-royal": darkRoyalTheme,
+  "classico": classicoTheme,
+  "sabedoria": sabedoriaTheme,
+  "noite-oracao": noiteOracaoTheme,
+  "pentecostes": pentecostesTheme,
 };
 
 // =====================================================
