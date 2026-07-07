@@ -34,6 +34,34 @@ export const LEVELS: GameLevel[] = [
   { level: 8, gridSize: 14, wordLengthMin: 4, wordLengthMax: 15, label: 'Desafio supremo' },
 ];
 
+// Rótulos ciclantes para níveis além dos 8 iniciais (progressão infinita)
+const ENDLESS_LABELS = [
+  'Peregrino da Fé', 'Guardião da Palavra', 'Sábio das Escrituras', 'Guerreiro Espiritual',
+  'Discípulo Fiel', 'Mestre da Aliança', 'Servo Dedicado', 'Vencedor em Cristo',
+  'Embaixador do Reino', 'Atalaia da Verdade', 'Semeador Incansável', 'Vaso de Honra',
+];
+
+export const MAX_LEVEL = 500;
+
+/**
+ * Config de nível para qualquer número de nível (1 a MAX_LEVEL).
+ * Níveis 1-8 usam exatamente os tiers fixos originais (intocados).
+ * A partir do nível 9, a mesma curva de dificuldade continua crescendo
+ * gradualmente (grade maior, palavras mais longas) em vez de estagnar.
+ */
+export const getLevelConfig = (level: number): GameLevel => {
+  const clamped = Math.max(1, Math.min(level, MAX_LEVEL));
+  if (clamped <= LEVELS.length) return LEVELS[clamped - 1];
+
+  const tier = clamped - LEVELS.length; // 1, 2, 3...
+  const gridSize = Math.min(14 + Math.floor(tier / 8), 20);
+  const wordLengthMin = Math.min(4 + Math.floor(tier / 40), 6);
+  const wordLengthMax = Math.min(15 + Math.floor(tier / 20), 18);
+  const label = ENDLESS_LABELS[tier % ENDLESS_LABELS.length];
+
+  return { level: clamped, gridSize, wordLengthMin, wordLengthMax, label };
+};
+
 // ========== Biblical words pool (fallback) ==========
 const BIBLICAL_WORDS_POOL = [
   // 3-5 letters
@@ -272,7 +300,7 @@ export const useWordSearchGame = () => {
 
   // Start new game for a level
   const startLevel = useCallback((level: number, extraWords?: string[]) => {
-    const levelConfig = LEVELS[Math.min(level - 1, LEVELS.length - 1)];
+    const levelConfig = getLevelConfig(level);
     const words = getWordsForLevel(levelConfig, level, extraWords);
     const { grid: newGrid, placements: newPlacements } = generateGrid(words, levelConfig.gridSize);
 

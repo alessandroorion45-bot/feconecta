@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useWordSearchGame, LEVELS, extractKeywords, type SavedGameState } from '@/hooks/useWordSearchGame';
+import { useWordSearchGame, getLevelConfig, MAX_LEVEL, extractKeywords, type SavedGameState } from '@/hooks/useWordSearchGame';
 import wordSearchBg from '@/assets/word-search-bg.jpg';
 import WordSearchGrid from '@/components/word-search/WordSearchGrid';
 import WordListPanel from '@/components/word-search/WordListPanel';
@@ -44,6 +44,7 @@ const WordSearch = () => {
   const [chestTier, setChestTier] = useState<ChestTier | null>(null);
   const [chestHasFragment, setChestHasFragment] = useState(false);
   const [fragmentOpen, setFragmentOpen] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [trailRefreshKey, setTrailRefreshKey] = useState(0);
 
   const goldRain = useGoldRain();
@@ -95,7 +96,7 @@ const WordSearch = () => {
   const startLevelWithTheme = useCallback((level: number, isRestart = false) => {
     const theme = getThemeForLevel(level);
     setCurrentTheme(theme);
-    const levelConfig = LEVELS[Math.min(level - 1, LEVELS.length - 1)];
+    const levelConfig = getLevelConfig(level);
     const curatedWords = themeWordsFor(theme, levelConfig.wordLengthMin, levelConfig.wordLengthMax);
     const extra = [...curatedWords, ...(apiWordsCache.current.get(level) || [])];
 
@@ -275,8 +276,15 @@ const WordSearch = () => {
     setChestOpen(false);
     if (chestHasFragment) {
       setTimeout(() => { setFragmentOpen(true); playFragment(); }, 300);
+    } else {
+      setTimeout(() => setShowCompleteModal(true), 300);
     }
   }, [chestHasFragment, playFragment]);
+
+  const handleCloseFragment = useCallback(() => {
+    setFragmentOpen(false);
+    setTimeout(() => setShowCompleteModal(true), 300);
+  }, []);
 
   // Pause system
   const handlePause = useCallback(() => {
@@ -290,10 +298,12 @@ const WordSearch = () => {
   }, [game]);
 
   const handleNextLevel = useCallback(() => {
-    startLevelWithTheme(game.currentLevel + 1, true);
+    setShowCompleteModal(false);
+    startLevelWithTheme(Math.min(game.currentLevel + 1, MAX_LEVEL), true);
   }, [game.currentLevel, startLevelWithTheme]);
 
   const handleRestart = useCallback(() => {
+    setShowCompleteModal(false);
     startLevelWithTheme(game.currentLevel, true);
   }, [game.currentLevel, startLevelWithTheme]);
 
@@ -308,7 +318,7 @@ const WordSearch = () => {
     }
   }, [game]);
 
-  const levelConfig = LEVELS[Math.min(game.currentLevel - 1, LEVELS.length - 1)];
+  const levelConfig = getLevelConfig(game.currentLevel);
 
   return (
     <div className="palavra-viva-wrapper" style={{ backgroundImage: `url(${wordSearchBg})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
@@ -407,7 +417,7 @@ const WordSearch = () => {
 
       {/* Complete modal */}
       <GameCompleteModal
-        open={game.gameComplete}
+        open={showCompleteModal}
         level={game.currentLevel}
         score={game.score}
         verseText={game.verseText}
@@ -430,7 +440,7 @@ const WordSearch = () => {
       <FragmentModal
         open={fragmentOpen}
         theme={currentTheme}
-        onClose={() => setFragmentOpen(false)}
+        onClose={handleCloseFragment}
       />
     </div>
   );
