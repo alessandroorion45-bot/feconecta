@@ -46,7 +46,6 @@ const Index = () => {
     { icon: Brain, title: "Quiz Bíblico", description: "Teste seus conhecimentos com perguntas interativas", link: "/quiz", gradient: "from-accent to-secondary" },
     { icon: HelpCircle, title: "Perguntas Bíblicas", description: "Tire dúvidas e aprenda com a comunidade", link: "/questions", gradient: "from-secondary to-primary" },
     { icon: Search, title: "Dicionário Bíblico", description: "Explore termos, personagens e lugares da Bíblia", link: "/dictionary", gradient: "from-secondary to-primary-glow" },
-    { icon: Users, title: "Acompanhamento Espiritual", description: "Discipulado, metas espirituais e mentoria", link: "/mentoring", gradient: "from-primary to-accent" },
     { icon: Star, title: "Meus Favoritos", description: "Versículos, estudos e louvores salvos em um só lugar", link: "/favorites", gradient: "from-accent to-primary-glow" },
     { icon: Users, title: "Amigos", description: "Conecte-se com irmãos e fortaleça sua comunidade", link: "/friends", gradient: "from-secondary to-accent" },
   ];

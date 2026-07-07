@@ -128,7 +128,6 @@ const Header = () => {
                   <MenuSection title="Comunidade" />
                   <MenuItem path="/shared-reading" icon={<BookOpen className="h-5 w-5" />} label="Leitura em Grupo" currentPath={currentPath} onClick={handleNavClick} iconColor="text-violet-500" />
                   <MenuItem path="/church-community" icon={<Church className="h-5 w-5" />} label="Comunidade da Igreja" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
-                  <MenuItem path="/mentoring" icon={<Users className="h-5 w-5" />} label="Mentoria Espiritual" currentPath={currentPath} onClick={handleNavClick} iconColor="text-cyan-500" />
 
                   <MenuSection title="Conta" />
                   <div onClick={(e) => e.stopPropagation()}>
@@ -253,7 +252,6 @@ const Header = () => {
                     <MenuItem path="/studies" icon={<BookMarked className="h-5 w-5" />} label="Estudos Bíblicos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-teal-500" />
                     <MenuItem path="/questions" icon={<HelpCircle className="h-5 w-5" />} label="Perguntas Bíblicas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-blue-500" />
                     <MenuItem path="/dictionary" icon={<SearchIcon className="h-5 w-5" />} label="Dicionário Bíblico" currentPath={currentPath} onClick={handleNavClick} iconColor="text-indigo-500" />
-                    <MenuItem path="/mentoring" icon={<Users className="h-5 w-5" />} label="Mentoria Espiritual" currentPath={currentPath} onClick={handleNavClick} iconColor="text-cyan-500" />
                     <MenuItem path="/favorites" icon={<Star className="h-5 w-5" />} label="Meus Favoritos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
                     <MenuItem path="/palavra-viva" icon={<SearchIcon className="h-5 w-5" />} label="Caça-Palavras" currentPath={currentPath} onClick={handleNavClick} iconColor="text-purple-500" />
 
