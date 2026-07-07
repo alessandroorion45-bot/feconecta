@@ -207,6 +207,25 @@ const getWordsForLevel = (level: GameLevel, levelNumber: number, extraWords?: st
   return [...new Set(pool)].sort(() => rng() - 0.5).slice(0, wordCount);
 };
 
+// ========== Combo ==========
+const COMBO_WINDOW_MS = 8000; // janela para manter o combo vivo
+const COMBO_BONUS_PER_STEP = 5; // XP/pontos extra por nível de combo
+
+export interface SavedGameState {
+  level: number;
+  grid: string[][];
+  placements: WordPlacement[];
+  foundWords: string[];
+  score: number;
+  combo: number;
+  maxCombo: number;
+  timeLeft: number;
+  hintsUsed: number;
+  revealedCells: string[];
+  themeKey?: string;
+  savedAt: number;
+}
+
 // ========== Main hook ==========
 export const useWordSearchGame = () => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -224,6 +243,10 @@ export const useWordSearchGame = () => {
   const [timerFrozen, setTimerFrozen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [lastFoundWord, setLastFoundWord] = useState<{ word: string; placement: WordPlacement; comboAt: number } | null>(null);
+  const lastFoundAtRef = useRef<number>(0);
 
   const [isPaused, setIsPaused] = useState(false);
 
@@ -263,6 +286,30 @@ export const useWordSearchGame = () => {
     setRevealedCells(new Set());
     setTimeLeft(levelConfig.gridSize * 15); // seconds based on grid size
     setTimerFrozen(false);
+    setScore(0);
+    setCombo(0);
+    setMaxCombo(0);
+    setLastFoundWord(null);
+    lastFoundAtRef.current = 0;
+  }, []);
+
+  /** Restaura uma sessão salva EXATAMENTE como estava (mesmo grid), sem regenerar nada. */
+  const restoreSession = useCallback((saved: SavedGameState) => {
+    setCurrentLevel(saved.level);
+    setGrid(saved.grid);
+    setPlacements(saved.placements);
+    setSelectedCells([]);
+    setFoundWords(saved.foundWords);
+    setGameComplete(false);
+    setHintsUsed(saved.hintsUsed);
+    setRevealedCells(new Set(saved.revealedCells));
+    setTimeLeft(saved.timeLeft);
+    setTimerFrozen(false);
+    setScore(saved.score);
+    setCombo(saved.combo);
+    setMaxCombo(saved.maxCombo);
+    setLastFoundWord(null);
+    lastFoundAtRef.current = 0;
   }, []);
 
   // Handle cell selection
@@ -309,7 +356,22 @@ export const useWordSearchGame = () => {
       );
       setPlacements(updatedPlacements);
       setFoundWords(prev => [...prev, matchedPlacement!.word]);
-      setScore(prev => prev + matchedPlacement!.word.length * 10);
+
+      // Combo: se encontrou dentro da janela de tempo, incrementa; senão reinicia
+      const now = Date.now();
+      const withinCombo = lastFoundAtRef.current > 0 && (now - lastFoundAtRef.current) <= COMBO_WINDOW_MS;
+      lastFoundAtRef.current = now;
+
+      setCombo(prev => {
+        const next = withinCombo ? prev + 1 : 1;
+        setMaxCombo(m => Math.max(m, next));
+        setLastFoundWord({ word: matchedPlacement!.word, placement: matchedPlacement!, comboAt: next });
+
+        const comboBonus = next > 1 ? (next - 1) * COMBO_BONUS_PER_STEP : 0;
+        setScore(s => s + matchedPlacement!.word.length * 10 + comboBonus);
+
+        return next;
+      });
 
       // Check if all words found
       if (updatedPlacements.every(p => p.found)) {
@@ -371,8 +433,12 @@ export const useWordSearchGame = () => {
     timerFrozen,
     revealedCells,
     isPaused,
+    combo,
+    maxCombo,
+    lastFoundWord,
     // Actions
     startLevel,
+    restoreSession,
     setPaused,
     handleCellSelect,
     startSelecting,

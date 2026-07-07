@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useWordSearchGame, LEVELS, extractKeywords } from '@/hooks/useWordSearchGame';
+import { useWordSearchGame, LEVELS, extractKeywords, type SavedGameState } from '@/hooks/useWordSearchGame';
 import wordSearchBg from '@/assets/word-search-bg.jpg';
 import WordSearchGrid from '@/components/word-search/WordSearchGrid';
 import WordListPanel from '@/components/word-search/WordListPanel';
@@ -11,139 +11,272 @@ import GameTools from '@/components/word-search/GameTools';
 import ThemeImage from '@/components/word-search/ThemeImage';
 import PauseMenu from '@/components/word-search/PauseMenu';
 import FloatingParticles from '@/components/word-search/FloatingParticles';
+import ResumeSessionModal from '@/components/word-search/ResumeSessionModal';
+import ChestReveal from '@/components/word-search/ChestReveal';
+import FragmentModal from '@/components/word-search/FragmentModal';
+import SpiritualTrail from '@/components/word-search/SpiritualTrail';
+import WordSearchRanking from '@/components/word-search/WordSearchRanking';
 import { useGoldRain, useRevealedBanner, useLevelGlow, useGameSounds, vibrateShort } from '@/components/word-search/GameEffects';
+import { WORD_SEARCH_THEMES, getThemeForLevel, type WordSearchTheme } from '@/lib/wordSearchThemes';
+import { CHESTS, determineChestTier, rollsFragment, type ChestTier } from '@/lib/wordSearchChests';
+import { WORD_SEARCH_ACHIEVEMENTS, evaluateAchievements } from '@/lib/wordSearchAchievements';
+import { saveSessionLocal, loadSessionLocal, clearSessionLocal, saveSessionRemote, loadSessionRemote, clearSessionRemote } from '@/lib/wordSearchSession';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGamification } from '@/hooks/useGamification';
+import { useToast } from '@/hooks/use-toast';
 import { Home, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
-const LEVEL_VERSES = [
-  { text: 'No princípio criou Deus os céus e a terra.', ref: 'Gênesis 1:1' },
-  { text: 'O Senhor é o meu pastor, nada me faltará.', ref: 'Salmos 23:1' },
-  { text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito.', ref: 'João 3:16' },
-  { text: 'Tudo posso naquele que me fortalece.', ref: 'Filipenses 4:13' },
-  { text: 'Eu sou o caminho, a verdade e a vida.', ref: 'João 14:6' },
-  { text: 'Buscai primeiro o reino de Deus e a sua justiça.', ref: 'Mateus 6:33' },
-  { text: 'O amor é paciente, o amor é bondoso.', ref: '1 Coríntios 13:4' },
-  { text: 'Lâmpada para os meus pés é a tua palavra, e luz para o meu caminho.', ref: 'Salmos 119:105' },
-  { text: 'Confiai no Senhor de todo o vosso coração.', ref: 'Provérbios 3:5' },
-  { text: 'O Senhor é a minha luz e a minha salvação; a quem temerei?', ref: 'Salmos 27:1' },
-  { text: 'Sede fortes e corajosos. Não temais.', ref: 'Deuteronômio 31:6' },
-  { text: 'Em tudo dai graças, porque esta é a vontade de Deus.', ref: '1 Tessalonicenses 5:18' },
-  { text: 'O Senhor peleja por vós, e vós vos calareis.', ref: 'Êxodo 14:14' },
-  { text: 'Eis que estou convosco todos os dias, até à consumação dos séculos.', ref: 'Mateus 28:20' },
-  { text: 'A fé é o firme fundamento das coisas que se esperam.', ref: 'Hebreus 11:1' },
-];
-
-const BOOK_THEMES: Record<string, string> = {
-  gn: 'Criação e Gênesis', ex: 'Êxodo e Libertação', lv: 'Leis e Levítico',
-  nm: 'Números e Jornada', dt: 'Deuteronômio', js: 'Josué e Conquista',
-  jz: 'Juízes de Israel', rt: 'Rute e Fidelidade', '1sm': 'Samuel e os Reis',
-  '2sm': 'Davi e o Reino', sl: 'Salmos e Louvor', pv: 'Sabedoria e Provérbios',
-  ec: 'Eclesiastes', ct: 'Cânticos', is: 'Isaías Profeta',
-  jr: 'Jeremias', ez: 'Ezequiel', dn: 'Daniel',
-  mt: 'Evangelho de Mateus', mc: 'Evangelho de Marcos',
-  lc: 'Evangelho de Lucas', jo: 'Evangelho de João',
-  at: 'Atos dos Apóstolos', rm: 'Epístola aos Romanos',
-  '1co': 'Coríntios', '2co': 'Coríntios', gl: 'Gálatas',
-  ef: 'Epístola aos Efésios', fp: 'Filipenses', cl: 'Colossenses',
-  hb: 'Epístola aos Hebreus', tg: 'Epístola de Tiago',
-  ap: 'Apocalipse e Revelação',
-};
-
-const BOOKS = Object.keys(BOOK_THEMES);
-const SAVE_KEY = 'pv-saved-progress';
-
 const WordSearch = () => {
   const game = useWordSearchGame();
-  const [currentTheme, setCurrentTheme] = useState('Jornada Bíblica');
+  const { user } = useAuth();
+  const { awardXP } = useGamification(user?.id);
+  const { toast: shadToast } = useToast();
+
+  const [currentTheme, setCurrentTheme] = useState<WordSearchTheme>(WORD_SEARCH_THEMES[0]);
   const [isPaused, setIsPaused] = useState(false);
+  const [profile, setProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
+  const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [savedSession, setSavedSession] = useState<SavedGameState | null>(null);
+  const [chestOpen, setChestOpen] = useState(false);
+  const [chestTier, setChestTier] = useState<ChestTier | null>(null);
+  const [chestHasFragment, setChestHasFragment] = useState(false);
+  const [fragmentOpen, setFragmentOpen] = useState(false);
+  const [trailRefreshKey, setTrailRefreshKey] = useState(0);
 
   const goldRain = useGoldRain();
   const showBanner = useRevealedBanner();
   const showGlow = useLevelGlow();
-  const { playSuccess, playClick, playLevelComplete } = useGameSounds();
+  const { playSuccess, playClick, playLevelComplete, playCombo, playChest, playFragment } = useGameSounds();
   const prevFoundRef = useRef(0);
+  const prevComboRef = useRef(0);
   const apiWordsCache = useRef<Map<number, string[]>>(new Map());
+  const levelCompletedRef = useRef(false);
+  const unlockedAchievementsRef = useRef<Set<string>>(new Set());
 
-  const startLevelInstant = useCallback((level: number) => {
-    const randomBook = BOOKS[level % BOOKS.length];
-    setCurrentTheme(BOOK_THEMES[randomBook] || 'Jornada Bíblica');
-    const verseIdx = (level - 1) % LEVEL_VERSES.length;
-    game.setEndVerse(LEVEL_VERSES[verseIdx].text, LEVEL_VERSES[verseIdx].ref);
-    game.startLevel(level);
-    prefetchApiWords(level);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Perfil do usuário (avatar/nome no HUD)
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).maybeSingle()
+      .then(({ data }) => { if (data) setProfile(data); });
+  }, [user]);
+
+  // Conquistas já desbloqueadas (evita reconceder)
+  useEffect(() => {
+    if (!user) return;
+    (supabase.from('user_word_search_achievements' as any) as any)
+      .select('achievement_key')
+      .eq('user_id', user.id)
+      .then(({ data }: any) => {
+        unlockedAchievementsRef.current = new Set((data || []).map((r: any) => r.achievement_key));
+      });
+  }, [user]);
+
+  const themeWordsFor = useCallback((theme: WordSearchTheme, min: number, max: number): string[] => {
+    return theme.words.filter(w => w.length >= min && w.length <= max);
   }, []);
 
-  const prefetchApiWords = useCallback(async (currentLevel: number) => {
+  const prefetchApiWords = useCallback(async (level: number) => {
     try {
-      const bookIdx = (currentLevel + 1) % BOOKS.length;
-      const randomBook = BOOKS[bookIdx];
-      const randomChapter = Math.floor(Math.random() * 5) + 1;
       const { data: chapterData, error } = await supabase.functions.invoke('bible', {
         method: 'GET',
-        headers: { 'x-path': `books/${randomBook}/chapters/${randomChapter}` },
+        headers: { 'x-path': `books/gn/chapters/1` },
       });
       if (!error && chapterData?.vers) {
         const allText = chapterData.vers.map((v: any) => v.verse).join(' ');
-        const words = extractKeywords(allText, 3, 15, 20);
-        if (words.length > 3) {
-          apiWordsCache.current.set(currentLevel + 1, words);
-        }
+        const words = extractKeywords(allText, 3, 15, 8);
+        if (words.length > 2) apiWordsCache.current.set(level + 1, words);
       }
-    } catch { /* silent */ }
+    } catch { /* silencioso — o banco de temas curado já é suficiente */ }
   }, []);
 
-  const startLevel = useCallback((level: number) => {
-    const cachedWords = apiWordsCache.current.get(level);
-    const randomBook = BOOKS[level % BOOKS.length];
-    setCurrentTheme(BOOK_THEMES[randomBook] || 'Jornada Bíblica');
-    const verseIdx = (level - 1) % LEVEL_VERSES.length;
-    game.setEndVerse(LEVEL_VERSES[verseIdx].text, LEVEL_VERSES[verseIdx].ref);
-    game.startLevel(level, cachedWords);
-    prefetchApiWords(level);
-    setIsPaused(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefetchApiWords]);
+  const startLevelWithTheme = useCallback((level: number, isRestart = false) => {
+    const theme = getThemeForLevel(level);
+    setCurrentTheme(theme);
+    const levelConfig = LEVELS[Math.min(level - 1, LEVELS.length - 1)];
+    const curatedWords = themeWordsFor(theme, levelConfig.wordLengthMin, levelConfig.wordLengthMax);
+    const extra = [...curatedWords, ...(apiWordsCache.current.get(level) || [])];
 
-  // Load saved or start fresh
+    game.setEndVerse(theme.verseText, theme.verseRef);
+    game.startLevel(level, extra);
+    prefetchApiWords(level);
+    levelCompletedRef.current = false;
+    if (isRestart) setIsPaused(false);
+  }, [game, themeWordsFor, prefetchApiWords]);
+
+  // Carrega sessão salva (local primeiro, depois remoto) ou começa do zero
   useEffect(() => {
-    const saved = localStorage.getItem(SAVE_KEY);
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        if (data.level) {
-          startLevelInstant(data.level);
-          toast.success('Progresso restaurado!');
-          localStorage.removeItem(SAVE_KEY);
+    (async () => {
+      const local = loadSessionLocal();
+      if (local) {
+        setSavedSession(local);
+        setResumeModalOpen(true);
+        return;
+      }
+      if (user) {
+        const remote = await loadSessionRemote(user.id);
+        if (remote) {
+          setSavedSession(remote);
+          setResumeModalOpen(true);
           return;
         }
-      } catch { /* ignore */ }
-    }
-    startLevelInstant(1);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      }
+      startLevelWithTheme(1);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-  // Effects on found words
+  const handleContinueSession = useCallback(() => {
+    if (!savedSession) return;
+    const theme = WORD_SEARCH_THEMES.find(t => t.key === savedSession.themeKey) || getThemeForLevel(savedSession.level);
+    setCurrentTheme(theme);
+    game.setEndVerse(theme.verseText, theme.verseRef);
+    game.restoreSession(savedSession);
+    levelCompletedRef.current = false;
+    setResumeModalOpen(false);
+    toast.success('Progresso restaurado!');
+  }, [savedSession, game]);
+
+  const handleRestartFromResume = useCallback(() => {
+    clearSessionLocal();
+    if (user) clearSessionRemote(user.id);
+    setResumeModalOpen(false);
+    startLevelWithTheme(savedSession?.level || 1, true);
+  }, [savedSession, startLevelWithTheme, user]);
+
+  // Auto-save (local sempre; remoto se logado) — debounced
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (!game.grid.length || game.gameComplete || resumeModalOpen) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const state: SavedGameState = {
+        level: game.currentLevel,
+        grid: game.grid,
+        placements: game.placements,
+        foundWords: game.foundWords,
+        score: game.score,
+        combo: game.combo,
+        maxCombo: game.maxCombo,
+        timeLeft: game.timeLeft,
+        hintsUsed: game.hintsUsed,
+        revealedCells: Array.from(game.revealedCells),
+        themeKey: currentTheme.key,
+        savedAt: Date.now(),
+      };
+      saveSessionLocal(state);
+      if (user) saveSessionRemote(user.id, state);
+    }, 1500);
+
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [game.grid, game.foundWords, game.score, game.timeLeft, game.combo, game.currentLevel, game.gameComplete, currentTheme.key, user, resumeModalOpen, game.hintsUsed, game.placements, game.maxCombo, game.revealedCells]);
+
+  // Efeitos ao encontrar palavra (som/partículas/combo)
   useEffect(() => {
     const currentFound = game.foundWords.length;
     if (currentFound > prevFoundRef.current && prevFoundRef.current >= 0) {
       const lastWord = game.foundWords[currentFound - 1];
       playSuccess();
       vibrateShort();
-      goldRain(25);
+      goldRain(20 + Math.min(game.combo, 5) * 4);
       showBanner(lastWord);
     }
     prevFoundRef.current = currentFound;
-  }, [game.foundWords, playSuccess, goldRain, showBanner]);
+  }, [game.foundWords, game.combo, playSuccess, goldRain, showBanner]);
 
   useEffect(() => {
-    if (game.gameComplete) {
-      playLevelComplete();
-      showGlow();
-      goldRain(60);
+    if (game.combo > prevComboRef.current && game.combo >= 2) {
+      playCombo(game.combo);
     }
-  }, [game.gameComplete, playLevelComplete, showGlow, goldRain]);
+    prevComboRef.current = game.combo;
+  }, [game.combo, playCombo]);
+
+  // Conclusão de nível: XP real, baú, fragmento, conquistas, ranking
+  useEffect(() => {
+    if (!game.gameComplete || levelCompletedRef.current) return;
+    levelCompletedRef.current = true;
+
+    playLevelComplete();
+    showGlow();
+    goldRain(60);
+    clearSessionLocal();
+    if (user) clearSessionRemote(user.id);
+
+    const stars = game.timeLeft > 60 ? 3 : game.timeLeft > 30 ? 2 : 1;
+    const tier = determineChestTier(stars, game.maxCombo, game.currentLevel);
+    const hasFragment = rollsFragment(tier);
+
+    (async () => {
+      if (!user) {
+        setChestTier(tier);
+        setChestHasFragment(hasFragment);
+        setTimeout(() => { setChestOpen(true); playChest(); }, 900);
+        return;
+      }
+
+      // Registrar conclusão (histórico p/ ranking e trilha espiritual)
+      await (supabase.from('word_search_level_completions' as any) as any).insert({
+        user_id: user.id,
+        level: game.currentLevel,
+        theme_key: currentTheme.key,
+        theme_label: currentTheme.label,
+        score: game.score,
+        stars,
+        max_combo: game.maxCombo,
+        words_found_count: game.foundWords.length,
+        chest_tier: tier,
+      });
+
+      // XP real via gamificação central
+      await awardXP('word_search_completed', { level: game.currentLevel, theme: currentTheme.key, score: game.score });
+
+      // Conquistas
+      const { data: allCompletions } = await (supabase.from('word_search_level_completions' as any) as any)
+        .select('theme_key, words_found_count')
+        .eq('user_id', user.id);
+
+      const totalWords = (allCompletions || []).reduce((s: number, r: any) => s + (r.words_found_count || 0), 0);
+      const distinctThemes = new Set((allCompletions || []).map((r: any) => r.theme_key).filter(Boolean)).size;
+
+      const newlyEarned = evaluateAchievements({
+        isFirstWordEver: totalWords <= game.foundWords.length,
+        isFirstLevelEver: (allCompletions || []).length <= 1,
+        maxComboThisLevel: game.maxCombo,
+        level: game.currentLevel,
+        totalWordsFound: totalWords,
+        distinctThemesCompleted: distinctThemes,
+        chestTier: tier,
+        alreadyUnlocked: unlockedAchievementsRef.current,
+      });
+
+      for (const key of newlyEarned) {
+        unlockedAchievementsRef.current.add(key);
+        await (supabase.from('user_word_search_achievements' as any) as any)
+          .insert({ user_id: user.id, achievement_key: key })
+          .then(() => {});
+        const def = WORD_SEARCH_ACHIEVEMENTS.find(a => a.key === key);
+        if (def) {
+          shadToast({ title: `${def.icon} Conquista: ${def.name}`, description: def.description });
+        }
+      }
+
+      setTrailRefreshKey(k => k + 1);
+      setChestTier(tier);
+      setChestHasFragment(hasFragment);
+      setTimeout(() => { setChestOpen(true); playChest(); }, 900);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.gameComplete]);
+
+  const handleCloseChest = useCallback(() => {
+    setChestOpen(false);
+    if (chestHasFragment) {
+      setTimeout(() => { setFragmentOpen(true); playFragment(); }, 300);
+    }
+  }, [chestHasFragment, playFragment]);
 
   // Pause system
   const handlePause = useCallback(() => {
@@ -156,25 +289,13 @@ const WordSearch = () => {
     game.setPaused(false);
   }, [game]);
 
-  const handleSave = useCallback(() => {
-    const saveData = {
-      level: game.currentLevel,
-      score: game.score,
-      foundWords: game.foundWords,
-      timeLeft: game.timeLeft,
-      savedAt: Date.now(),
-    };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-    toast.success('Progresso salvo!');
-  }, [game]);
-
   const handleNextLevel = useCallback(() => {
-    startLevel(game.currentLevel + 1);
-  }, [game.currentLevel, startLevel]);
+    startLevelWithTheme(game.currentLevel + 1, true);
+  }, [game.currentLevel, startLevelWithTheme]);
 
   const handleRestart = useCallback(() => {
-    startLevel(game.currentLevel);
-  }, [game.currentLevel, startLevel]);
+    startLevelWithTheme(game.currentLevel, true);
+  }, [game.currentLevel, startLevelWithTheme]);
 
   const handleCellPointerDown = useCallback((row: number, col: number) => {
     playClick();
@@ -222,12 +343,16 @@ const WordSearch = () => {
             timerFrozen={game.timerFrozen}
             foundCount={game.foundWords.length}
             totalCount={game.placements.length}
+            combo={game.combo}
+            userId={user?.id}
+            userName={profile?.full_name}
+            userAvatar={profile?.avatar_url}
             onPause={handlePause}
           />
 
           {/* Theme */}
           <ThemeImage
-            theme={currentTheme}
+            theme={currentTheme.label}
             words={game.placements.map(p => p.word)}
           />
 
@@ -259,6 +384,10 @@ const WordSearch = () => {
           {/* Verse */}
           <VerseDisplay verseText={game.verseText} verseRef={game.verseRef} />
 
+          {/* Trilha espiritual + Ranking */}
+          <SpiritualTrail userId={user?.id} refreshKey={trailRefreshKey} />
+          <WordSearchRanking userId={user?.id} />
+
           <p className="pv-disclaimer">
             ✝ Jogo 100% gratuito • Conteúdo bíblico educativo
           </p>
@@ -266,10 +395,14 @@ const WordSearch = () => {
       </div>
 
       {/* Pause menu */}
-      <PauseMenu
-        open={isPaused}
-        onResume={handleResume}
-        onSave={handleSave}
+      <PauseMenu open={isPaused} onResume={handleResume} />
+
+      {/* Resume session */}
+      <ResumeSessionModal
+        open={resumeModalOpen}
+        saved={savedSession}
+        onContinue={handleContinueSession}
+        onRestart={handleRestartFromResume}
       />
 
       {/* Complete modal */}
@@ -280,7 +413,24 @@ const WordSearch = () => {
         verseText={game.verseText}
         verseRef={game.verseRef}
         timeLeft={game.timeLeft}
+        maxCombo={game.maxCombo}
+        userId={user?.id}
+        trailRefreshKey={trailRefreshKey}
         onNextLevel={handleNextLevel}
+      />
+
+      {/* Baú + Fragmento */}
+      <ChestReveal
+        open={chestOpen}
+        tier={chestTier}
+        xpEarned={chestTier ? CHESTS[chestTier].xpBonus : 0}
+        hasFragment={chestHasFragment}
+        onClose={handleCloseChest}
+      />
+      <FragmentModal
+        open={fragmentOpen}
+        theme={currentTheme}
+        onClose={() => setFragmentOpen(false)}
       />
     </div>
   );

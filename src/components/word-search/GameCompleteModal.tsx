@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Trophy, ArrowRight, Star } from 'lucide-react';
+import { Trophy, ArrowRight, Star, Flame } from 'lucide-react';
+import SpiritualTrail from './SpiritualTrail';
 
 interface GameCompleteModalProps {
   open: boolean;
@@ -9,6 +10,9 @@ interface GameCompleteModalProps {
   verseText: string;
   verseRef: string;
   timeLeft: number;
+  maxCombo: number;
+  userId?: string | null;
+  trailRefreshKey?: number;
   onNextLevel: () => void;
 }
 
@@ -30,6 +34,9 @@ const GameCompleteModal = memo(({
   verseText,
   verseRef,
   timeLeft,
+  maxCombo,
+  userId,
+  trailRefreshKey,
   onNextLevel,
 }: GameCompleteModalProps) => {
   const starCount = timeLeft > 60 ? 3 : timeLeft > 30 ? 2 : 1;
@@ -78,6 +85,12 @@ const GameCompleteModal = memo(({
                 {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
               </span>
             </div>
+            {maxCombo > 1 && (
+              <div className="flex justify-between text-sm">
+                <span className="pv-text-muted flex items-center gap-1"><Flame className="h-3.5 w-3.5" /> Maior combo</span>
+                <span className="font-bold text-white">x{maxCombo}</span>
+              </div>
+            )}
           </div>
 
           {/* Motivational message */}
@@ -90,6 +103,8 @@ const GameCompleteModal = memo(({
               <p className="text-xs pv-text-gold mt-2 text-right">— {verseRef}</p>
             </div>
           )}
+
+          <SpiritualTrail userId={userId} refreshKey={trailRefreshKey} />
 
           {/* Next level button */}
           <button onClick={onNextLevel} className="pv-btn-gold w-full gap-2">

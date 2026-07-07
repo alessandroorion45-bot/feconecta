@@ -36,7 +36,9 @@ export type GameAction =
   | 'streak_milestone_365'
   // Desafios
   | 'challenge_completed'
-  | 'achievement_unlocked';
+  | 'achievement_unlocked'
+  // Jogos
+  | 'word_search_completed';
 
 export interface XPReward {
   xp_earned: number;
@@ -110,6 +112,8 @@ export const XP_VALUES: Record<GameAction, number> = {
   // Desafios
   challenge_completed: 100,
   achievement_unlocked: 0, // varia por conquista
+  // Jogos
+  word_search_completed: 25,
 };
 
 // ============================================

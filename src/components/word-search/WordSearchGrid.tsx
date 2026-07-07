@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CellPosition } from '@/hooks/useWordSearchGame';
 
 interface WordSearchGridProps {
@@ -13,6 +14,8 @@ interface WordSearchGridProps {
   onCellPointerEnter: (row: number, col: number) => void;
   onPointerUp: () => void;
 }
+
+const cellCenter = (row: number, col: number) => ({ x: col + 0.5, y: row + 0.5 });
 
 const WordSearchGrid = memo(({
   grid,
@@ -49,6 +52,9 @@ const WordSearchGrid = memo(({
   // Bigger cells - 30% increase
   const cellSize = gridSize <= 8 ? 'pv-cell-xl' : gridSize <= 10 ? 'pv-cell-lg' : gridSize <= 12 ? 'pv-cell-md' : 'pv-cell-sm';
 
+  const selectionPoints = selectedCells.map(c => cellCenter(c.row, c.col));
+  const selectionPath = selectionPoints.map(p => `${p.x},${p.y}`).join(' ');
+
   return (
     <div
       className={`pv-grid-wrapper ${isPaused ? 'pv-grid-paused' : ''}`}
@@ -77,6 +83,47 @@ const WordSearchGrid = memo(({
               {letter}
             </button>
           ))
+        )}
+
+        {/* SVG vivo: linhas permanentes das palavras encontradas + linha animada da seleção atual */}
+        {gridSize > 0 && (
+          <svg
+            className="pv-grid-svg"
+            viewBox={`0 0 ${gridSize} ${gridSize}`}
+            preserveAspectRatio="none"
+          >
+            {placements.filter(p => p.found).map((p) => {
+              const start = cellCenter(p.startRow, p.startCol);
+              const end = cellCenter(
+                p.startRow + p.direction[0] * (p.word.length - 1),
+                p.startCol + p.direction[1] * (p.word.length - 1)
+              );
+              return (
+                <motion.line
+                  key={p.word}
+                  x1={start.x} y1={start.y} x2={end.x} y2={end.y}
+                  className="pv-found-line"
+                  initial={{ pathLength: 0, opacity: 0.9 }}
+                  animate={{ pathLength: 1, opacity: 0.55 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                />
+              );
+            })}
+
+            <AnimatePresence>
+              {selectionPoints.length > 1 && (
+                <motion.polyline
+                  key="selection-line"
+                  points={selectionPath}
+                  className="pv-selection-line"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15, ease: 'linear' }}
+                />
+              )}
+            </AnimatePresence>
+          </svg>
         )}
       </div>
     </div>

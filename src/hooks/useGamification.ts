@@ -374,6 +374,7 @@ function getActionDescription(action: GameAction): string {
     streak_milestone_365: 'Sequência de 1 ano!',
     challenge_completed: 'Desafio completado!',
     achievement_unlocked: 'Conquista desbloqueada',
+    word_search_completed: 'Caça-palavras concluído!',
   };
 
   return descriptions[action] || 'Ação completada';

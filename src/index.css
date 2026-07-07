@@ -796,6 +796,52 @@ All colors MUST be HSL.
 .pv-text-gold { color: hsl(var(--pv-gold)); }
 .pv-text-muted { color: hsl(var(--pv-text-dim)); }
 
+/* Combo badge */
+.pv-combo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  color: hsl(28 95% 60%);
+  background: linear-gradient(135deg, hsl(28 95% 55% / 0.2), hsl(var(--pv-gold) / 0.1));
+  border: 1px solid hsl(28 90% 55% / 0.4);
+  text-shadow: 0 0 10px hsl(28 90% 55% / 0.5);
+}
+
+/* Avatar com aura dourada pulsante durante combo */
+.pv-avatar-combo-glow {
+  border-radius: 0.6rem;
+  animation: pvAvatarGlow 1.4s ease-in-out infinite;
+}
+
+@keyframes pvAvatarGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px hsl(var(--pv-gold) / 0.5)); }
+  50% { filter: drop-shadow(0 0 14px hsl(var(--pv-gold) / 0.9)); }
+}
+
+/* Trilha espiritual / ranking */
+.pv-trail-card {
+  background: hsl(var(--pv-navy-surface) / 0.7);
+  border: 1px solid hsl(var(--pv-border-gold) / 0.25);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  backdrop-filter: blur(8px);
+}
+
+.pv-ranking-tab {
+  color: hsl(var(--pv-text-dim));
+  border-radius: 0.5rem;
+}
+
+.pv-ranking-tab[data-state='active'] {
+  background: hsl(var(--pv-gold) / 0.15);
+  color: hsl(var(--pv-gold));
+}
+
 /* Pause button */
 .pv-pause-button {
   display: flex;
@@ -884,6 +930,7 @@ All colors MUST be HSL.
 }
 
 .pv-grid {
+  position: relative;
   display: inline-grid;
   gap: 5px;
   padding: 1.25rem;
@@ -903,10 +950,43 @@ All colors MUST be HSL.
   100% { box-shadow: inset 0 2px 8px hsl(0 0% 0% / 0.4), 0 0 60px hsl(var(--pv-gold) / 0.15); }
 }
 
+/* Linha viva de seleção — alinhada ao viewBox N×N via padding igual ao do grid */
+.pv-grid-svg {
+  position: absolute;
+  inset: 1.25rem;
+  width: calc(100% - 2.5rem);
+  height: calc(100% - 2.5rem);
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.pv-selection-line {
+  fill: none;
+  stroke: hsl(var(--pv-gold));
+  stroke-width: 0.12;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px hsl(var(--pv-gold) / 0.9));
+}
+
+.pv-found-line {
+  stroke: hsl(var(--pv-gold));
+  stroke-width: 0.1;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px hsl(var(--pv-gold) / 0.6));
+}
+
 @media (max-width: 640px) {
   .pv-grid {
     gap: 3px;
     padding: 0.75rem;
+  }
+
+  .pv-grid-svg {
+    inset: 0.75rem;
+    width: calc(100% - 1.5rem);
+    height: calc(100% - 1.5rem);
   }
 }
 
@@ -1079,6 +1159,7 @@ All colors MUST be HSL.
 }
 
 .pv-word-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -1110,6 +1191,16 @@ All colors MUST be HSL.
 .pv-check-animate {
   animation: check-pop 0.4s ease forwards;
   color: hsl(var(--pv-gold));
+}
+
+.pv-word-found-burst {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--pv-gold));
+  pointer-events: none;
 }
 
 /* === VERSE DISPLAY === */
@@ -1324,6 +1415,48 @@ All colors MUST be HSL.
   font-weight: 800;
   color: white;
   text-shadow: 0 0 15px hsl(var(--pv-gold) / 0.2);
+}
+
+.pv-pause-subtitle {
+  font-size: 0.85rem;
+  color: hsl(var(--pv-text-dim));
+  margin-top: -0.5rem;
+}
+
+.pv-pause-save-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: hsl(var(--pv-gold) / 0.8);
+  margin-top: 0.25rem;
+}
+
+.pv-pause-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pv-pause-particle {
+  position: absolute;
+  top: 100%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: hsl(var(--pv-gold) / 0.6);
+  box-shadow: 0 0 6px hsl(var(--pv-gold) / 0.8);
+  animation-name: pvPauseParticleRise;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+}
+
+@keyframes pvPauseParticleRise {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.4; }
+  100% { transform: translateY(-100vh); opacity: 0; }
 }
 
 .pv-pause-btn {

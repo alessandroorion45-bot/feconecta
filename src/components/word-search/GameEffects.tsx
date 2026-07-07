@@ -114,7 +114,62 @@ export const useGameSounds = () => {
     } catch { /* silence errors */ }
   }, [getCtx]);
 
-  return { playSuccess, playClick, playLevelComplete };
+  const playCombo = useCallback((comboLevel: number) => {
+    try {
+      const ctx = getCtx();
+      const base = 700 + Math.min(comboLevel, 8) * 60;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(base, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(base * 1.4, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.2);
+    } catch { /* silence errors */ }
+  }, [getCtx]);
+
+  const playChest = useCallback(() => {
+    try {
+      const ctx = getCtx();
+      const notes = [392, 523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        const t = ctx.currentTime + i * 0.08;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.1, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
+        osc.start(t);
+        osc.stop(t + 0.35);
+      });
+    } catch { /* silence errors */ }
+  }, [getCtx]);
+
+  const playFragment = useCallback(() => {
+    try {
+      const ctx = getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.6);
+    } catch { /* silence errors */ }
+  }, [getCtx]);
+
+  return { playSuccess, playClick, playLevelComplete, playCombo, playChest, playFragment };
 };
 
 /** Mobile vibration */
