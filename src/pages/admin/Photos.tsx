@@ -218,7 +218,6 @@ export default function AdminPhotos() {
     const types: Record<string, { label: string; color: string }> = {
       post: { label: "Post", color: "bg-blue-500" },
       profile_photo: { label: "Perfil", color: "bg-purple-500" },
-      gratitude_post: { label: "Gratidão", color: "bg-green-500" },
     };
 
     const typeData = types[type] || { label: type, color: "bg-gray-500" };

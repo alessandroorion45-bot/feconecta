@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
-import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, HelpCircle, Smile, Search as SearchIcon, Star, BookMarked, MapPin } from "lucide-react";
+import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, HelpCircle, Search as SearchIcon, Star, BookMarked } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -129,8 +129,6 @@ const Header = () => {
                   <MenuItem path="/shared-reading" icon={<BookOpen className="h-5 w-5" />} label="Leitura em Grupo" currentPath={currentPath} onClick={handleNavClick} iconColor="text-violet-500" />
                   <MenuItem path="/church-community" icon={<Church className="h-5 w-5" />} label="Comunidade da Igreja" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
                   <MenuItem path="/mentoring" icon={<Users className="h-5 w-5" />} label="Mentoria Espiritual" currentPath={currentPath} onClick={handleNavClick} iconColor="text-cyan-500" />
-                  <MenuItem path="/nearby-churches" icon={<MapPin className="h-5 w-5" />} label="Igrejas Próximas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-emerald-500" />
-                  <MenuItem path="/gratitude" icon={<Smile className="h-5 w-5" />} label="Mural de Gratidão" currentPath={currentPath} onClick={handleNavClick} iconColor="text-green-500" />
 
                   <MenuSection title="Conta" />
                   <div onClick={(e) => e.stopPropagation()}>
@@ -254,11 +252,9 @@ const Header = () => {
                     <MenuItem path="/devotional" icon={<Sparkles className="h-5 w-5" />} label="Devocional Diário" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
                     <MenuItem path="/studies" icon={<BookMarked className="h-5 w-5" />} label="Estudos Bíblicos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-teal-500" />
                     <MenuItem path="/questions" icon={<HelpCircle className="h-5 w-5" />} label="Perguntas Bíblicas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-blue-500" />
-                    <MenuItem path="/gratitude" icon={<Smile className="h-5 w-5" />} label="Mural de Gratidão" currentPath={currentPath} onClick={handleNavClick} iconColor="text-green-500" />
                     <MenuItem path="/dictionary" icon={<SearchIcon className="h-5 w-5" />} label="Dicionário Bíblico" currentPath={currentPath} onClick={handleNavClick} iconColor="text-indigo-500" />
                     <MenuItem path="/mentoring" icon={<Users className="h-5 w-5" />} label="Mentoria Espiritual" currentPath={currentPath} onClick={handleNavClick} iconColor="text-cyan-500" />
                     <MenuItem path="/favorites" icon={<Star className="h-5 w-5" />} label="Meus Favoritos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
-                    <MenuItem path="/nearby-churches" icon={<MapPin className="h-5 w-5" />} label="Igrejas Próximas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-emerald-500" />
                     <MenuItem path="/palavra-viva" icon={<SearchIcon className="h-5 w-5" />} label="Caça-Palavras" currentPath={currentPath} onClick={handleNavClick} iconColor="text-purple-500" />
 
                     <div className="h-px bg-border my-2" />

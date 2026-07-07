@@ -44,10 +44,8 @@ const Devotional = lazy(() => import("./pages/Devotional"));
 const BibleDictionary = lazy(() => import("./pages/BibleDictionary"));
 const BibleQuestions = lazy(() => import("./pages/BibleQuestions"));
 const BibleStudies = lazy(() => import("./pages/BibleStudies"));
-const GratitudeWall = lazy(() => import("./pages/GratitudeWall"));
 const SpiritualMentoring = lazy(() => import("./pages/SpiritualMentoring"));
 const FavoritesHub = lazy(() => import("./pages/FavoritesHub"));
-const NearbyChurches = lazy(() => import("./pages/NearbyChurches"));
 const ThemesGallery = lazy(() => import("./pages/ThemesGallery"));
 const FavoriteVerses = lazy(() => import("./pages/FavoriteVerses"));
 const Gamification = lazy(() => import("./pages/Gamification"));
@@ -107,10 +105,8 @@ const routes: RouteObject[] = [
   { path: "/dictionary", element: <BibleDictionary /> },
   { path: "/questions", element: <ProtectedRoute><BibleQuestions /></ProtectedRoute> },
   { path: "/studies", element: <BibleStudies /> },
-  { path: "/gratitude", element: <ProtectedRoute><GratitudeWall /></ProtectedRoute> },
   { path: "/mentoring", element: <ProtectedRoute><SpiritualMentoring /></ProtectedRoute> },
   { path: "/favorites", element: <ProtectedRoute><FavoritesHub /></ProtectedRoute> },
-  { path: "/nearby-churches", element: <ProtectedRoute><NearbyChurches /></ProtectedRoute> },
   { path: "/themes", element: <ProtectedRoute><ThemesGallery /></ProtectedRoute> },
   { path: "/favorite-verses", element: <ProtectedRoute><FavoriteVerses /></ProtectedRoute> },
   { path: "/gamification", element: <Gamification /> },

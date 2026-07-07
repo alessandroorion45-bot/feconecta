@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingFallback from "@/components/LoadingFallback";
-import { Book, Heart, Church, Sparkles, User, Gamepad2, MessageSquare, BookOpen, HelpCircle, Search, MapPin, Star, Users, Brain, Smile, BookMarked } from "lucide-react";
+import { Book, Heart, Church, Sparkles, User, Gamepad2, MessageSquare, BookOpen, HelpCircle, Search, Star, Users, Brain, BookMarked } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -45,8 +45,6 @@ const Index = () => {
     { icon: BookMarked, title: "Estudos Bíblicos", description: "Pregações em vídeo, áudio e texto para crescimento espiritual", link: "/studies", gradient: "from-secondary to-accent" },
     { icon: Brain, title: "Quiz Bíblico", description: "Teste seus conhecimentos com perguntas interativas", link: "/quiz", gradient: "from-accent to-secondary" },
     { icon: HelpCircle, title: "Perguntas Bíblicas", description: "Tire dúvidas e aprenda com a comunidade", link: "/questions", gradient: "from-secondary to-primary" },
-    { icon: Smile, title: "Mural de Gratidão", description: "Compartilhe gratidão e respostas de oração", link: "/gratitude", gradient: "from-accent to-accent/70" },
-    { icon: MapPin, title: "Igrejas Próximas", description: "Encontre e cadastre igrejas na sua região", link: "/nearby-churches", gradient: "from-primary to-secondary-glow" },
     { icon: Search, title: "Dicionário Bíblico", description: "Explore termos, personagens e lugares da Bíblia", link: "/dictionary", gradient: "from-secondary to-primary-glow" },
     { icon: Users, title: "Acompanhamento Espiritual", description: "Discipulado, metas espirituais e mentoria", link: "/mentoring", gradient: "from-primary to-accent" },
     { icon: Star, title: "Meus Favoritos", description: "Versículos, estudos e louvores salvos em um só lugar", link: "/favorites", gradient: "from-accent to-primary-glow" },

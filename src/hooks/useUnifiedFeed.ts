@@ -117,30 +117,6 @@ async function fetchTestimonies(ctx: FetchCtx): Promise<FeedItem[]> {
   }));
 }
 
-async function fetchGratitude(ctx: FetchCtx): Promise<FeedItem[]> {
-  let q = sb.from('gratitude_posts_with_user').select('*');
-  if (ctx.search) q = q.ilike('message', `%${ctx.search}%`);
-  const { data, error } = await applyCommon(q, ctx);
-  if (error) throw error;
-  return (data || []).map((g: any): FeedItem => ({
-    key: `gratitude:${g.id}`,
-    type: 'gratitude',
-    id: g.id,
-    user_id: g.user_id,
-    created_at: g.created_at,
-    title: g.type === 'testemunho' ? 'Testemunho' : null,
-    content: g.message || '',
-    media_url: null,
-    media_type: null,
-    audio_url: null,
-    category: null,
-    engagement: g.amens_count || 0,
-    link: '/gratitude',
-    profile: null,
-    author_name: g.author_name,
-  }));
-}
-
 async function fetchQuestions(ctx: FetchCtx): Promise<FeedItem[]> {
   let q = sb.from('bible_questions').select('*');
   if (ctx.search) q = q.or(`title.ilike.%${ctx.search}%,body.ilike.%${ctx.search}%`);
@@ -224,30 +200,6 @@ async function fetchDevotionals(ctx: FetchCtx): Promise<FeedItem[]> {
   }));
 }
 
-async function fetchChurches(ctx: FetchCtx): Promise<FeedItem[]> {
-  let q = sb.from('nearby_churches').select('*').eq('is_active', true);
-  if (ctx.search) q = q.or(`name.ilike.%${ctx.search}%,city.ilike.%${ctx.search}%,denomination.ilike.%${ctx.search}%`);
-  const { data, error } = await applyCommon(q, ctx);
-  if (error) throw error;
-  return (data || []).map((c: any): FeedItem => ({
-    key: `church:${c.id}`,
-    type: 'church',
-    id: c.id,
-    user_id: c.user_id,
-    created_at: c.created_at,
-    title: c.name,
-    content: [c.denomination, c.city && c.state ? `${c.city} - ${c.state}` : c.city, c.description]
-      .filter(Boolean).join(' · '),
-    media_url: c.cover_image_url,
-    media_type: c.cover_image_url ? 'image' : null,
-    audio_url: null,
-    category: c.denomination,
-    engagement: 0,
-    link: '/nearby-churches',
-    profile: null,
-  }));
-}
-
 async function fetchCommunities(ctx: FetchCtx): Promise<FeedItem[]> {
   let q = sb.from('church_communities').select('*').eq('is_active', true);
   if (ctx.search) q = q.or(`name.ilike.%${ctx.search}%,church_name.ilike.%${ctx.search}%,city.ilike.%${ctx.search}%`);
@@ -298,11 +250,9 @@ const FETCHERS: Record<FeedItemType, (ctx: FetchCtx) => Promise<FeedItem[]>> = {
   post: fetchPosts,
   prayer: fetchPrayers,
   testimony: fetchTestimonies,
-  gratitude: fetchGratitude,
   question: fetchQuestions,
   study: fetchStudies,
   devotional: fetchDevotionals,
-  church: fetchChurches,
   community: fetchCommunities,
   reading: fetchReadings,
 };

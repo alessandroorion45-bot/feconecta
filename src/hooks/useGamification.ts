@@ -364,7 +364,6 @@ function getActionDescription(action: GameAction): string {
     testimony_shared: 'Testemunho compartilhado',
     prayer_created: 'Oração criada',
     prayer_interceded: 'Intercessão realizada',
-    gratitude_post: 'Gratidão publicada',
     comment_posted: 'Comentário enviado',
     worship_favorited: 'Louvor favoritado',
     worship_shared: 'Louvor compartilhado',

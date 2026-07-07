@@ -7,11 +7,9 @@ export type FeedItemType =
   | 'post'
   | 'prayer'
   | 'testimony'
-  | 'gratitude'
   | 'question'
   | 'study'
   | 'devotional'
-  | 'church'
   | 'community'
   | 'reading';
 
@@ -39,7 +37,7 @@ export interface FeedItem {
   /** Rota interna para abrir o conteúdo original */
   link: string;
   profile: FeedProfile | null;
-  /** Nome de autor quando não há profile (ex.: mural de gratidão) */
+  /** Nome de autor quando não há profile associado */
   author_name?: string | null;
   // Interações (apenas posts nativos têm like/comentário próprios)
   likes_count?: number;
@@ -75,11 +73,9 @@ export const FEED_TYPE_META: Record<FeedItemType, { label: string; emoji: string
   post: { label: 'Publicação', emoji: '💬', badgeClass: 'bg-primary/10 text-primary' },
   prayer: { label: 'Pedido de Oração', emoji: '🙏', badgeClass: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
   testimony: { label: 'Testemunho', emoji: '❤️', badgeClass: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
-  gratitude: { label: 'Gratidão', emoji: '🌻', badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
   question: { label: 'Pergunta Bíblica', emoji: '❓', badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
   study: { label: 'Estudo Bíblico', emoji: '📚', badgeClass: 'bg-teal-500/10 text-teal-600 dark:text-teal-400' },
   devotional: { label: 'Devocional', emoji: '🌅', badgeClass: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
-  church: { label: 'Igreja', emoji: '⛪', badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
   community: { label: 'Comunidade', emoji: '🏘️', badgeClass: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400' },
   reading: { label: 'Leitura em Grupo', emoji: '📖', badgeClass: 'bg-violet-500/10 text-violet-600 dark:text-violet-400' },
 };
@@ -92,11 +88,9 @@ export const FEED_FILTERS: { key: FeedFilterKey; label: string; emoji: string }[
   { key: 'post', label: 'Publicações', emoji: '💬' },
   { key: 'testimony', label: 'Testemunhos', emoji: '❤️' },
   { key: 'prayer', label: 'Orações', emoji: '🙏' },
-  { key: 'gratitude', label: 'Gratidão', emoji: '🌻' },
   { key: 'study', label: 'Estudos', emoji: '📚' },
   { key: 'devotional', label: 'Devocionais', emoji: '🌅' },
   { key: 'question', label: 'Perguntas', emoji: '❓' },
-  { key: 'church', label: 'Igrejas', emoji: '⛪' },
   { key: 'community', label: 'Comunidades', emoji: '🏘️' },
   { key: 'reading', label: 'Leituras', emoji: '📖' },
 ];

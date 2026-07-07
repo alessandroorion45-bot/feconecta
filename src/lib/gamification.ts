@@ -24,7 +24,6 @@ export type GameAction =
   | 'testimony_shared'
   | 'prayer_created'
   | 'prayer_interceded'
-  | 'gratitude_post'
   | 'comment_posted'
   // Louvores
   | 'worship_favorited'
@@ -98,7 +97,6 @@ export const XP_VALUES: Record<GameAction, number> = {
   testimony_shared: 25,
   prayer_created: 15,
   prayer_interceded: 10,
-  gratitude_post: 15,
   comment_posted: 5,
   // Louvores
   worship_favorited: 5,
