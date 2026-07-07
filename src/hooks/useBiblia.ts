@@ -64,24 +64,34 @@ export function useBiblia() {
           throw new Error('Nenhum livro encontrado no banco de dados')
         }
 
-        // ✅ OTIMIZAÇÃO: Buscar TODOS os versículos de uma vez (1 query em vez de 66!)
-        console.log('📖 Buscando TODOS os versículos em uma única query...')
+        // ✅ Buscar TODOS os versículos, paginando (Supabase/PostgREST limita
+        // a ~1000 linhas por requisição — a Bíblia inteira tem >30 mil versículos)
+        console.log('📖 Buscando todos os versículos (paginado)...')
         const bookIds = books.map(b => b.id)
+        const PAGE_SIZE = 1000
+        const allVerses: { book_id: number; chapter: number; verse: number; text: string }[] = []
 
-        const { data: allVerses, error: versesError } = await supabase
-          .from('bible_verses')
-          .select('book_id, chapter, verse, text')
-          .in('book_id', bookIds)
-          .order('book_id', { ascending: true })
-          .order('chapter', { ascending: true })
-          .order('verse', { ascending: true })
+        for (let offset = 0; ; offset += PAGE_SIZE) {
+          const { data: page, error: versesError } = await supabase
+            .from('bible_verses')
+            .select('book_id, chapter, verse, text')
+            .in('book_id', bookIds)
+            .order('book_id', { ascending: true })
+            .order('chapter', { ascending: true })
+            .order('verse', { ascending: true })
+            .range(offset, offset + PAGE_SIZE - 1)
 
-        if (versesError) {
-          console.error('❌ Erro ao buscar versículos:', versesError)
-          throw versesError
+          if (versesError) {
+            console.error('❌ Erro ao buscar versículos:', versesError)
+            throw versesError
+          }
+
+          if (!page || page.length === 0) break
+          allVerses.push(...page)
+          if (page.length < PAGE_SIZE) break
         }
 
-        console.log(`✅ ${allVerses?.length || 0} versículos carregados!`)
+        console.log(`✅ ${allVerses.length} versículos carregados!`)
 
         // Organizar versículos por livro
         const versesByBook = new Map<number, typeof allVerses>()
