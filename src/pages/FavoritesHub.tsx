@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Book, Music, BookOpen, Sparkles, MessageCircle, Star } from "lucide-react";
+import { Heart, Book, BookOpen, Sparkles, MessageCircle, Star } from "lucide-react";
 
 type FavoriteItem = { id: number; title: string; subtitle: string; type: string };
 
@@ -18,10 +18,6 @@ const mockFavorites: Record<string, FavoriteItem[]> = {
     { id: 4, title: "O Sermão do Monte", subtitle: "Pr. André Valadão • Vídeo • 45 min", type: "estudo" },
     { id: 5, title: "Oração Eficaz", subtitle: "Pr. Cláudio Duarte • Áudio • 30 min", type: "estudo" },
   ],
-  louvores: [
-    { id: 6, title: "Lugar Secreto", subtitle: "Gabriela Rocha", type: "louvor" },
-    { id: 7, title: "Bondade de Deus", subtitle: "Isaías Saad", type: "louvor" },
-  ],
   devocionais: [
     { id: 8, title: "Devocional - João 3:16", subtitle: "16 de Março, 2026 • Amor", type: "devocional" },
   ],
@@ -33,7 +29,6 @@ const mockFavorites: Record<string, FavoriteItem[]> = {
 const tabConfig = [
   { value: "versiculos", label: "Versículos", icon: Book },
   { value: "estudos", label: "Estudos", icon: BookOpen },
-  { value: "louvores", label: "Louvores", icon: Music },
   { value: "devocionais", label: "Devocionais", icon: Sparkles },
   { value: "perguntas", label: "Perguntas", icon: MessageCircle },
 ];
