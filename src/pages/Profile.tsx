@@ -38,20 +38,8 @@ interface ProfileData {
 }
 
 const Profile = () => {
-  console.log('[Profile] Componente iniciado');
-
-  // TESTE DEFINITIVO: Alert que SEMPRE aparece
-  if (typeof window !== 'undefined' && window.location.pathname === '/profile') {
-    console.warn('🔴 PROFILE CARREGADO! Se você vê isso, o código está funcionando!');
-    console.error('🚨 TESTE: Este erro DEVE aparecer em vermelho!');
-
-    // ALERT FORÇADO - Vai aparecer como POPUP!
-    alert('✅ CÓDIGO FUNCIONANDO! Se vê este popup, o JavaScript está rodando! Deploy atualizado em ' + new Date().toLocaleTimeString());
-  }
-
   const { toast } = useToast();
   const { user } = useAuth();
-  console.log('[Profile] User:', user?.email || 'não autenticado');
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData>({
     username: "",
