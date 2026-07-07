@@ -302,10 +302,10 @@ BEGIN
     RAISE EXCEPTION 'Action key % not found or is inactive', p_action_key;
   END IF;
 
-  SELECT total_xp, level, title
+  SELECT us.total_xp, us.level, us.title
   INTO v_current_xp, v_old_level, v_old_title
-  FROM public.user_stats
-  WHERE user_id = p_user_id;
+  FROM public.user_stats us
+  WHERE us.user_id = p_user_id;
 
   IF NOT FOUND THEN
     INSERT INTO public.user_stats (user_id, total_xp, level, title)
