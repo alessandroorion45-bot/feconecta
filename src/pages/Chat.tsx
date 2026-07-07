@@ -152,29 +152,6 @@ const Chat = () => {
     onConversationUpdate: handleConversationUpdate
   });
 
-  // Realtime de reações (INSERT/DELETE) para a conversa aberta
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel(`message-reactions-${user.id}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'message_reactions' },
-        (payload) => {
-          const messageId = (payload.new as any)?.message_id || (payload.old as any)?.message_id;
-          if (!messageId) return;
-          if (!messagesRef.current.some(m => m.id === messageId)) return;
-          loadReactionsFor([messageId]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, loadReactionsFor]);
-
   // Load conversations on mount
   useEffect(() => {
     if (!user) return;
@@ -394,6 +371,29 @@ const Chat = () => {
       return next;
     });
   }, [user]);
+
+  // Realtime de reações (INSERT/DELETE) para a conversa aberta
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`message-reactions-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'message_reactions' },
+        (payload) => {
+          const messageId = (payload.new as any)?.message_id || (payload.old as any)?.message_id;
+          if (!messageId) return;
+          if (!messagesRef.current.some(m => m.id === messageId)) return;
+          loadReactionsFor([messageId]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, loadReactionsFor]);
 
   const loadMessages = useCallback(async (friendId: string, before?: string) => {
     if (!user) return;
