@@ -97,55 +97,59 @@ body.theme-transitioning {
 }
 
 /* ===== CARDS ===== */
+/* background-color (não "background") para não resetar o background-image
+   quando um Card usa classes de gradiente do Tailwind (bg-gradient-primary etc) */
 .theme-card {
-  background: var(--theme-card-background);
+  background-color: var(--theme-card-background);
   border: 1px solid var(--theme-border);
   box-shadow: 0 4px 6px var(--theme-shadow);
   transition: all 0.3s ease;
 }
 
 .theme-card:hover {
-  background: var(--theme-surface-hover);
+  background-color: var(--theme-surface-hover);
   border-color: var(--theme-border-hover);
   box-shadow: 0 10px 20px var(--theme-shadow-hover);
   transform: translateY(-2px);
 }
 
 /* ===== HEADER ===== */
+/* background-color em vez de "background" para não apagar background-image
+   quando o elemento também recebe uma classe de gradiente do Tailwind */
 .theme-header {
-  background: var(--theme-header-background);
+  background-color: var(--theme-header-background);
   backdrop-filter: blur(var(--theme-backdrop-blur));
   border-bottom: 1px solid var(--theme-border);
 }
 
 /* ===== SIDEBAR ===== */
 .theme-sidebar {
-  background: var(--theme-sidebar-background);
+  background-color: var(--theme-sidebar-background);
 }
 
 /* ===== BUTTONS ===== */
 .theme-button-primary {
-  background: var(--theme-button-primary);
+  background-color: var(--theme-button-primary);
   color: var(--theme-text-on-primary);
   border: none;
   transition: all 0.3s ease;
 }
 
 .theme-button-primary:hover {
-  background: var(--theme-button-hover);
+  background-color: var(--theme-button-hover);
   box-shadow: 0 0 20px var(--theme-glow);
   transform: scale(1.05);
 }
 
 .theme-button-secondary {
-  background: var(--theme-button-secondary);
+  background-color: var(--theme-button-secondary);
   color: var(--theme-text-on-accent);
   transition: all 0.3s ease;
 }
 
 /* ===== INPUTS ===== */
 .theme-input {
-  background: var(--theme-input-background);
+  background-color: var(--theme-input-background);
   border: 1px solid var(--theme-input-border);
   color: var(--theme-text);
   transition: all 0.3s ease;
@@ -159,19 +163,19 @@ body.theme-transitioning {
 
 /* ===== MODAIS ===== */
 .theme-modal {
-  background: var(--theme-modal-background);
+  background-color: var(--theme-modal-background);
   backdrop-filter: blur(var(--theme-backdrop-blur));
   border: 1px solid var(--theme-border);
 }
 
 .theme-modal-overlay {
-  background: var(--theme-overlay);
+  background-color: var(--theme-overlay);
   backdrop-filter: blur(var(--theme-backdrop-blur));
 }
 
 /* ===== TOOLTIPS ===== */
 .theme-tooltip {
-  background: var(--theme-tooltip-background);
+  background-color: var(--theme-tooltip-background);
   color: var(--theme-text-on-primary);
   border-radius: 4px;
   padding: 6px 12px;
@@ -179,7 +183,7 @@ body.theme-transitioning {
 
 /* ===== GLASS MORPHISM (Premium) ===== */
 .theme-glass {
-  background: var(--theme-glass);
+  background-color: var(--theme-glass);
   backdrop-filter: blur(var(--theme-backdrop-blur));
   border: 1px solid var(--theme-border);
 }
