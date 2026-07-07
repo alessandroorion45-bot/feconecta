@@ -7,6 +7,9 @@ interface TypingStatus {
   userId: string;
 }
 
+const getPairChannelName = (userId: string, otherId: string) =>
+  `typing-${[userId, otherId].sort().join('_')}`;
+
 export const useTypingIndicator = (conversationId: string | null, userId: string | null) => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -51,7 +54,7 @@ export const useTypingIndicator = (conversationId: string | null, userId: string
   ) => {
     if (!conversationId || !userId) return () => {};
 
-    const channelName = `typing-${conversationId}`;
+    const channelName = getPairChannelName(userId, conversationId);
     
     channelRef.current = supabase
       .channel(channelName)

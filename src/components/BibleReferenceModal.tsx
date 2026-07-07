@@ -6,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { bibleApi, BibleChapter } from "@/services/bibleApi";
-import { BookOpen, ZoomIn, ZoomOut, Heart, Share2, Loader2 } from "lucide-react";
+import { BookOpen, ZoomIn, ZoomOut, Heart, Share2, Loader2, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FriendPickerDialog } from "@/components/chat/FriendPickerDialog";
 
 /**
  * Modal de referência bíblica: abre qualquer referência (ex: "João 3:16-18",
@@ -53,6 +54,7 @@ export const BibleReferenceModal = ({ open, onOpenChange, reference }: BibleRefe
   const [notFound, setNotFound] = useState(false);
   const [fontSize, setFontSize] = useState(16);
   const [showFullChapter, setShowFullChapter] = useState(false);
+  const [friendPickerOpen, setFriendPickerOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -199,12 +201,32 @@ export const BibleReferenceModal = ({ open, onOpenChange, reference }: BibleRefe
               <Share2 className="h-3.5 w-3.5" />
               Compartilhar
             </Button>
+            {user && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setFriendPickerOpen(true)}>
+                <MessageCircle className="h-3.5 w-3.5" />
+                Enviar no chat
+              </Button>
+            )}
             <Badge variant="secondary" className="ml-auto text-xs">
               {chapter.name} {parsed?.chapter}
             </Badge>
           </div>
         )}
       </DialogContent>
+
+      {chapter && parsed && (
+        <FriendPickerDialog
+          open={friendPickerOpen}
+          onOpenChange={setFriendPickerOpen}
+          messageType="verse"
+          sharedContent={{
+            reference,
+            title: `${chapter.name} ${parsed.chapter}${parsed.verseStart ? `:${parsed.verseStart}` : ''}`,
+            snippet: visibleVerses[0]?.verse?.slice(0, 100),
+          }}
+          fallbackText={`📖 Compartilhou ${reference}`}
+        />
+      )}
     </Dialog>
   );
 };

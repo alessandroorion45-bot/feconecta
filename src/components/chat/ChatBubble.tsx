@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Check, CheckCheck, Heart, ThumbsUp, Star, Laugh, Sparkles } from 'lucide-react';
+import { Check, CheckCheck, MoreVertical, Copy, Trash2, Pin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChatAudioPlayer } from './ChatAudioPlayer';
+import { SharedContentCard, type SharedMessageType } from './SharedContentCard';
 import UserAvatar from '@/components/UserAvatar';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Reaction {
   emoji: string;
@@ -26,14 +34,20 @@ interface ChatBubbleProps {
   mediaType?: 'image' | 'audio' | 'video';
   senderAvatar?: string | null;
   senderName?: string;
+  messageType?: SharedMessageType;
+  sharedContent?: Record<string, any> | null;
+  onDelete?: () => void;
+  onPin?: () => void;
+  isPinned?: boolean;
 }
 
 const reactionEmojis = [
-  { emoji: '❤️', icon: Heart, label: 'Amor' },
-  { emoji: '👍', icon: ThumbsUp, label: 'Curtir' },
-  { emoji: '⭐', icon: Star, label: 'Especial' },
-  { emoji: '😂', icon: Laugh, label: 'Engraçado' },
-  { emoji: '✨', icon: Sparkles, label: 'Brilhante' }
+  { emoji: '🙏', label: 'Oração' },
+  { emoji: '❤️', label: 'Amor' },
+  { emoji: '🔥', label: 'Fogo' },
+  { emoji: '👏', label: 'Aplauso' },
+  { emoji: '🙌', label: 'Louvor' },
+  { emoji: '😢', label: 'Triste' },
 ];
 
 export const ChatBubble: React.FC<ChatBubbleProps> = ({
@@ -48,11 +62,22 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   mediaUrl,
   mediaType,
   senderAvatar,
-  senderName
+  senderName,
+  messageType = 'text',
+  sharedContent,
+  onDelete,
+  onPin,
+  isPinned
 }) => {
+  const { toast } = useToast();
   const [showReactions, setShowReactions] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message);
+    toast({ title: 'Copiado!', description: 'Mensagem copiada para a área de transferência.' });
+  };
 
   const getBubbleStyles = () => {
     const baseStyles = 'relative max-w-[80%] px-4 py-2.5 rounded-2xl shadow-lg transition-all duration-300';
@@ -116,6 +141,46 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
         </div>
 
         <div className="relative group min-w-0">
+        {isPinned && (
+          <Pin className={cn(
+            'absolute -top-2 h-3.5 w-3.5 text-amber-500 fill-amber-500 rotate-45 z-10',
+            isSent ? 'right-1' : 'left-1'
+          )} />
+        )}
+
+        {(onDelete || onPin) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                className={cn(
+                  'absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity z-10',
+                  'h-6 w-6 flex items-center justify-center rounded-full bg-background/80 backdrop-blur-sm shadow',
+                  isSent ? '-left-7' : '-right-7'
+                )}
+              >
+                <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isSent ? 'end' : 'start'}>
+              <DropdownMenuItem onClick={handleCopy}>
+                <Copy className="h-3.5 w-3.5 mr-2" /> Copiar
+              </DropdownMenuItem>
+              {onPin && (
+                <DropdownMenuItem onClick={onPin}>
+                  <Pin className="h-3.5 w-3.5 mr-2" /> {isPinned ? 'Desafixar' : 'Fixar mensagem'}
+                </DropdownMenuItem>
+              )}
+              {isSent && onDelete && (
+                <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         <motion.div
           className={cn(
             getBubbleStyles(),
@@ -156,6 +221,11 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
             <div className="mb-2 -mx-1">
               <ChatAudioPlayer src={mediaUrl} />
             </div>
+          )}
+
+          {/* Shared content card */}
+          {messageType !== 'text' && sharedContent && (
+            <SharedContentCard type={messageType} content={sharedContent} isSent={isSent} />
           )}
 
           {/* Text content */}

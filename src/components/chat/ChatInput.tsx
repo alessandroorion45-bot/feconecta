@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Send, Smile } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMediaUpload } from './ChatMediaUpload';
+import { EmojiPicker } from './EmojiPicker';
 
 interface ChatInputProps {
   onSend: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => void;
@@ -62,6 +63,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleMediaUpload = (url: string, type: 'image' | 'audio') => {
     setPendingMedia({ url, type });
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setMessage((prev) => prev + emoji);
+      return;
+    }
+    const start = textarea.selectionStart ?? message.length;
+    const end = textarea.selectionEnd ?? message.length;
+    const next = message.slice(0, start) + emoji + message.slice(end);
+    setMessage(next);
+    setIsTyping(true);
+    onTyping?.();
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = start + emoji.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
   };
 
   return (
@@ -126,14 +146,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </AnimatePresence>
 
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          >
-            <Smile className="h-5 w-5" />
-          </Button>
-          
+          <EmojiPicker onSelect={handleEmojiSelect} disabled={disabled} />
+
           {userId && (
             <ChatMediaUpload
               userId={userId}
