@@ -209,7 +209,6 @@ const CommunityInviteModal = ({
                     <UserAvatar src={u.avatar_url || undefined} fallback={u.full_name || "U"} size="sm" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{u.full_name || "Usuário"}</p>
-                      <p className="text-xs text-muted-foreground truncate">@{u.username}</p>
                     </div>
                     {invited.has(u.id) ? (
                       <span className="text-green-600 text-sm flex items-center gap-1">

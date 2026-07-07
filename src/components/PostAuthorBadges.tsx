@@ -19,16 +19,14 @@ const RARITY_COLOR: Record<string, string> = {
 
 interface PostAuthorBadgesProps {
   userId: string;
-  username: string;
   fullName: string;
   avatarUrl: string | null;
 }
 
-export const PostAuthorBadges = ({ 
-  userId, 
-  username, 
-  fullName, 
-  avatarUrl 
+export const PostAuthorBadges = ({
+  userId,
+  fullName,
+  avatarUrl
 }: PostAuthorBadgesProps) => {
   const [badges, setBadges] = useState<Badge[]>([]);
 
@@ -64,7 +62,6 @@ export const PostAuthorBadges = ({
       />
       <div className="flex-1 min-w-0">
         <p className="font-semibold truncate">{fullName}</p>
-        <p className="text-sm text-muted-foreground truncate">@{username}</p>
         {badges.length > 0 && (
           <div className="flex gap-1 mt-1 flex-wrap">
             {badges.map((badge, index) => (

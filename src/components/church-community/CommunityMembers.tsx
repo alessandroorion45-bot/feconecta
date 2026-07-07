@@ -311,9 +311,6 @@ const CommunityMembers = ({ communityId, communityName, userId, isAdmin }: Commu
                       </p>
                       {getRoleBadge(member.role)}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      @{member.profile?.username || "usuario"}
-                    </p>
                     <MemberMinistryBadges ministries={member.ministries} maxShow={2} />
 
                     {/* Admin: alterar função do membro */}

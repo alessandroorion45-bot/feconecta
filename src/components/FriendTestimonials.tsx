@@ -203,7 +203,6 @@ export const FriendTestimonials = ({
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">{testimonial.profiles.full_name}</p>
-                    <p className="text-xs text-muted-foreground">@{testimonial.profiles.username}</p>
                   </div>
                   <Badge variant="outline" className="text-yellow-500 border-yellow-500/50">
                     Pendente
@@ -330,8 +329,7 @@ export const FriendTestimonials = ({
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{testimonial.profiles.full_name}</p>
-                        <p className="text-xs text-muted-foreground">@{testimonial.profiles.username}</p>
-                      </div>
+                          </div>
                       {isOwnProfile && (
                         <Button
                           variant="ghost"

@@ -805,7 +805,6 @@ const Testimonies = () => {
               <CardHeader className="relative z-10">
                 <PostAuthorBadges
                   userId={testimony.user_id}
-                  username={testimony.profiles?.username || "Usuário"}
                   fullName={testimony.profiles?.full_name || "Membro da Comunidade"}
                   avatarUrl={testimony.profiles?.avatar_url || null}
                 />
@@ -1019,9 +1018,6 @@ const Testimonies = () => {
                           <p className="text-sm font-medium truncate">
                             {comment.profiles?.full_name || "Usuário"}
                           </p>
-                          <span className="text-xs text-muted-foreground">
-                            @{comment.profiles?.username}
-                          </span>
                         </div>
                         <p className="text-sm text-foreground/90 mt-0.5 break-words">
                           {comment.content}

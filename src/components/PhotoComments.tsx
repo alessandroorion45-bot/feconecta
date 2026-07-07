@@ -204,9 +204,6 @@ export const PhotoComments = ({ photoId, isOpen }: PhotoCommentsProps) => {
                         <span className="font-medium text-sm truncate">
                           {comment.profile?.full_name || "Usuário"}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          @{comment.profile?.username}
-                        </span>
                       </div>
                       <p className="text-sm break-words">{comment.content}</p>
                     </div>

@@ -318,10 +318,6 @@ const Ranking = () => {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          @{user.profiles.username}
-                        </p>
-                        
                         {/* Badges - show only on larger screens or for top 3 */}
                         {user.badges.length > 0 && (position <= 3 || window.innerWidth >= 640) && (
                           <div className="flex gap-1 mt-1 flex-wrap">

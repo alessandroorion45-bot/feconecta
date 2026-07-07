@@ -9,12 +9,22 @@ import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { optimizeImage } from "@/lib/imageOptimization";
+import { cn } from "@/lib/utils";
 
 interface AvatarUploadProps {
   currentUrl?: string;
   userId: string;
   onUploadComplete: (url: string) => void;
   variant?: "circular" | "rectangular";
+  fallbackName?: string;
+}
+
+function getInitials(name?: string): string {
+  if (!name?.trim()) return "?";
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+  return (first + last).toUpperCase();
 }
 
 const ASPECT_RATIO = 9 / 16; // Portrait 9:16
@@ -37,15 +47,17 @@ function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: numbe
   );
 }
 
-export const AvatarUpload = ({ 
-  currentUrl, 
-  userId, 
+export const AvatarUpload = ({
+  currentUrl,
+  userId,
   onUploadComplete,
-  variant = "circular"
+  variant = "circular",
+  fallbackName,
 }: AvatarUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState("");
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [scale, setScale] = useState(1);
@@ -214,22 +226,50 @@ export const AvatarUpload = ({
   if (variant === "rectangular") {
     return (
       <>
-        <div className="relative group cursor-pointer" onClick={() => inputRef.current?.click()}>
-          <div className="w-[84px] h-[120px] sm:w-[112px] sm:h-[160px] relative overflow-hidden bg-muted rounded-xl">
+        <div
+          className="relative group cursor-pointer transition-transform duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02]"
+          onClick={() => inputRef.current?.click()}
+        >
+          {/* Glow suave nas extremidades */}
+          <div className="pointer-events-none absolute -inset-2 rounded-2xl bg-gradient-to-br from-primary/25 via-amber-300/15 to-transparent opacity-0 blur-lg transition-opacity duration-500 group-hover:opacity-100" />
+
+          <div
+            className={cn(
+              "w-[84px] h-[120px] sm:w-[112px] sm:h-[160px] relative overflow-hidden bg-muted rounded-2xl",
+              "shadow-[0_2px_4px_rgba(15,23,42,0.08),0_12px_28px_-6px_rgba(15,23,42,0.22)]",
+              "ring-1 ring-inset ring-black/[0.06] dark:ring-white/[0.08]",
+              "transition-shadow duration-300 group-hover:shadow-[0_4px_8px_rgba(15,23,42,0.1),0_18px_36px_-6px_rgba(15,23,42,0.28)]"
+            )}
+          >
+            {/* Brilho sutil vindo de cima */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
+
+            {!imageLoaded && currentUrl && (
+              <div className="absolute inset-0 z-[5] overflow-hidden bg-muted">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.6s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+              </div>
+            )}
+
             {currentUrl ? (
-              <img 
-                src={currentUrl} 
+              <img
+                src={currentUrl}
                 alt="Foto de perfil"
-                className="w-full h-full object-cover"
+                onLoad={() => setImageLoaded(true)}
+                className={cn(
+                  "w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-[1.06]",
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                )}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                <span className="text-xl sm:text-2xl font-semibold text-primary">U</span>
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-primary/70">
+                <span className="text-xl sm:text-2xl font-semibold text-primary-foreground">
+                  {getInitials(fallbackName)}
+                </span>
               </div>
             )}
           </div>
           <div
-            className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
           >
             <Camera className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>

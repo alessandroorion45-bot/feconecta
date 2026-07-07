@@ -147,7 +147,6 @@ export const AvatarMiniProfile = ({ userId }: { userId: string }) => {
         </div>
         <div className="min-w-0">
           <p className="font-semibold truncate">{data.full_name}</p>
-          {data.username && <p className="text-xs text-muted-foreground truncate">@{data.username}</p>}
           {(data.city || data.country) && (
             <p className="flex items-center gap-1 text-xs text-muted-foreground truncate mt-0.5">
               <MapPin className="h-3 w-3 shrink-0" />

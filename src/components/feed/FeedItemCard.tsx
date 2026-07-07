@@ -186,7 +186,6 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {item.profile?.username ? `@${item.profile.username} · ` : ""}
                 {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ptBR })}
               </p>
             </div>

@@ -346,9 +346,6 @@ export const SharedReadingRanking = ({ userId, compact = false }: SharedReadingR
                             {stat.profile?.full_name || 'Usuário'}
                             {isCurrentUser && <span className="text-primary ml-2">(você)</span>}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            @{stat.profile?.username || 'user'}
-                          </p>
                         </div>
 
                         {/* Stats */}

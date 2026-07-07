@@ -478,7 +478,6 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                     {selected.profile?.full_name || "Membro"}
                     {selected.user_id === userId && <span className="text-primary text-sm ml-1">(você)</span>}
                   </p>
-                  <p className="text-sm text-muted-foreground">@{selected.profile?.username || "usuario"}</p>
                 </div>
 
                 <Badge className="gap-1">

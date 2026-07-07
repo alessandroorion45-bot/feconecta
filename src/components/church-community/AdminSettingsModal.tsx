@@ -410,9 +410,6 @@ const AdminSettingsModal = ({
                       <p className="font-medium text-sm">
                         {member.profile?.full_name || "Membro"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        @{member.profile?.username}
-                      </p>
                     </div>
                     {member.role === "leader" && (
                       <Badge variant="secondary">Líder</Badge>

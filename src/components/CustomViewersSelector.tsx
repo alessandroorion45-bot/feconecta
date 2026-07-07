@@ -224,9 +224,6 @@ export const CustomViewersSelector = ({
                       <p className="font-medium text-sm truncate">
                         {friend.full_name}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        @{friend.username}
-                      </p>
                     </div>
                     {selectedIds.has(friend.id) && (
                       <Check className="h-4 w-4 text-primary" />

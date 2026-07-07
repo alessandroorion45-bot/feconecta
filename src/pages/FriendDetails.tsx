@@ -515,7 +515,6 @@ const FriendDetails = () => {
                   </motion.div>
                   <div>
                     <h1 className="text-xl font-bold">{friend.full_name}</h1>
-                    <p className="text-muted-foreground">@{friend.username}</p>
                     {friendshipDate && (
                       <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                         <Clock className="h-3 w-3" />

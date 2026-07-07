@@ -447,14 +447,11 @@ const UserProfile = () => {
                 )}
               </div>
               
-              {/* Name and Username - centered below avatar */}
+              {/* Name - centered below avatar */}
               <div className="text-center mt-4 space-y-1">
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                   {profile.full_name}
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  @{profile.username}
-                </p>
               </div>
               
               {/* Badges - centered below name */}
@@ -638,9 +635,6 @@ const UserProfile = () => {
                             <div className="flex-1">
                               <p className="font-semibold text-sm">
                                 {post.profiles.full_name}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                @{post.profiles.username}
                               </p>
                               <p className="mt-2">{post.content}</p>
                               <p className="text-xs text-muted-foreground mt-2">

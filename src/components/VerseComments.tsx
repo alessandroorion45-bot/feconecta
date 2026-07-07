@@ -317,9 +317,6 @@ const VerseComments = ({
                       <span className="font-medium text-sm">
                         {comment.profile?.full_name || "Usuário"}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        @{comment.profile?.username || "usuario"}
-                      </span>
                       {currentUserId === comment.user_id && (
                         <Button
                           variant="ghost"

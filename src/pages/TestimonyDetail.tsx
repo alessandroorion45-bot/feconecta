@@ -405,9 +405,6 @@ const TestimonyDetail = () => {
                     {authorName}
                   </h2>
                 </Link>
-                <p className="text-sm text-white/80 truncate drop-shadow">
-                  @{testimony.profiles?.username}
-                </p>
               </div>
             </div>
           </div>
@@ -557,9 +554,6 @@ const TestimonyDetail = () => {
                           <p className="text-sm font-medium truncate">
                             {comment.profiles?.full_name || "Usuário"}
                           </p>
-                          <span className="text-xs text-muted-foreground">
-                            @{comment.profiles?.username}
-                          </span>
                         </div>
                         <p className="text-sm text-foreground/90 mt-0.5 break-words">
                           {comment.content}

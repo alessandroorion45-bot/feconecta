@@ -366,11 +366,11 @@ const Friends = () => {
     try {
       if (u.is_following) {
         await supabase.from("followers").delete().eq("follower_id", currentUserId).eq("following_id", userId);
-        toast({ title: "Deixou de seguir", description: `Você deixou de seguir @${u.username}` });
+        toast({ title: "Deixou de seguir", description: `Você deixou de seguir ${u.full_name}` });
       } else {
         await supabase.from("followers").insert({ follower_id: currentUserId, following_id: userId });
-        await supabase.from("notifications").insert({ user_id: userId, actor_id: currentUserId, type: "follow", content: `@${u.username} começou a seguir você` });
-        toast({ title: "Seguindo", description: `Você agora segue @${u.username}` });
+        await supabase.from("notifications").insert({ user_id: userId, actor_id: currentUserId, type: "follow", content: `${u.full_name} começou a seguir você` });
+        toast({ title: "Seguindo", description: `Você agora segue ${u.full_name}` });
       }
       // Optimistic toggle
       setUsers(prev => prev.map(x => x.id === userId ? { ...x, is_following: !x.is_following } : x));
@@ -391,7 +391,7 @@ const Friends = () => {
       return;
     }
     if (u.is_friend) {
-      toast({ title: "Já são amigos", description: `Você já é amigo de @${u.username}` });
+      toast({ title: "Já são amigos", description: `Você já é amigo de ${u.full_name}` });
       return;
     }
 
@@ -416,7 +416,7 @@ const Friends = () => {
         toast({ title: "Erro", description: "Não foi possível enviar o pedido", variant: "destructive" });
       }
     } else {
-      toast({ title: "Pedido enviado! 🎉", description: `Pedido de amizade enviado para @${u.username}` });
+      toast({ title: "Pedido enviado! 🎉", description: `Pedido de amizade enviado para ${u.full_name}` });
       // No full reload needed - optimistic update already applied
     }
   };
@@ -525,7 +525,6 @@ const Friends = () => {
                                   <span className="ml-2 text-xs font-normal text-green-500">online</span>
                                 )}
                               </p>
-                              <p className="text-sm text-muted-foreground">@{friend.username}</p>
                             </div>
                             <UserCheck className="h-5 w-5 text-primary" />
                           </motion.div>
@@ -548,7 +547,6 @@ const Friends = () => {
                             </motion.div>
                             <div className="flex-1">
                               <p className="font-semibold">{request.profiles.full_name}</p>
-                              <p className="text-sm text-muted-foreground">@{request.profiles.username}</p>
                             </div>
                             <div className="flex gap-2">
                               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -582,7 +580,6 @@ const Friends = () => {
                           <UserAvatar src={u.avatar_url} fallback={u.full_name} size="sm" />
                           <div className="flex-1">
                             <p className="font-semibold">{u.full_name}</p>
-                            <p className="text-sm text-muted-foreground">@{u.username}</p>
                           </div>
                         </div>
                       ))
@@ -668,10 +665,9 @@ const UserCard = ({ user, navigate, sendFriendRequest, language, friends, MAX_FR
         </div>
         <div>
           <p className="font-semibold">{user.full_name}</p>
-          <p className="text-sm text-muted-foreground">
-            @{user.username}
-            {showCountry && user.country && getCountryName && <span className="ml-2 text-xs">• {getCountryName(user.country)}</span>}
-          </p>
+          {showCountry && user.country && getCountryName && (
+            <p className="text-sm text-muted-foreground">{getCountryName(user.country)}</p>
+          )}
         </div>
       </div>
       <div className="flex gap-2">

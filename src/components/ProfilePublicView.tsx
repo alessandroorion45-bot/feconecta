@@ -121,36 +121,29 @@ export const ProfilePublicView = ({
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground leading-tight uppercase tracking-wide break-words">
             {profile.full_name || "Seu Nome"}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            @{profile.username || "username"}
-          </p>
         </div>
 
         {/* Avatar + Badges + Quote - Centered Column Layout */}
         <div className="flex flex-col items-center gap-3">
           {/* Avatar - 9:16 Portrait Format - Larger Size */}
           <div className="flex justify-center z-10">
-            <div 
-              className="ring-[3px] ring-primary/20 rounded-xl shadow-xl bg-card overflow-hidden"
-              style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}
-            >
-              {isOwner ? (
-                <AvatarUpload
-                  currentUrl={profile.avatar_url}
-                  userId={userId}
-                  onUploadComplete={onAvatarUpdate}
-                  variant="rectangular"
-                />
-              ) : (
-                <AvatarPro
-                  src={profile.avatar_url}
-                  name={profile.full_name}
-                  userId={userId}
-                  size="xl"
-                  clickable={false}
-                />
-              )}
-            </div>
+            {isOwner ? (
+              <AvatarUpload
+                currentUrl={profile.avatar_url}
+                userId={userId}
+                onUploadComplete={onAvatarUpdate}
+                variant="rectangular"
+                fallbackName={profile.full_name}
+              />
+            ) : (
+              <AvatarPro
+                src={profile.avatar_url}
+                name={profile.full_name}
+                userId={userId}
+                size="xl"
+                clickable={false}
+              />
+            )}
           </div>
 
           {/* Badges + Quote - Centered Below Avatar */}

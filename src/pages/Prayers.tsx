@@ -763,7 +763,6 @@ const Prayers = () => {
                       <div className="flex items-start justify-between gap-3">
                         <PostAuthorBadges
                           userId={prayer.user_id}
-                          username={prayer.profiles?.username}
                           fullName={prayer.profiles?.full_name}
                           avatarUrl={prayer.profiles?.avatar_url}
                         />
