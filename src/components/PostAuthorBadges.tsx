@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import UserAvatar from "@/components/UserAvatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import { UserBadge } from "@/components/UserBadge";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,6 +8,14 @@ interface Badge {
   badge_icon: string;
   badge_color: string;
 }
+
+const RARITY_COLOR: Record<string, string> = {
+  common: "#94a3b8",
+  rare: "#38bdf8",
+  epic: "#a855f7",
+  legendary: "#f59e0b",
+  mythic: "#f43f5e",
+};
 
 interface PostAuthorBadgesProps {
   userId: string;
@@ -29,23 +37,29 @@ export const PostAuthorBadges = ({
   }, [userId]);
 
   const loadUserBadges = async () => {
-    const { data } = await supabase
-      .from("user_badges")
-      .select("badge_name, badge_icon, badge_color")
+    const { data } = await (supabase.from("user_badges" as any) as any)
+      .select("unlocked_at, badges(name, icon, rarity)")
       .eq("user_id", userId)
-      .order("display_order", { ascending: true })
+      .order("unlocked_at", { ascending: false })
       .limit(3);
 
     if (data) {
-      setBadges(data);
+      setBadges(
+        data.map((row: any) => ({
+          badge_name: row.badges?.name || "",
+          badge_icon: row.badges?.icon || "🏅",
+          badge_color: RARITY_COLOR[row.badges?.rarity] || RARITY_COLOR.common,
+        }))
+      );
     }
   };
 
   return (
     <div className="flex items-start gap-3">
-      <UserAvatar
+      <AvatarPro
         src={avatarUrl}
-        fallback={fullName || "U"}
+        name={fullName || "U"}
+        userId={userId}
         size="md"
       />
       <div className="flex-1 min-w-0">

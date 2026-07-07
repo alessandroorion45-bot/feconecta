@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
 import { Trophy, Target, Zap, Crown, Award, TrendingUp, Timer, Flame } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Question {
@@ -595,10 +595,12 @@ const Quiz = () => {
                           {i === 2 && <Award className="h-6 w-6 text-orange-600 mx-auto" />}
                           {i > 2 && <span className="text-muted-foreground font-bold">#{i + 1}</span>}
                         </div>
-                        <Avatar>
-                          <AvatarImage src={r.profiles?.avatar_url || undefined} />
-                          <AvatarFallback>{r.profiles?.full_name?.[0] || "?"}</AvatarFallback>
-                        </Avatar>
+                        <AvatarPro
+                          src={r.profiles?.avatar_url}
+                          name={r.profiles?.full_name || r.profiles?.username}
+                          userId={r.user_id}
+                          size="sm"
+                        />
                         <div className="flex-1">
                           <p className="font-semibold">{r.profiles?.full_name || r.profiles?.username}</p>
                           <p className="text-xs text-muted-foreground">

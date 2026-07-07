@@ -326,14 +326,15 @@ export const AvatarUpload = ({
   // Circular variant (default)
   return (
     <>
-      <div className="relative group cursor-pointer" onClick={() => inputRef.current?.click()}>
-        <Avatar className="h-[72px] w-[72px] sm:h-24 sm:w-24 md:h-32 md:w-32">
-          <AvatarImage 
-            src={currentUrl} 
+      <div className="relative group cursor-pointer transition-transform duration-200 hover:scale-105" onClick={() => inputRef.current?.click()}>
+        <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-primary/25 via-amber-300/15 to-transparent blur-md" aria-hidden />
+        <Avatar className="relative h-[72px] w-[72px] sm:h-24 sm:w-24 md:h-32 md:w-32 ring-2 ring-border/60 ring-offset-2 ring-offset-background shadow-lg">
+          <AvatarImage
+            src={currentUrl}
             alt="Foto de perfil"
-            className="object-cover"
+            className="object-cover object-center"
           />
-          <AvatarFallback className="text-xl sm:text-2xl md:text-3xl font-semibold bg-primary/10">U</AvatarFallback>
+          <AvatarFallback className="text-xl sm:text-2xl md:text-3xl font-semibold bg-gradient-to-br from-sky-400 to-blue-500 text-white">U</AvatarFallback>
         </Avatar>
         <div
           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"

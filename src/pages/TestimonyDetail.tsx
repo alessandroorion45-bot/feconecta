@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, MessageCircle, Sparkles, Share2, Volume2, Loader2, ArrowLeft } from "lucide-react";
@@ -392,17 +392,12 @@ const TestimonyDetail = () => {
             {/* Profile info overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex items-end gap-4">
               <Link to={`/profile/${testimony.user_id}`}>
-                <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-background shadow-lg">
-                  <AvatarImage 
-                    src={testimony.profiles?.avatar_url || undefined} 
-                    alt={`Foto de ${authorName}`}
-                    className="object-cover"
-                    style={{ filter: "contrast(1.05) brightness(1.02)" }}
-                  />
-                  <AvatarFallback className="text-xl">
-                    {authorName[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <AvatarPro
+                  src={testimony.profiles?.avatar_url}
+                  name={authorName}
+                  size="lg"
+                  clickable={false}
+                />
               </Link>
               <div className="flex-1 min-w-0 pb-1">
                 <Link to={`/profile/${testimony.user_id}`} className="hover:underline">
@@ -551,12 +546,12 @@ const TestimonyDetail = () => {
                 <div className="space-y-4 pr-4">
                   {comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3">
-                      <Avatar className="h-8 w-8 flex-shrink-0">
-                        <AvatarImage src={comment.profiles?.avatar_url} />
-                        <AvatarFallback>
-                          {comment.profiles?.full_name?.[0] || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <AvatarPro
+                        src={comment.profiles?.avatar_url}
+                        name={comment.profiles?.full_name}
+                        userId={comment.user_id}
+                        size="xs"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
                           <p className="text-sm font-medium truncate">

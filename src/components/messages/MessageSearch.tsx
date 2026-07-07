@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Filter, Calendar, User, Image, Mic, FileText, Hash, Star } from 'lucide-react';
+import { AvatarPro } from '@/components/AvatarPro';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -282,17 +283,7 @@ export const MessageSearch: React.FC<MessageSearchProps> = ({
                 >
                   <div className="flex items-start gap-3">
                     {/* Avatar */}
-                    {result.sender_avatar ? (
-                      <img
-                        src={result.sender_avatar}
-                        alt={result.sender_name}
-                        className="w-10 h-10 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                        {result.sender_name[0]}
-                      </div>
-                    )}
+                    <AvatarPro src={result.sender_avatar} name={result.sender_name} size="sm" clickable={false} />
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">

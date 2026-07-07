@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { PresenceProvider } from "@/contexts/PresenceContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -137,23 +138,25 @@ const App = () => (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <AdminProvider>
-            <ThemeProvider>
-              <PremiumEffectsWrapper>
-                <DailyLoginTracker />
-                <LanguageProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    <NetworkStatusIndicator />
-                    <Suspense fallback={<LoadingFallback />}>
-                      <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
-                    </Suspense>
-                  </TooltipProvider>
-                </LanguageProvider>
-              </PremiumEffectsWrapper>
-            </ThemeProvider>
-          </AdminProvider>
+          <PresenceProvider>
+            <AdminProvider>
+              <ThemeProvider>
+                <PremiumEffectsWrapper>
+                  <DailyLoginTracker />
+                  <LanguageProvider>
+                    <TooltipProvider>
+                      <Toaster />
+                      <Sonner />
+                      <NetworkStatusIndicator />
+                      <Suspense fallback={<LoadingFallback />}>
+                        <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
+                      </Suspense>
+                    </TooltipProvider>
+                  </LanguageProvider>
+                </PremiumEffectsWrapper>
+              </ThemeProvider>
+            </AdminProvider>
+          </PresenceProvider>
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>

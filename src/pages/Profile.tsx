@@ -22,6 +22,21 @@ interface Badge {
   badge_color: string;
 }
 
+const RARITY_COLOR: Record<string, string> = {
+  common: "#94a3b8",
+  rare: "#38bdf8",
+  epic: "#a855f7",
+  legendary: "#f59e0b",
+  mythic: "#f43f5e",
+};
+
+const mapUserBadges = (rows: any[] | null | undefined): Badge[] =>
+  (rows || []).map((row) => ({
+    badge_name: row.badges?.name || "",
+    badge_icon: row.badges?.icon || "🏅",
+    badge_color: RARITY_COLOR[row.badges?.rarity] || RARITY_COLOR.common,
+  }));
+
 interface ProfileData {
   username: string;
   full_name: string;
@@ -124,11 +139,10 @@ const Profile = () => {
 
       const badgesPromise = (async () => {
         console.log('🏅 Carregando badges em paralelo...');
-        return await supabase
-          .from("user_badges")
-          .select("badge_name, badge_icon, badge_color")
+        return await (supabase.from("user_badges" as any) as any)
+          .select("unlocked_at, badges(name, icon, rarity)")
           .eq("user_id", userId)
-          .order("display_order", { ascending: true })
+          .order("unlocked_at", { ascending: false })
           .limit(5);
       })();
 
@@ -189,7 +203,7 @@ const Profile = () => {
         console.warn('⚠️ Erro ao carregar badges:', badgesError.message);
       } else if (badgesData) {
         console.log(`✅ ${badgesData.length} badges carregados em paralelo`);
-        setBadges(badgesData);
+        setBadges(mapUserBadges(badgesData));
       } else {
         console.log('ℹ️ Nenhum badge encontrado');
       }
@@ -212,7 +226,7 @@ const Profile = () => {
 
       pageCache.set(cacheKey, {
         profile: profileData,
-        badges: badgesData || []
+        badges: mapUserBadges(badgesData)
       }, CACHE_TTL.PROFILE);
 
       console.log('✅ Perfil salvo no cache!');

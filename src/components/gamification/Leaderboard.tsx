@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Trophy, TrendingUp, Flame, Calendar, Crown, Medal } from "lucide-react";
@@ -205,12 +205,12 @@ const Leaderboard = () => {
                         <span className="font-bold text-lg">#{userRank.rank}</span>
                       </div>
 
-                      <Avatar className="h-10 w-10 border-2 border-primary">
-                        <AvatarImage src={userRank.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {userRank.full_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      <AvatarPro
+                        src={userRank.avatar_url}
+                        name={userRank.full_name}
+                        userId={userRank.user_id}
+                        size="sm"
+                      />
 
                       <div className="flex-1 min-w-0">
                         <p className="font-bold truncate">Você</p>
@@ -260,18 +260,13 @@ const Leaderboard = () => {
                         </div>
 
                         {/* Avatar */}
-                        <Avatar
-                          className={`h-10 w-10 ${
-                            entry.rank === 1 ? 'border-2 border-yellow-500' :
-                            entry.rank === 2 ? 'border-2 border-gray-400' :
-                            entry.rank === 3 ? 'border-2 border-orange-600' : ''
-                          }`}
-                        >
-                          <AvatarImage src={entry.avatar_url || undefined} />
-                          <AvatarFallback>
-                            {entry.full_name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <AvatarPro
+                          src={entry.avatar_url}
+                          name={entry.full_name}
+                          userId={entry.user_id}
+                          size="sm"
+                          ring={entry.rank <= 3 ? "admin" : "none"}
+                        />
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">

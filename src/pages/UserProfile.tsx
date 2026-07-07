@@ -39,6 +39,21 @@ interface Badge {
   badge_color: string;
 }
 
+const RARITY_COLOR: Record<string, string> = {
+  common: "#94a3b8",
+  rare: "#38bdf8",
+  epic: "#a855f7",
+  legendary: "#f59e0b",
+  mythic: "#f43f5e",
+};
+
+const mapUserBadges = (rows: any[] | null | undefined): Badge[] =>
+  (rows || []).map((row) => ({
+    badge_name: row.badges?.name || "",
+    badge_icon: row.badges?.icon || "🏅",
+    badge_color: RARITY_COLOR[row.badges?.rarity] || RARITY_COLOR.common,
+  }));
+
 interface FaithPost {
   id: string;
   content: string;
@@ -147,15 +162,14 @@ const UserProfile = () => {
 
       if (canViewProfile) {
         // Carregar badges
-        const { data: badgesData } = await supabase
-          .from("user_badges")
-          .select("badge_name, badge_icon, badge_color")
+        const { data: badgesData } = await (supabase.from("user_badges" as any) as any)
+          .select("unlocked_at, badges(name, icon, rarity)")
           .eq("user_id", profileId)
-          .order("display_order", { ascending: true })
+          .order("unlocked_at", { ascending: false })
           .limit(5);
 
         if (badgesData) {
-          setBadges(badgesData);
+          setBadges(mapUserBadges(badgesData));
         }
 
         // Carregar posts de fé

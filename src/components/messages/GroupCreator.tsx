@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AvatarPro } from '@/components/AvatarPro';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -234,15 +235,7 @@ export const GroupCreator: React.FC<GroupCreatorProps> = ({
                         onCheckedChange={() => toggleMember(friend.id)}
                       />
 
-                      <Avatar className="h-10 w-10">
-                        {friend.avatar ? (
-                          <AvatarImage src={friend.avatar} />
-                        ) : (
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                            {friend.name[0]}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
+                      <AvatarPro src={friend.avatar} name={friend.name} size="sm" clickable={false} />
 
                       <p className="font-semibold flex-1">{friend.name}</p>
 

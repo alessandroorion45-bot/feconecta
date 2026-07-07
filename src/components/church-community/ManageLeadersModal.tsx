@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import { useToast } from "@/hooks/use-toast";
 import { Users, Plus, Trash2, Loader2, Edit2, Check, X } from "lucide-react";
 
@@ -243,12 +243,7 @@ const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageL
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={leader.photo_url || undefined} />
-                          <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-500 text-white">
-                            {leader.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <AvatarPro src={leader.photo_url} name={leader.name} size="sm" clickable={false} />
                         <div className="flex-1">
                           <p className="font-medium">{leader.name}</p>
                           <p className="text-sm text-muted-foreground">{leader.role}</p>

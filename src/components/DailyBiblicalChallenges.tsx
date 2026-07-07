@@ -42,6 +42,7 @@ interface ChallengeCompletion {
 
 interface StreakBadge {
   days: number;
+  badgeKey: string;
   name: string;
   icon: string;
   color: string;
@@ -52,9 +53,9 @@ interface DailyBiblicalChallengesProps {
 }
 
 const STREAK_BADGES: StreakBadge[] = [
-  { days: 7, name: "Discípulo Fiel", icon: "🌟", color: "from-blue-500 to-cyan-500" },
-  { days: 21, name: "Guerreiro da Fé", icon: "⚔️", color: "from-purple-500 to-pink-500" },
-  { days: 40, name: "Peregrino Consagrado", icon: "👑", color: "from-yellow-500 to-orange-500" },
+  { days: 7, badgeKey: "daily_streak_7", name: "Discípulo Fiel", icon: "🌟", color: "from-blue-500 to-cyan-500" },
+  { days: 21, badgeKey: "daily_streak_21", name: "Guerreiro da Fé", icon: "⚔️", color: "from-purple-500 to-pink-500" },
+  { days: 40, badgeKey: "daily_streak_40", name: "Peregrino Consagrado", icon: "👑", color: "from-yellow-500 to-orange-500" },
 ];
 
 const DailyBiblicalChallenges = ({ userId }: DailyBiblicalChallengesProps) => {
@@ -191,14 +192,13 @@ const DailyBiblicalChallenges = ({ userId }: DailyBiblicalChallengesProps) => {
     }
 
     // Carregar badges do usuário
-    const { data: badgesData } = await supabase
-      .from("user_badges")
-      .select("badge_name")
+    const { data: badgesData } = await (supabase.from("user_badges" as any) as any)
+      .select("badges!inner(badge_key, name)")
       .eq("user_id", userId)
-      .in("badge_type", ["streak_7", "streak_21", "streak_40"]);
+      .in("badges.badge_key", ["daily_streak_7", "daily_streak_21", "daily_streak_40"]);
 
     if (badgesData) {
-      setEarnedBadges(badgesData.map(b => b.badge_name));
+      setEarnedBadges(badgesData.map((b: any) => b.badges?.name).filter(Boolean));
     }
 
     setLoading(false);
@@ -207,16 +207,18 @@ const DailyBiblicalChallenges = ({ userId }: DailyBiblicalChallengesProps) => {
   const checkAndAwardStreakBadge = async (newStreak: number) => {
     for (const badge of STREAK_BADGES) {
       if (newStreak >= badge.days && !earnedBadges.includes(badge.name)) {
-        // Award badge
-        const { error } = await supabase
-          .from("user_badges")
-          .insert({
-            user_id: userId,
-            badge_type: `streak_${badge.days}`,
-            badge_name: badge.name,
-            badge_icon: badge.icon,
-            badge_color: badge.color
-          });
+        // Award badge (busca o id no catálogo e vincula ao usuário)
+        const { data: badgeRow } = await (supabase.from("badges" as any) as any)
+          .select("id")
+          .eq("badge_key", badge.badgeKey)
+          .maybeSingle();
+
+        const { error } = badgeRow
+          ? await (supabase.from("user_badges" as any) as any).insert({
+              user_id: userId,
+              badge_id: badgeRow.id,
+            })
+          : { error: new Error("Badge não encontrado no catálogo") };
 
         if (!error) {
           setNewBadge(badge);

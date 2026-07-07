@@ -21,6 +21,7 @@ import { Message } from '@/hooks/useChatEngine';
 import { ReactionPicker } from './ReactionPicker';
 import { REACTIONS_MAP } from '@/lib/constants/reactions';
 import { AudioPlayer } from './AudioPlayer';
+import { AvatarPro } from '@/components/AvatarPro';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -128,17 +129,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       {/* Avatar (para mensagens recebidas em grupos) */}
       {!isMine && showAvatar && isGroupChat && (
         <div className="flex-shrink-0">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={senderName}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-              {senderName?.[0] || '?'}
-            </div>
-          )}
+          <AvatarPro src={avatarUrl} name={senderName} userId={message.sender_id} size="xs" />
         </div>
       )}
 

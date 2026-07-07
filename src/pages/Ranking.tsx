@@ -28,6 +28,14 @@ interface RankedUser {
   }>;
 }
 
+const RARITY_COLOR: Record<string, string> = {
+  common: "#94a3b8",
+  rare: "#38bdf8",
+  epic: "#a855f7",
+  legendary: "#f59e0b",
+  mythic: "#f43f5e",
+};
+
 const Ranking = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState<RankedUser[]>([]);
@@ -162,19 +170,22 @@ const Ranking = () => {
     // Buscar badges para todos os usuários no ranking
     if (rankedUsers.length > 0) {
       const userIds = rankedUsers.map(u => u.user_id);
-      const { data: allBadges } = await supabase
-        .from("user_badges")
-        .select("user_id, badge_name, badge_icon, badge_color")
+      const { data: allBadges } = await (supabase.from("user_badges" as any) as any)
+        .select("user_id, unlocked_at, badges(name, icon, rarity)")
         .in("user_id", userIds)
-        .order("display_order", { ascending: true });
+        .order("unlocked_at", { ascending: false });
 
       // Agrupar badges por usuário
-      const badgesByUser = new Map<string, typeof allBadges>();
-      allBadges?.forEach(badge => {
+      const badgesByUser = new Map<string, any[]>();
+      allBadges?.forEach((badge: any) => {
         if (!badgesByUser.has(badge.user_id)) {
           badgesByUser.set(badge.user_id, []);
         }
-        badgesByUser.get(badge.user_id)!.push(badge);
+        badgesByUser.get(badge.user_id)!.push({
+          badge_name: badge.badges?.name || "",
+          badge_icon: badge.badges?.icon || "🏅",
+          badge_color: RARITY_COLOR[badge.badges?.rarity] || RARITY_COLOR.common,
+        });
       });
 
       // Adicionar badges aos usuários

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
@@ -299,12 +299,12 @@ export const VideoComments = ({ videoId, videoOwnerId, visibility, isOpen }: Vid
                   transition={{ delay: index * 0.05 }}
                   className="flex gap-3 group"
                 >
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={comment.profile?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10">
-                      <User className="h-4 w-4 text-primary" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <AvatarPro
+                    src={comment.profile?.avatar_url}
+                    name={comment.profile?.full_name}
+                    userId={comment.user_id}
+                    size="xs"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="bg-muted/50 rounded-lg px-3 py-2">
                       <div className="flex items-center gap-2 mb-1">

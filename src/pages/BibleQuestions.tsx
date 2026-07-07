@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import BibleRefText from "@/components/BibleRefText";
 
 /** Busca perfis em lote (joins embutidos falham no banco remoto) */
@@ -283,10 +283,12 @@ const BibleQuestions = () => {
           <Card className="shadow-divine mb-6">
             <CardHeader>
               <div className="flex items-start gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={selectedQuestion.profiles?.avatar_url || undefined} />
-                  <AvatarFallback>{selectedQuestion.profiles?.full_name?.[0] || "?"}</AvatarFallback>
-                </Avatar>
+                <AvatarPro
+                  src={selectedQuestion.profiles?.avatar_url}
+                  name={selectedQuestion.profiles?.full_name}
+                  userId={selectedQuestion.user_id}
+                  size="sm"
+                />
                 <div className="flex-1">
                   <CardTitle className="text-xl">{selectedQuestion.title}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -313,10 +315,12 @@ const BibleQuestions = () => {
               <CardContent className="p-4">
                 {a.is_best && <Badge className="mb-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0"><CheckCircle2 className="h-3 w-3 mr-1" /> ⭐ Melhor Resposta</Badge>}
                 <div className="flex items-start gap-3 mb-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={a.profiles?.avatar_url || undefined} />
-                    <AvatarFallback>{a.profiles?.full_name?.[0] || "?"}</AvatarFallback>
-                  </Avatar>
+                  <AvatarPro
+                    src={a.profiles?.avatar_url}
+                    name={a.profiles?.full_name}
+                    userId={a.user_id}
+                    size="xs"
+                  />
                   <div className="flex-1">
                     <p className="text-sm font-medium">{a.profiles?.full_name}</p>
                     <p className="text-xs text-muted-foreground">{formatDate(a.created_at)}</p>

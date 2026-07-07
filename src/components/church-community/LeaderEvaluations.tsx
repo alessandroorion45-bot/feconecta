@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -283,12 +283,7 @@ const LeaderEvaluations = ({ communityId, userId }: LeaderEvaluationsProps) => {
             <Card key={leader.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-start gap-4">
-                  <Avatar className="h-14 w-14">
-                    <AvatarImage src={leader.photo_url || undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-500 text-white text-lg">
-                      {leader.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <AvatarPro src={leader.photo_url} name={leader.name} size="lg" clickable={false} />
                   <div className="flex-1">
                     <CardTitle className="text-lg">{leader.name}</CardTitle>
                     <CardDescription>{leader.role}</CardDescription>
@@ -325,19 +320,17 @@ const LeaderEvaluations = ({ communityId, userId }: LeaderEvaluationsProps) => {
                       <div className="flex items-center gap-2">
                         {evaluation.is_anonymous ? (
                           <>
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback>?</AvatarFallback>
-                            </Avatar>
+                            <AvatarPro name="?" size="xs" clickable={false} />
                             <span className="text-sm text-muted-foreground">Anônimo</span>
                           </>
                         ) : (
                           <>
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={evaluation.profile?.avatar_url || undefined} />
-                              <AvatarFallback>
-                                {evaluation.profile?.full_name?.charAt(0) || "?"}
-                              </AvatarFallback>
-                            </Avatar>
+                            <AvatarPro
+                              src={evaluation.profile?.avatar_url}
+                              name={evaluation.profile?.full_name}
+                              userId={evaluation.user_id}
+                              size="xs"
+                            />
                             <span className="text-sm">{evaluation.profile?.full_name}</span>
                           </>
                         )}

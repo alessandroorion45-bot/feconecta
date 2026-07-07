@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -241,18 +241,16 @@ const CommunityComments = ({ communityId, votingId, evaluationId, userId }: Comm
         ) : (
           comments.map(comment => (
             <div key={comment.id} className="flex gap-2">
-              <Avatar className="h-8 w-8 shrink-0">
-                {comment.is_anonymous ? (
-                  <AvatarFallback>?</AvatarFallback>
-                ) : (
-                  <>
-                    <AvatarImage src={comment.profile?.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {comment.profile?.full_name?.charAt(0) || "?"}
-                    </AvatarFallback>
-                  </>
-                )}
-              </Avatar>
+              {comment.is_anonymous ? (
+                <AvatarPro name="?" size="xs" clickable={false} />
+              ) : (
+                <AvatarPro
+                  src={comment.profile?.avatar_url}
+                  name={comment.profile?.full_name}
+                  userId={comment.user_id}
+                  size="xs"
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-medium">

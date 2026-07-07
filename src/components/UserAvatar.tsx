@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { AvatarPro, AvatarSize, AvatarRing } from "@/components/AvatarPro";
 
 interface UserAvatarProps {
   src?: string | null;
@@ -6,69 +6,47 @@ interface UserAvatarProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   onClick?: () => void;
+  userId?: string | null;
+  ring?: AvatarRing;
+  badgeIcon?: string | null;
 }
 
+const SIZE_MAP: Record<NonNullable<UserAvatarProps["size"]>, AvatarSize> = {
+  xs: "xs",
+  sm: "sm",
+  md: "md",
+  lg: "lg",
+  xl: "xl",
+};
+
 /**
- * Standardized rectangular user avatar component
- * Uses 7:10 aspect ratio (similar to 9:16) for consistent visual identity
- * 
- * Sizes:
- * - xs: 28x40px (notifications, small lists)
- * - sm: 36x52px (comments, compact views)
- * - md: 48x68px (cards, feed posts)
- * - lg: 64x92px (rankings, larger displays)
- * - xl: 84x120px mobile / 112x160px desktop (profile header)
+ * Wrapper de compatibilidade em torno de AvatarPro — mantém a API antiga
+ * (fallback/size xs-xl) para não quebrar os call sites existentes, mas
+ * renderiza o avatar circular padronizado da plataforma (sombra, halo,
+ * borda por papel/VIP, status online, badge, skeleton).
  */
-const UserAvatar = ({ 
-  src, 
-  fallback, 
-  size = "md", 
+const UserAvatar = ({
+  src,
+  fallback,
+  size = "md",
   className,
-  onClick 
+  onClick,
+  userId,
+  ring,
+  badgeIcon,
 }: UserAvatarProps) => {
-  const sizeClasses = {
-    xs: "w-7 h-10",
-    sm: "w-9 h-[52px]",
-    md: "w-12 h-[68px]",
-    lg: "w-16 h-[92px]",
-    xl: "w-[84px] h-[120px] sm:w-[112px] sm:h-[160px]"
-  };
-
-  const textSizes = {
-    xs: "text-xs",
-    sm: "text-sm",
-    md: "text-base",
-    lg: "text-lg",
-    xl: "text-2xl sm:text-3xl"
-  };
-
-  const initial = fallback?.charAt(0)?.toUpperCase() || "?";
-
   return (
-    <div 
-      className={cn(
-        "relative shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 via-muted to-primary/5 transition-transform duration-300 ease-out hover:scale-110",
-        sizeClasses[size],
-        onClick && "cursor-pointer",
-        className
-      )}
+    <AvatarPro
+      src={src}
+      name={fallback}
+      userId={userId}
+      size={SIZE_MAP[size]}
+      ring={ring}
+      badgeIcon={badgeIcon}
+      className={className}
+      clickable={onClick ? true : undefined}
       onClick={onClick}
-    >
-      {src ? (
-        <img 
-          src={src} 
-          alt={fallback}
-          className="w-full h-full object-contain"
-          loading="lazy"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-primary/10">
-          <span className={cn("font-semibold text-primary", textSizes[size])}>
-            {initial}
-          </span>
-        </div>
-      )}
-    </div>
+    />
   );
 };
 

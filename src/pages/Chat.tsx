@@ -13,6 +13,7 @@ import { useDynamicBackground } from '@/hooks/useDynamicBackground';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useChatWebSocket } from '@/hooks/useChatWebSocket';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePresence } from '@/contexts/PresenceContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Search, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -60,7 +61,8 @@ const Chat = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [friendIsTyping, setFriendIsTyping] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const { connectedUserIds } = usePresence();
+  const onlineUsers = useMemo(() => new Set(connectedUserIds), [connectedUserIds]);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -119,33 +121,6 @@ const Chat = () => {
     onNewMessage: handleNewMessage,
     onConversationUpdate: handleConversationUpdate
   });
-
-  // Setup Presence channel
-  useEffect(() => {
-    if (!user) return;
-
-    const presenceChannel = supabase.channel('online-presence', {
-      config: { presence: { key: user.id } }
-    });
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        setOnlineUsers(new Set(Object.keys(state)));
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await presenceChannel.track({
-            user_id: user.id,
-            online_at: new Date().toISOString()
-          });
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(presenceChannel);
-    };
-  }, [user]);
 
   // Load conversations on mount
   useEffect(() => {

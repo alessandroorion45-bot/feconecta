@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPro } from "@/components/AvatarPro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Church, MapPin, Trophy, Lock, Heart, Pencil, Medal, User, BookOpen, Quote, Users, Music, HeartHandshake, Baby, Megaphone, Monitor, HandHeart, Star } from "lucide-react";
 import { UserBadge } from "./UserBadge";
@@ -142,21 +142,13 @@ export const ProfilePublicView = ({
                   variant="rectangular"
                 />
               ) : (
-                <div className="w-[84px] h-[120px] sm:w-[112px] sm:h-[160px] relative overflow-hidden bg-muted rounded-xl">
-                  {profile.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt={`Foto de perfil de ${profile.full_name}`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                      <span className="text-2xl sm:text-3xl font-semibold text-primary">
-                        {profile.full_name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <AvatarPro
+                  src={profile.avatar_url}
+                  name={profile.full_name}
+                  userId={userId}
+                  size="xl"
+                  clickable={false}
+                />
               )}
             </div>
           </div>
