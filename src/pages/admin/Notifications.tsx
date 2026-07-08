@@ -27,6 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, Send, History } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useToast } from "@/hooks/use-toast";
 
 interface NotificationHistory {
@@ -140,13 +141,10 @@ export default function AdminNotifications() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Central de Notificações</h1>
-          <p className="text-muted-foreground mt-1">
-            Enviar notificações em massa para os usuários
-          </p>
-        </div>
+        <AdminPageHeader
+          title="Central de Notificações"
+          description="Enviar notificações em massa para os usuários"
+        />
 
         <Tabs defaultValue="send">
           <TabsList className="grid w-full grid-cols-2">

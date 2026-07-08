@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Bot, Shield, Ban, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getSeverityConfig } from "@/lib/adminSeverity";
 
 interface BannedWord {
   id: string;
@@ -178,15 +179,9 @@ export default function AdminAutomation() {
   };
 
   const getSeverityBadge = (severity: string) => {
-    const colors: Record<string, string> = {
-      low: "bg-blue-500",
-      medium: "bg-yellow-500",
-      high: "bg-orange-500",
-      critical: "bg-red-500",
-    };
-
+    const config = getSeverityConfig(severity);
     return (
-      <Badge className={`${colors[severity] || "bg-gray-500"} text-white text-xs`}>
+      <Badge className={`${config.solidClassName} text-xs`}>
         {severity}
       </Badge>
     );

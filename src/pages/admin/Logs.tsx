@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Search, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 interface AdminLog {
   id: string;
@@ -109,13 +110,10 @@ export default function AdminLogs() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Logs Administrativos</h1>
-          <p className="text-muted-foreground mt-1">
-            Histórico completo de ações administrativas
-          </p>
-        </div>
+        <AdminPageHeader
+          title="Logs Administrativos"
+          description="Histórico completo de ações administrativas"
+        />
 
         {/* Search */}
         <Card>

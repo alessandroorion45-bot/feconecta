@@ -41,7 +41,9 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserProfileDialog } from "@/components/admin/UserProfileDialog";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getSeverityConfig } from "@/lib/adminSeverity";
 
 interface UserProfile {
   id: string;
@@ -64,13 +66,6 @@ interface UserProfile {
   risk_score: number;
   risk_level: "baixo" | "medio" | "alto" | "critico";
 }
-
-const RISK_CONFIG: Record<UserProfile["risk_level"], { label: string; emoji: string; className: string }> = {
-  baixo: { label: "Baixo risco", emoji: "🟢", className: "text-green-700 dark:text-green-400 border-green-300 dark:border-green-800" },
-  medio: { label: "Médio risco", emoji: "🟡", className: "text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800" },
-  alto: { label: "Alto risco", emoji: "🟠", className: "text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-800" },
-  critico: { label: "Crítico", emoji: "🔴", className: "text-red-700 dark:text-red-400 border-red-300 dark:border-red-800" },
-};
 
 export default function AdminUsersEnhanced() {
   const { isAdmin, hasPermission, loading: adminLoading } = useAdmin();
@@ -243,13 +238,10 @@ export default function AdminUsersEnhanced() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Gestão Avançada de Usuários</h1>
-          <p className="text-muted-foreground mt-1">
-            Perfis completos, punições e gerenciamento
-          </p>
-        </div>
+        <AdminPageHeader
+          title="Gestão Avançada de Usuários"
+          description="Perfis completos, punições e gerenciamento"
+        />
 
         {/* Filters */}
         <Card>
@@ -365,10 +357,10 @@ export default function AdminUsersEnhanced() {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={`text-xs ${RISK_CONFIG[user.risk_level]?.className || ""}`}
+                        className={`text-xs ${getSeverityConfig(user.risk_level).outlineClassName}`}
                         title={`Pontuação: ${user.risk_score}/100 — advertências, suspensões, denúncias aprovadas e idade da conta. A decisão final é sempre do administrador.`}
                       >
-                        {RISK_CONFIG[user.risk_level]?.emoji} {RISK_CONFIG[user.risk_level]?.label || "—"}
+                        {getSeverityConfig(user.risk_level).emoji} {getSeverityConfig(user.risk_level).label}
                       </Badge>
                     </TableCell>
 

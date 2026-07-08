@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { Crown, Award, Flag, ShieldAlert, MessageSquare, Loader2 } from "lucide-react";
+import { getSeverityConfig } from "@/lib/adminSeverity";
 
 interface UserProfileDialogProps {
   userId: string | null;
@@ -61,12 +62,6 @@ interface FullProfile {
   recent_posts: { id: string; content: string; created_at: string; likes_count: number }[];
 }
 
-const RISK_LABEL: Record<string, string> = {
-  baixo: "🟢 Baixo risco",
-  medio: "🟡 Médio risco",
-  alto: "🟠 Alto risco",
-  critico: "🔴 Crítico",
-};
 
 export function UserProfileDialog({ userId, open, onOpenChange }: UserProfileDialogProps) {
   const [data, setData] = useState<FullProfile | null>(null);
@@ -122,7 +117,7 @@ export function UserProfileDialog({ userId, open, onOpenChange }: UserProfileDia
                 <Badge variant="outline"><Crown className="h-3 w-3 mr-1 text-yellow-600" />VIP {p.vip_tier}</Badge>
               )}
               {p.is_banned && <Badge variant="destructive">Banido</Badge>}
-              <Badge variant="outline">{RISK_LABEL[p.risk_level] || p.risk_level} ({p.risk_score}/100)</Badge>
+              <Badge variant="outline">{getSeverityConfig(p.risk_level).emoji} {getSeverityConfig(p.risk_level).label} risco ({p.risk_score}/100)</Badge>
               <Badge variant="outline"><Award className="h-3 w-3 mr-1" />Nível {p.level} ({p.total_xp} XP)</Badge>
             </div>
 

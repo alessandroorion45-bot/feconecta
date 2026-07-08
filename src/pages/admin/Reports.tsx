@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Flag, Check, X, AlertCircle, User as UserIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserProfileDialog } from "@/components/admin/UserProfileDialog";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 interface Report {
   id: string;
@@ -174,13 +175,10 @@ export default function AdminReports() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Denúncias</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerenciar denúncias e moderação de conteúdo
-          </p>
-        </div>
+        <AdminPageHeader
+          title="Denúncias"
+          description="Gerenciar denúncias e moderação de conteúdo"
+        />
 
         {/* Filters */}
         <div className="flex gap-2">
