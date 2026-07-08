@@ -104,9 +104,10 @@ $function$;
 
 -- 4. admin_notifications_history passa a expor pra quem foi (quando
 --    for notificação de usuário único).
-CREATE OR REPLACE VIEW public.admin_notifications_history AS
+DROP VIEW IF EXISTS public.admin_notifications_history;
+CREATE VIEW public.admin_notifications_history AS
 SELECT * FROM (
-  SELECT id, title, message, notification_type, target_audience, target_user_email, total_sent, sent_at, created_at
+  SELECT id, title, message, notification_type, target_audience, total_sent, sent_at, created_at, target_user_email
   FROM public.admin_notifications n
   ORDER BY created_at DESC
 ) sub
