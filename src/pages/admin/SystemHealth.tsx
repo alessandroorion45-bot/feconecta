@@ -5,8 +5,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, Database, HardDrive, Users, MessageSquare, Image, Flag, FileText, RefreshCw } from "lucide-react";
+import { Activity, Database, HardDrive, Users, MessageSquare, Image, Flag, FileText, RefreshCw, ShieldAlert, TrendingUp, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { UserProfileDialog } from "@/components/admin/UserProfileDialog";
+
+interface SignupBurst {
+  hour: string;
+  count: number;
+}
+
+interface RiskyAccount {
+  id: string;
+  email: string;
+  full_name: string | null;
+  created_at: string;
+  hours_old: number;
+  reports_count: number;
+  punishments_count: number;
+}
+
+interface DuplicateName {
+  full_name: string;
+  count: number;
+}
+
+interface FraudSignals {
+  signup_bursts: SignupBurst[];
+  young_risky_accounts: RiskyAccount[];
+  duplicate_names: DuplicateName[];
+}
 
 interface SystemHealth {
   total_users: number;
@@ -38,6 +65,19 @@ export default function AdminSystemHealth() {
   const [realtimeStatus, setRealtimeStatus] = useState<"checking" | "ok" | "fail">("checking");
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [fraud, setFraud] = useState<FraudSignals | null>(null);
+  const [profileDialogUserId, setProfileDialogUserId] = useState<string | null>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+
+  const checkFraudSignals = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc("get_admin_fraud_signals");
+      if (error) throw error;
+      setFraud(data as unknown as FraudSignals);
+    } catch (error) {
+      console.error("Erro ao verificar sinais de fraude:", error);
+    }
+  }, []);
 
   const checkHealth = useCallback(async () => {
     try {
@@ -84,11 +124,12 @@ export default function AdminSystemHealth() {
     if (isAdmin) {
       checkHealth();
       checkRealtime();
+      checkFraudSignals();
 
       const interval = setInterval(checkHealth, 30000);
       return () => clearInterval(interval);
     }
-  }, [isAdmin, adminLoading, navigate, checkHealth, checkRealtime]);
+  }, [isAdmin, adminLoading, navigate, checkHealth, checkRealtime, checkFraudSignals]);
 
   const latencyStatus = dbLatencyMs === null ? "checking" : dbLatencyMs < 300 ? "ok" : dbLatencyMs < 1000 ? "warn" : "fail";
 
@@ -211,12 +252,94 @@ export default function AdminSystemHealth() {
           </CardContent>
         </Card>
 
+        {/* Antifraude */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5" /> Sinais de Fraude
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Baseado em padrões de comportamento (o app não rastreia IP/dispositivo hoje) — picos de cadastro, contas novas já denunciadas/punidas, e nomes duplicados.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div>
+              <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" /> Picos de cadastro (7 dias, 5+ contas/hora)
+              </p>
+              {!fraud || fraud.signup_bursts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum pico detectado.</p>
+              ) : (
+                <div className="space-y-1">
+                  {fraud.signup_bursts.map((b) => (
+                    <div key={b.hour} className="flex items-center justify-between text-sm border rounded-lg p-2">
+                      <span>{new Date(b.hour).toLocaleString("pt-BR")}</span>
+                      <Badge variant="destructive">{b.count} cadastros</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4" /> Contas novas (&lt;48h) já denunciadas ou punidas
+              </p>
+              {!fraud || fraud.young_risky_accounts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma conta suspeita.</p>
+              ) : (
+                <div className="space-y-1">
+                  {fraud.young_risky_accounts.map((acc) => (
+                    <button
+                      key={acc.id}
+                      onClick={() => { setProfileDialogUserId(acc.id); setShowProfileDialog(true); }}
+                      className="w-full flex items-center justify-between text-sm border rounded-lg p-2 hover:bg-accent transition-colors text-left"
+                    >
+                      <div>
+                        <p className="font-medium underline decoration-dotted underline-offset-2">{acc.full_name || acc.email}</p>
+                        <p className="text-xs text-muted-foreground">Cadastrada há {acc.hours_old}h</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {acc.reports_count > 0 && <Badge variant="outline" className="text-xs">{acc.reports_count} denúncia(s)</Badge>}
+                        {acc.punishments_count > 0 && <Badge variant="destructive" className="text-xs">{acc.punishments_count} punição(ões)</Badge>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                <Copy className="h-4 w-4" /> Nomes duplicados
+              </p>
+              {!fraud || fraud.duplicate_names.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum nome duplicado.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {fraud.duplicate_names.map((d) => (
+                    <Badge key={d.full_name} variant="outline" className="text-xs">
+                      {d.full_name} ({d.count}x)
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {lastChecked && (
           <p className="text-xs text-muted-foreground text-center">
             Última verificação: {lastChecked.toLocaleTimeString("pt-BR")} — atualiza automaticamente a cada 30s
           </p>
         )}
       </div>
+
+      <UserProfileDialog
+        userId={profileDialogUserId}
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+      />
     </AdminLayout>
   );
 }

@@ -10,6 +10,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Search, User, Image, Flag, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { UserProfileDialog } from "./UserProfileDialog";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface SearchResult {
   id: string;
@@ -25,6 +28,8 @@ export function GlobalSearch() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [profileDialogUserId, setProfileDialogUserId] = useState<string | null>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   useEffect(() => {
     // Atalho: Ctrl+K ou Cmd+K
@@ -57,6 +62,26 @@ export function GlobalSearch() {
     const allResults: SearchResult[] = [];
 
     try {
+      // Busca direta por ID (UUID exato — usuário, post ou denúncia)
+      if (UUID_REGEX.test(searchQuery.trim())) {
+        const id = searchQuery.trim();
+        const { data: userById } = await supabase
+          .from("users")
+          .select("id, full_name, email")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (userById) {
+          allResults.push({
+            id: userById.id,
+            type: "user",
+            title: userById.full_name || "Sem nome",
+            subtitle: `${userById.email || ""} — encontrado por ID`,
+            data: userById,
+          });
+        }
+      }
+
       // Buscar usuários
       const { data: users } = await supabase
         .from("users")
@@ -129,7 +154,8 @@ export function GlobalSearch() {
 
     // Navegar baseado no tipo
     if (result.type === "user") {
-      navigate(`/admin/users`);
+      setProfileDialogUserId(result.id);
+      setShowProfileDialog(true);
     } else if (result.type === "photo") {
       navigate(`/admin/photos`);
     } else if (result.type === "report") {
@@ -256,6 +282,12 @@ export function GlobalSearch() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <UserProfileDialog
+        userId={profileDialogUserId}
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+      />
     </>
   );
 }
