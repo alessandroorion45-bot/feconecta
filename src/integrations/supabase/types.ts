@@ -157,6 +157,8 @@ export type Database = {
           sent_by: string
           sent_by_email: string
           target_audience: string
+          target_user_email: string | null
+          target_user_id: string | null
           title: string
           total_sent: number | null
         }
@@ -169,6 +171,8 @@ export type Database = {
           sent_by: string
           sent_by_email: string
           target_audience: string
+          target_user_email?: string | null
+          target_user_id?: string | null
           title: string
           total_sent?: number | null
         }
@@ -181,6 +185,8 @@ export type Database = {
           sent_by?: string
           sent_by_email?: string
           target_audience?: string
+          target_user_email?: string | null
+          target_user_id?: string | null
           title?: string
           total_sent?: number | null
         }
@@ -6895,28 +6901,9 @@ export type Database = {
           notification_type: string | null
           sent_at: string | null
           target_audience: string | null
+          target_user_email: string | null
           title: string | null
           total_sent: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string | null
-          message?: string | null
-          notification_type?: string | null
-          sent_at?: string | null
-          target_audience?: string | null
-          title?: string | null
-          total_sent?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string | null
-          message?: string | null
-          notification_type?: string | null
-          sent_at?: string | null
-          target_audience?: string | null
-          title?: string | null
-          total_sent?: number | null
         }
         Relationships: []
       }
@@ -7305,6 +7292,16 @@ export type Database = {
           p_message: string
           p_notification_type: string
           p_target_audience: string
+          p_title: string
+        }
+        Returns: string
+      }
+      send_user_notification: {
+        Args: {
+          p_admin_id: string
+          p_message: string
+          p_notification_type: string
+          p_target_user_id: string
           p_title: string
         }
         Returns: string
