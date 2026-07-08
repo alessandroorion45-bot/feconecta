@@ -456,6 +456,7 @@ export default function AdminUsersEnhanced() {
         userId={profileDialogUserId}
         open={showProfileDialog}
         onOpenChange={setShowProfileDialog}
+        onActionTaken={loadUsers}
       />
 
       {/* Action Dialog */}

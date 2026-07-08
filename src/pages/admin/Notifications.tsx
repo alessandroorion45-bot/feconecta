@@ -26,9 +26,16 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Send, History } from "lucide-react";
+import { Bell, Send, History, Search, X, User as UserIcon } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface UserSearchResult {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
 
 interface NotificationHistory {
   id: string;
@@ -36,17 +43,18 @@ interface NotificationHistory {
   message: string;
   notification_type: string;
   target_audience: string;
+  target_user_email?: string | null;
   total_sent: number;
   sent_at: string | null;
   created_at: string;
 }
 
 export default function AdminNotifications() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { sendMassNotification, getNotificationHistory } = useAdminActions();
+  const { sendMassNotification, sendUserNotification, getNotificationHistory } = useAdminActions();
 
   const [history, setHistory] = useState<NotificationHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +65,31 @@ export default function AdminNotifications() {
   const [message, setMessage] = useState("");
   const [notificationType, setNotificationType] = useState("info");
   const [targetAudience, setTargetAudience] = useState("all");
+
+  // Modo "pessoa específica"
+  const [notifyMode, setNotifyMode] = useState<"mass" | "user">("mass");
+  const [userQuery, setUserQuery] = useState("");
+  const [userResults, setUserResults] = useState<UserSearchResult[]>([]);
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
+
+  useEffect(() => {
+    if (notifyMode !== "user" || selectedUser || userQuery.trim().length < 2) {
+      setUserResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearchingUsers(true);
+      const { data } = await supabase
+        .from("users")
+        .select("id, full_name, email")
+        .or(`full_name.ilike.%${userQuery}%,email.ilike.%${userQuery}%`)
+        .limit(8);
+      setUserResults(data || []);
+      setSearchingUsers(false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [userQuery, notifyMode, selectedUser]);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -96,19 +129,29 @@ export default function AdminNotifications() {
       return;
     }
 
+    if (notifyMode === "user" && !selectedUser) {
+      toast({
+        title: "Erro",
+        description: "Busque e selecione a pessoa que vai receber a notificação.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSending(true);
     try {
-      const success = await sendMassNotification(
-        title,
-        message,
-        notificationType,
-        targetAudience
-      );
+      const success =
+        notifyMode === "user" && selectedUser
+          ? await sendUserNotification(selectedUser.id, title, message, notificationType)
+          : await sendMassNotification(title, message, notificationType, targetAudience);
 
       if (success) {
         toast({
           title: "Sucesso!",
-          description: "Notificação enviada com sucesso!",
+          description:
+            notifyMode === "user"
+              ? `Notificação enviada para ${selectedUser?.full_name || selectedUser?.email}!`
+              : "Notificação enviada com sucesso!",
         });
 
         // Limpar form
@@ -116,6 +159,8 @@ export default function AdminNotifications() {
         setMessage("");
         setNotificationType("info");
         setTargetAudience("all");
+        setSelectedUser(null);
+        setUserQuery("");
 
         // Recarregar histórico
         loadHistory();
@@ -143,7 +188,7 @@ export default function AdminNotifications() {
       <div className="space-y-6">
         <AdminPageHeader
           title="Central de Notificações"
-          description="Enviar notificações em massa para os usuários"
+          description="Enviar notificações em massa ou pra uma pessoa específica"
         />
 
         <Tabs defaultValue="send">
@@ -186,24 +231,48 @@ export default function AdminNotifications() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Tipo</Label>
-                    <Select value={notificationType} onValueChange={setNotificationType}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="info">ℹ️ Informação</SelectItem>
-                        <SelectItem value="success">✅ Sucesso</SelectItem>
-                        <SelectItem value="warning">⚠️ Aviso</SelectItem>
-                        <SelectItem value="announcement">📢 Anúncio</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select value={notificationType} onValueChange={setNotificationType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="info">ℹ️ Informação</SelectItem>
+                      <SelectItem value="success">✅ Sucesso</SelectItem>
+                      <SelectItem value="warning">⚠️ Aviso</SelectItem>
+                      <SelectItem value="announcement">📢 Anúncio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Público-Alvo</Label>
+                  <div className="flex gap-2 mb-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={notifyMode === "mass" ? "default" : "outline"}
+                      onClick={() => {
+                        setNotifyMode("mass");
+                        setSelectedUser(null);
+                        setUserQuery("");
+                      }}
+                    >
+                      🌍 Grupo de usuários
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={notifyMode === "user" ? "default" : "outline"}
+                      onClick={() => setNotifyMode("user")}
+                    >
+                      <UserIcon className="h-4 w-4 mr-1" />
+                      Pessoa específica
+                    </Button>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Público-Alvo</Label>
+                  {notifyMode === "mass" ? (
                     <Select value={targetAudience} onValueChange={setTargetAudience}>
                       <SelectTrigger>
                         <SelectValue />
@@ -214,7 +283,65 @@ export default function AdminNotifications() {
                         <SelectItem value="new">🆕 Novos Usuários</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                  ) : selectedUser ? (
+                    <div className="flex items-center justify-between gap-2 p-2 border rounded-lg bg-accent/50">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <UserIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {selectedUser.full_name || "Sem nome"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{selectedUser.email}</p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        onClick={() => setSelectedUser(null)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por nome ou email..."
+                        value={userQuery}
+                        onChange={(e) => setUserQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                      {userQuery.trim().length >= 2 && (
+                        <div className="absolute z-10 mt-1 w-full border rounded-lg bg-popover shadow-md max-h-56 overflow-y-auto">
+                          {searchingUsers ? (
+                            <p className="p-3 text-sm text-muted-foreground">Buscando...</p>
+                          ) : userResults.length === 0 ? (
+                            <p className="p-3 text-sm text-muted-foreground">Nenhum usuário encontrado.</p>
+                          ) : (
+                            userResults.map((u) => (
+                              <button
+                                key={u.id}
+                                type="button"
+                                className="w-full text-left p-2 hover:bg-accent transition-colors flex items-center gap-2"
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setUserQuery("");
+                                }}
+                              >
+                                <UserIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{u.full_name || "Sem nome"}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <Button
@@ -266,7 +393,9 @@ export default function AdminNotifications() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm">
-                            {item.target_audience}
+                            {item.target_audience === "user"
+                              ? `👤 ${item.target_user_email || "usuário"}`
+                              : item.target_audience}
                           </TableCell>
                           <TableCell className="text-sm">
                             {item.sent_at

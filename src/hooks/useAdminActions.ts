@@ -159,6 +159,59 @@ export function useAdminActions() {
   };
 
   /**
+   * Enviar notificação pra um único usuário (busca no painel)
+   */
+  const sendUserNotification = async (
+    targetUserId: string,
+    title: string,
+    message: string,
+    notificationType: string
+  ): Promise<boolean> => {
+    if (!user?.id) return false;
+
+    const { error } = await supabase.rpc('send_user_notification', {
+      p_admin_id: user.id,
+      p_target_user_id: targetUserId,
+      p_title: title,
+      p_message: message,
+      p_notification_type: notificationType,
+    });
+
+    if (error) {
+      console.error('[useAdminActions] Error sending user notification:', error);
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
+   * Excluir o conteúdo de uma denúncia (hoje só posts têm exclusão real).
+   * Reaproveita delete_photo, que já sabe apagar de public.posts.
+   */
+  const deleteReportedContent = async (
+    contentType: string,
+    contentId: string,
+    reason?: string
+  ): Promise<boolean> => {
+    if (!user?.id) return false;
+
+    const { error } = await supabase.rpc('delete_photo', {
+      p_photo_id: contentId,
+      p_photo_type: contentType,
+      p_admin_id: user.id,
+      p_reason: reason ?? null,
+    });
+
+    if (error) {
+      console.error('[useAdminActions] Error deleting reported content:', error);
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
    * Buscar histórico de notificações
    */
   const getNotificationHistory = async (): Promise<NotificationHistory[]> => {
@@ -200,6 +253,8 @@ export function useAdminActions() {
     suspendUser,
     banUser,
     sendMassNotification,
+    sendUserNotification,
+    deleteReportedContent,
     getNotificationHistory,
     getAdminLogs,
   };

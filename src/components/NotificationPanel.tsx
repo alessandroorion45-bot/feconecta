@@ -10,18 +10,50 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { 
-  Bell, 
-  Check, 
-  UserPlus, 
-  MessageCircle, 
-  Heart, 
-  Users, 
+import {
+  Bell,
+  Check,
+  UserPlus,
+  MessageCircle,
+  Heart,
+  Users,
   Trophy,
   Star,
   ThumbsUp,
-  Sparkles
+  Sparkles,
+  Info,
+  CheckCircle2,
+  AlertTriangle,
+  Megaphone,
 } from "lucide-react";
+
+// Avisos do admin (Central de Notificações) usam um "type" com prefixo
+// admin_ (admin_info/admin_success/admin_warning/admin_announcement) pra
+// poder ter ícone/cor/destaque diferente de acordo com a gravidade —
+// pedido explícito: aviso do admin precisa chamar mais atenção que uma
+// notificação social comum.
+const ADMIN_NOTICE_STYLES: Record<string, { icon: JSX.Element; accent: string; bg: string }> = {
+  admin_info: {
+    icon: <Info className="h-4 w-4 text-blue-500" />,
+    accent: "border-l-blue-500",
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+  },
+  admin_success: {
+    icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+    accent: "border-l-green-500",
+    bg: "bg-green-50 dark:bg-green-950/30",
+  },
+  admin_warning: {
+    icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+    accent: "border-l-amber-500",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+  },
+  admin_announcement: {
+    icon: <Megaphone className="h-4 w-4 text-pink-500" />,
+    accent: "border-l-pink-500",
+    bg: "bg-pink-50 dark:bg-pink-950/30",
+  },
+};
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -31,6 +63,7 @@ const NotificationPanel = () => {
   const [open, setOpen] = useState(false);
 
   const getNotificationIcon = (type: string) => {
+    if (ADMIN_NOTICE_STYLES[type]) return ADMIN_NOTICE_STYLES[type].icon;
     switch (type) {
       case "friend_request":
         return <UserPlus className="h-4 w-4 text-blue-500" />;
@@ -167,12 +200,16 @@ const NotificationPanel = () => {
             </div>
           ) : (
             <div className="divide-y">
-              {notifications.map((notification) => (
+              {notifications.map((notification) => {
+                const adminStyle = ADMIN_NOTICE_STYLES[notification.type];
+                return (
                 <div
                   key={notification.id}
                   onClick={(e) => handleNotificationClick(notification, e)}
                   className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                    !notification.is_read ? "bg-primary/5" : ""
+                    adminStyle
+                      ? `border-l-4 ${adminStyle.accent} ${!notification.is_read ? adminStyle.bg : ""}`
+                      : !notification.is_read ? "bg-primary/5" : ""
                   }`}
                 >
                   <div className="flex gap-3">
@@ -211,7 +248,8 @@ const NotificationPanel = () => {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>

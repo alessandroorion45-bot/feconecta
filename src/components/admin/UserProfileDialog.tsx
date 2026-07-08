@@ -7,16 +7,31 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Crown, Award, Flag, ShieldAlert, MessageSquare, Loader2 } from "lucide-react";
+import { Crown, Award, Flag, ShieldAlert, MessageSquare, Loader2, AlertTriangle, UserX, Ban } from "lucide-react";
 import { getSeverityConfig } from "@/lib/adminSeverity";
+import { useAdminActions } from "@/hooks/useAdminActions";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserProfileDialogProps {
   userId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** chamado depois de advertir/suspender/banir com sucesso, pra quem abriu o dialog recarregar sua lista */
+  onActionTaken?: () => void;
 }
+
+type PunishAction = "warn" | "suspend" | "ban" | null;
 
 interface FullProfile {
   profile: {
@@ -63,16 +78,19 @@ interface FullProfile {
 }
 
 
-export function UserProfileDialog({ userId, open, onOpenChange }: UserProfileDialogProps) {
+export function UserProfileDialog({ userId, open, onOpenChange, onActionTaken }: UserProfileDialogProps) {
   const [data, setData] = useState<FullProfile | null>(null);
   const [loading, setLoading] = useState(false);
+  const { warnUser, suspendUser, banUser } = useAdminActions();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (!open || !userId) {
-      setData(null);
-      return;
-    }
+  const [punishAction, setPunishAction] = useState<PunishAction>(null);
+  const [punishReason, setPunishReason] = useState("");
+  const [punishDays, setPunishDays] = useState("7");
+  const [punishing, setPunishing] = useState(false);
 
+  const loadProfile = () => {
+    if (!userId) return;
     setLoading(true);
     supabase
       .rpc("get_user_full_profile", { p_user_id: userId })
@@ -84,9 +102,50 @@ export function UserProfileDialog({ userId, open, onOpenChange }: UserProfileDia
         }
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    if (!open || !userId) {
+      setData(null);
+      setPunishAction(null);
+      setPunishReason("");
+      return;
+    }
+    loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, userId]);
 
   const p = data?.profile;
+
+  const handleConfirmPunish = async () => {
+    if (!userId || !punishAction || !punishReason.trim()) return;
+    setPunishing(true);
+    try {
+      const success =
+        punishAction === "warn"
+          ? await warnUser(userId, punishReason)
+          : punishAction === "suspend"
+          ? await suspendUser(userId, punishReason, parseInt(punishDays, 10) || 7)
+          : await banUser(userId, punishReason);
+
+      if (success) {
+        toast({
+          title:
+            punishAction === "warn" ? "Usuário advertido" : punishAction === "suspend" ? "Usuário suspenso" : "Usuário banido",
+        });
+        setPunishAction(null);
+        setPunishReason("");
+        loadProfile();
+        onActionTaken?.();
+      } else {
+        throw new Error("Falha ao aplicar a ação");
+      }
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Não foi possível aplicar a ação.", variant: "destructive" });
+    } finally {
+      setPunishing(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,6 +179,72 @@ export function UserProfileDialog({ userId, open, onOpenChange }: UserProfileDia
               <Badge variant="outline">{getSeverityConfig(p.risk_level).emoji} {getSeverityConfig(p.risk_level).label} risco ({p.risk_score}/100)</Badge>
               <Badge variant="outline"><Award className="h-3 w-3 mr-1" />Nível {p.level} ({p.total_xp} XP)</Badge>
             </div>
+
+            {/* Ações de moderação — o "papel de juiz" do admin */}
+            <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
+              <Button
+                size="sm"
+                variant={punishAction === "warn" ? "default" : "outline"}
+                onClick={() => setPunishAction(punishAction === "warn" ? null : "warn")}
+              >
+                <AlertTriangle className="h-4 w-4 mr-1" />
+                Advertir
+              </Button>
+              <Button
+                size="sm"
+                variant={punishAction === "suspend" ? "default" : "outline"}
+                onClick={() => setPunishAction(punishAction === "suspend" ? null : "suspend")}
+              >
+                <UserX className="h-4 w-4 mr-1" />
+                Suspender temporariamente
+              </Button>
+              <Button
+                size="sm"
+                variant={punishAction === "ban" ? "destructive" : "outline"}
+                onClick={() => setPunishAction(punishAction === "ban" ? null : "ban")}
+              >
+                <Ban className="h-4 w-4 mr-1" />
+                Banir permanentemente
+              </Button>
+            </div>
+
+            {punishAction && (
+              <div className="p-3 border rounded-lg space-y-2">
+                <Textarea
+                  placeholder="Motivo (obrigatório)..."
+                  value={punishReason}
+                  onChange={(e) => setPunishReason(e.target.value)}
+                  rows={2}
+                />
+                {punishAction === "suspend" && (
+                  <Select value={punishDays} onValueChange={setPunishDays}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 dia</SelectItem>
+                      <SelectItem value="3">3 dias</SelectItem>
+                      <SelectItem value="7">7 dias</SelectItem>
+                      <SelectItem value="15">15 dias</SelectItem>
+                      <SelectItem value="30">30 dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={!punishReason.trim() || punishing}
+                    onClick={handleConfirmPunish}
+                  >
+                    {punishing ? "Aplicando..." : "Confirmar"}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setPunishAction(null)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Quick stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">

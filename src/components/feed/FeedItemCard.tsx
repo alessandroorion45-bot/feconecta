@@ -33,13 +33,18 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-const REPORT_REASONS = [
-  "Conteúdo ofensivo",
-  "Spam ou propaganda",
-  "Informação falsa",
-  "Conteúdo impróprio",
-  "Assédio",
-  "Outro",
+// Rótulo em pt-BR mapeado pra chave que o painel admin já reconhece
+// em getReportTypeLabel() (src/pages/admin/Reports.tsx) — antes esses
+// dois lugares usavam vocabulários diferentes e o admin via o texto
+// cru em vez do badge traduzido.
+const REPORT_REASONS: { label: string; key: string }[] = [
+  { label: "Conteúdo ofensivo", key: "offensive_content" },
+  { label: "Spam ou propaganda", key: "spam" },
+  { label: "Informação falsa", key: "other" },
+  { label: "Conteúdo impróprio", key: "inappropriate_language" },
+  { label: "Assédio", key: "harassment" },
+  { label: "Ataque à fé/religião", key: "religious_attack" },
+  { label: "Outro", key: "other" },
 ];
 
 interface FeedItemCardProps {
@@ -55,7 +60,7 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
   const [showComments, setShowComments] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
+  const [reportReason, setReportReason] = useState(REPORT_REASONS[0].label);
   const [reportDescription, setReportDescription] = useState("");
 
   const meta = FEED_TYPE_META[item.type];
@@ -138,11 +143,14 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
 
   const submitReport = async () => {
     if (!userId || !item.user_id) return;
+    const reasonKey = REPORT_REASONS.find((r) => r.label === reportReason)?.key || "other";
     const { error } = await supabase.from('user_reports').insert({
       reporter_id: userId,
       reported_user_id: item.user_id,
-      reason: reportReason,
+      reason: reasonKey,
       description: `[${meta.label}] ${item.title || item.content.slice(0, 100)} — ${reportDescription}`.slice(0, 500),
+      content_type: item.type,
+      content_id: item.id,
     });
     if (error) {
       toast({ title: "Erro", description: "Não foi possível enviar a denúncia", variant: "destructive" });
@@ -346,7 +354,7 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
               </SelectTrigger>
               <SelectContent>
                 {REPORT_REASONS.map(r => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                  <SelectItem key={r.label} value={r.label}>{r.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

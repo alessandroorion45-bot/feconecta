@@ -6,10 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Flag, Check, X, AlertCircle, User as UserIcon } from "lucide-react";
+import { Flag, Check, X, AlertCircle, User as UserIcon, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserProfileDialog } from "@/components/admin/UserProfileDialog";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { useAdminActions } from "@/hooks/useAdminActions";
 
 interface Report {
   id: string;
@@ -18,6 +19,7 @@ interface Report {
   status: string;
   resolution: string | null;
   content_type: string | null;
+  content_id: string | null;
   created_at: string;
   reporter_id: string;
   reporter_email: string | null;
@@ -32,7 +34,9 @@ export default function AdminReports() {
   const { isAdmin, hasPermission, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { deleteReportedContent } = useAdminActions();
   const [reports, setReports] = useState<Report[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("pending");
   const [profileDialogUserId, setProfileDialogUserId] = useState<string | null>(null);
@@ -123,6 +127,28 @@ export default function AdminReports() {
         description: error.message || "Não foi possível revisar denúncia.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteContent = async (report: Report) => {
+    if (!report.content_type || !report.content_id) return;
+    if (!hasPermission("reports.resolve")) {
+      toast({ title: "Sem permissão", description: "Você não tem permissão para excluir conteúdo.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm("Excluir este conteúdo permanentemente? Essa ação não pode ser desfeita.")) return;
+
+    setDeletingId(report.id);
+    try {
+      const success = await deleteReportedContent(report.content_type, report.content_id, `Denúncia: ${report.reason}`);
+      if (!success) throw new Error("Falha ao excluir conteúdo");
+
+      await handleReview(report.id, "approved", "content_removed");
+      toast({ title: "Conteúdo excluído", description: "O conteúdo denunciado foi removido." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Não foi possível excluir o conteúdo.", variant: "destructive" });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -248,24 +274,26 @@ export default function AdminReports() {
                 </button>
 
                 {report.status === "pending" && hasPermission("reports.resolve") && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={() =>
-                        handleReview(report.id, "approved", "content_removed")
-                      }
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Aprovar e Remover Conteúdo
-                    </Button>
+                  <div className="flex flex-wrap gap-2">
+                    {report.content_type === "post" && report.content_id && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={deletingId === report.id}
+                        onClick={() => handleDeleteContent(report)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        {deletingId === report.id ? "Excluindo..." : "Excluir Conteúdo"}
+                      </Button>
+                    )}
 
                     <Button
                       size="sm"
-                      variant="default"
-                      onClick={() => handleReview(report.id, "approved", "warned")}
+                      variant="outline"
+                      onClick={() => handleReview(report.id, "approved", "reviewed_no_deletion")}
                     >
-                      Aprovar e Advertir
+                      <Check className="h-4 w-4 mr-1" />
+                      Marcar como Procedente
                     </Button>
 
                     <Button
@@ -276,6 +304,10 @@ export default function AdminReports() {
                       <X className="h-4 w-4 mr-1" />
                       Rejeitar
                     </Button>
+
+                    <p className="w-full text-xs text-muted-foreground mt-1">
+                      Pra advertir, suspender ou banir o usuário, clique no card dele acima.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -296,6 +328,7 @@ export default function AdminReports() {
         userId={profileDialogUserId}
         open={showProfileDialog}
         onOpenChange={setShowProfileDialog}
+        onActionTaken={loadReports}
       />
     </AdminLayout>
   );
