@@ -14,6 +14,7 @@ interface DashboardStats {
   usersWeek: number;
   totalLogs: number;
   activePunishments: number;
+  pendingReports: number;
 }
 
 export default function AdminDashboard() {
@@ -26,6 +27,7 @@ export default function AdminDashboard() {
     usersWeek: 0,
     totalLogs: 0,
     activePunishments: 0,
+    pendingReports: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -67,6 +69,7 @@ export default function AdminDashboard() {
         usersWeek: data?.users_week || 0,
         totalLogs: data?.total_logs || 0,
         activePunishments: data?.active_punishments || 0,
+        pendingReports: data?.pending_reports || 0,
       });
 
       console.log('[Dashboard] Stats loaded successfully (REAL DATA)');
@@ -79,6 +82,7 @@ export default function AdminDashboard() {
         usersWeek: 0,
         totalLogs: 0,
         activePunishments: 0,
+        pendingReports: 0,
       });
     } finally {
       setLoading(false);
@@ -214,13 +218,13 @@ export default function AdminDashboard() {
             </button>
 
             <button
-              onClick={() => navigate("/admin/settings")}
+              onClick={() => navigate("/admin/automation")}
               className="p-4 border rounded-lg hover:bg-accent transition-colors text-left"
             >
               <Settings className="h-6 w-6 mb-2 text-muted-foreground" />
-              <h3 className="font-semibold">Configurações</h3>
+              <h3 className="font-semibold">Automação</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Ajustes da plataforma
+                Palavras proibidas e regras de moderação
               </p>
             </button>
           </CardContent>

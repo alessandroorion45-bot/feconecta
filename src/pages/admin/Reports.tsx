@@ -11,9 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Report {
   id: string;
-  report_type: string;
-  description: string;
+  reason: string;
+  description: string | null;
   status: string;
+  resolution: string | null;
+  content_type: string | null;
   created_at: string;
   reporter_id: string;
   reported_user_id: string;
@@ -41,13 +43,17 @@ export default function AdminReports() {
   const loadReports = async () => {
     try {
       let query = supabase
-        .from("reports")
+        .from("user_reports")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
 
-      if (filter !== "all") {
-        query = query.eq("status", filter);
+      if (filter === "pending") {
+        query = query.eq("status", "pending");
+      } else if (filter === "approved") {
+        query = query.eq("resolution", "approved");
+      } else if (filter === "rejected") {
+        query = query.eq("resolution", "rejected");
       }
 
       const { data, error } = await query;
@@ -124,14 +130,15 @@ export default function AdminReports() {
     return types[type] || type;
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (report: Report) => {
+    const displayStatus = report.status === "pending" ? "pending" : (report.resolution || "pending");
     const variants: Record<string, any> = {
       pending: { variant: "default", icon: AlertCircle, label: "Pendente" },
       approved: { variant: "default", icon: Check, label: "Aprovada" },
       rejected: { variant: "destructive", icon: X, label: "Rejeitada" },
     };
 
-    const config = variants[status] || variants.pending;
+    const config = variants[displayStatus] || variants.pending;
     const Icon = config.icon;
 
     return (
@@ -192,13 +199,13 @@ export default function AdminReports() {
                   <div className="space-y-1">
                     <CardTitle className="flex items-center gap-2">
                       <Flag className="h-5 w-5 text-red-600" />
-                      {getReportTypeLabel(report.report_type)}
+                      {getReportTypeLabel(report.reason)}
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
                       {new Date(report.created_at).toLocaleString("pt-BR")}
                     </p>
                   </div>
-                  {getStatusBadge(report.status)}
+                  {getStatusBadge(report)}
                 </div>
               </CardHeader>
               <CardContent>

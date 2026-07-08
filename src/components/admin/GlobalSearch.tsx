@@ -59,18 +59,18 @@ export function GlobalSearch() {
     try {
       // Buscar usuários
       const { data: users } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, users!inner(email)")
-        .or(`full_name.ilike.%${searchQuery}%,users.email.ilike.%${searchQuery}%`)
+        .from("users")
+        .select("id, full_name, email")
+        .or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
         .limit(5);
 
       if (users) {
-        users.forEach((user: any) => {
+        users.forEach((user) => {
           allResults.push({
-            id: user.user_id,
+            id: user.id,
             type: "user",
             title: user.full_name || "Sem nome",
-            subtitle: user.users?.email || "",
+            subtitle: user.email || "",
             data: user,
           });
         });
@@ -98,18 +98,18 @@ export function GlobalSearch() {
 
       // Buscar denúncias
       const { data: reports } = await supabase
-        .from("reports")
-        .select("id, report_type, description, status")
-        .or(`report_type.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
+        .from("user_reports")
+        .select("id, reason, description, status")
+        .or(`reason.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
         .limit(5);
 
       if (reports) {
-        reports.forEach((report: any) => {
+        reports.forEach((report) => {
           allResults.push({
             id: report.id,
             type: "report",
-            title: report.report_type || "Denúncia",
-            subtitle: report.description?.substring(0, 50) + "...",
+            title: report.reason || "Denúncia",
+            subtitle: (report.description?.substring(0, 50) || "") + "...",
             data: report,
           });
         });

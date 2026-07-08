@@ -144,7 +144,7 @@ export default function AdminUsersEnhanced() {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error("Usuário não autenticado");
 
-      let rpcName = "";
+      let rpcName: "warn_user" | "suspend_user" | "ban_user" = "warn_user";
       let params: any = {
         p_user_id: selectedUser.id,
         p_admin_id: currentUser.user.id,

@@ -2,7 +2,7 @@
 // REAÇÕES EXCLUSIVAS DA REDE DA FÉ
 // =====================================================
 
-export interface RedeD aFeReaction {
+export interface RedeDaFeReaction {
   id: string;
   emoji: string;
   label: string;
@@ -10,7 +10,7 @@ export interface RedeD aFeReaction {
   description: string;
 }
 
-export const REDE_DA_FE_REACTIONS: RedeD aFeReaction[] = [
+export const REDE_DA_FE_REACTIONS: RedeDaFeReaction[] = [
   {
     id: 'amem',
     emoji: '❤️',
@@ -87,7 +87,7 @@ export const REDE_DA_FE_REACTIONS: RedeD aFeReaction[] = [
 export const REACTIONS_MAP = REDE_DA_FE_REACTIONS.reduce((acc, reaction) => {
   acc[reaction.id] = reaction;
   return acc;
-}, {} as Record<string, RedeD aFeReaction>);
+}, {} as Record<string, RedeDaFeReaction>);
 
 // Reação padrão (quick reaction)
 export const DEFAULT_REACTION = REDE_DA_FE_REACTIONS[0]; // Amém

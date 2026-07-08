@@ -57,24 +57,22 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // SIMPLIFICADO: Verificar se é super_admin pelo email
-      // Evita queries desnecessárias que podem dar timeout
-      const adminEmails = ['alessandroibama40@gmail.com'];
-      const isSuperAdminEmail = adminEmails.includes(user.email || '');
+      const [{ data: role, error: roleError }, { data: perms, error: permsError }] = await Promise.all([
+        supabase.rpc('get_highest_role', { user_id: user.id }),
+        supabase.rpc('get_user_permissions', { input_user_id: user.id }),
+      ]);
 
-      if (isSuperAdminEmail) {
-        console.log('[AdminContext] Super admin detected by email');
-        setUserRole('super_admin');
-        setPermissions(['*']); // Todas as permissões
-        setLoading(false);
-        return;
+      if (roleError) throw roleError;
+
+      console.log('[AdminContext] Role loaded from user_roles:', role);
+      setUserRole((role as UserRole) || 'user');
+
+      if (permsError) {
+        console.error('[AdminContext] Erro ao carregar permissões:', permsError);
+        setPermissions([]);
+      } else {
+        setPermissions((perms || []).map((p: { permission_name: string }) => p.permission_name));
       }
-
-      // ✅ SIMPLIFICADO: Todos os outros usuários são "user" comum
-      // Tabelas user_roles e permissions não existem ainda
-      console.log('[AdminContext] Setting as regular user (no role tables)');
-      setUserRole('user');
-      setPermissions([]);
     } catch (error) {
       console.error("[AdminContext] Erro ao carregar permissões:", error);
       setUserRole("user"); // Fallback para user comum

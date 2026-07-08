@@ -104,19 +104,19 @@ export default function AdminThemes() {
 
     try {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url, current_theme, users!inner(email)")
-        .or(`full_name.ilike.%${query}%,users.email.ilike.%${query}%`)
+        .from("users")
+        .select("id, email, full_name, avatar_url")
+        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
         .limit(10);
 
       if (error) throw error;
 
-      const users = (data || []).map((item: any) => ({
-        id: item.user_id,
-        email: item.users?.email || "",
+      const users = (data || []).map((item) => ({
+        id: item.id,
+        email: item.email || "",
         full_name: item.full_name || "Sem nome",
         avatar_url: item.avatar_url || "",
-        current_theme: item.current_theme || "default",
+        current_theme: "default",
       }));
 
       setSearchResults(users);
@@ -156,16 +156,16 @@ export default function AdminThemes() {
         expiresAt.setDate(expiresAt.getDate() + days);
       }
 
-      // Conceder tema
-      const { error } = await supabase.from("user_themes").insert({
+      // Conceder tema (upsert: se o usuário já tinha o registro, apenas desbloqueia de novo)
+      const { error } = await supabase.from("user_themes").upsert({
         user_id: selectedUser.id,
-        theme_id: selectedTheme.id,
+        theme_key: selectedTheme.theme_key,
         granted_by: currentUser.user.id,
-        granted_at: new Date().toISOString(),
-        expires_at: expiresAt?.toISOString(),
-        is_active: true,
+        is_unlocked: true,
+        unlocked_at: new Date().toISOString(),
+        expires_at: expiresAt?.toISOString() || null,
         grant_reason: grantReason || "Concedido via admin panel",
-      });
+      }, { onConflict: "user_id,theme_key" });
 
       if (error) throw error;
 
@@ -206,8 +206,8 @@ export default function AdminThemes() {
     try {
       const { error } = await supabase
         .from("user_themes")
-        .update({ is_active: false })
-        .eq("theme_id", themeId)
+        .update({ is_active: false, is_unlocked: false })
+        .eq("theme_key", themeId)
         .eq("user_id", userId);
 
       if (error) throw error;
