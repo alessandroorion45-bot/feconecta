@@ -40,12 +40,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--theme-background)' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--theme-background)' }}>
       {/* Sidebar */}
-      <aside className="theme-sidebar fixed left-0 top-0 h-full w-64 border-r shadow-lg z-40">
+      <aside className="theme-sidebar fixed left-0 top-0 h-full w-64 border-r shadow-lg z-40 overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center gap-2 mb-8">
-            <Crown className="h-8 w-8 text-purple-600" />
+            <Crown className="h-8 w-8 text-purple-600 shrink-0" />
             <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Admin Panel
             </h1>
@@ -70,7 +70,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                       isActive && "bg-gradient-to-r from-purple-600 to-pink-600"
                     )}
                   >
-                    <Icon className="mr-2 h-4 w-4" />
+                    <Icon className="mr-2 h-4 w-4 shrink-0" />
                     {item.label}
                   </Button>
                 </Link>
@@ -80,7 +80,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <div className="pt-4 mt-4 border-t">
               <Link to="/">
                 <Button variant="outline" className="w-full justify-start">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  <ArrowLeft className="mr-2 h-4 w-4 shrink-0" />
                   Voltar ao App
                 </Button>
               </Link>
@@ -94,8 +94,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <AdminNotificationBell />
       </div>
 
-      {/* Main Content */}
-      <main className="ml-64 p-8">
+      {/* Main Content — largura travada em 100% - sidebar pra nunca estourar
+          a viewport e forçar scroll horizontal da página inteira (o que
+          "escondia" conteúdo atrás da sidebar fixa). Qualquer coisa larga
+          demais (tabela, card) rola só dentro de si mesma agora. */}
+      <main className="ml-64 w-[calc(100%-16rem)] min-w-0 max-w-[calc(100vw-16rem)] overflow-x-hidden p-8">
         {children}
       </main>
     </div>
