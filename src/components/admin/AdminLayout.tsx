@@ -3,12 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from "./GlobalSearch";
+import { AdminNotificationBell } from "./AdminNotificationBell";
 import {
   LayoutDashboard,
   Users,
   Flag,
   BarChart3,
-  Settings,
   ArrowLeft,
   Crown,
   Palette,
@@ -16,6 +16,7 @@ import {
   FileText,
   Bell,
   Bot,
+  HeartPulse,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -32,7 +33,7 @@ const navItems = [
   { path: "/admin/logs", icon: FileText, label: "Logs" },
   { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },
   { path: "/admin/automation", icon: Bot, label: "Automações" },
-  { path: "/admin/settings", icon: Settings, label: "Configurações" },
+  { path: "/admin/system", icon: HeartPulse, label: "Saúde do Sistema" },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
@@ -87,6 +88,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
         </div>
       </aside>
+
+      {/* Notification bell (fixo, visível em todas as páginas admin) */}
+      <div className="fixed top-6 right-8 z-50">
+        <AdminNotificationBell />
+      </div>
 
       {/* Main Content */}
       <main className="ml-64 p-8">

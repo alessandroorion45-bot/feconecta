@@ -60,6 +60,7 @@ const AdminLogs = lazy(() => import("./pages/admin/Logs"));
 const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
 const AdminAutomation = lazy(() => import("./pages/admin/Automation"));
 const AdminReports = lazy(() => import("./pages/admin/Reports"));
+const AdminSystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -120,6 +121,7 @@ const routes: RouteObject[] = [
   { path: "/admin/analytics", element: <ProtectedRoute><AdminAnalytics /></ProtectedRoute> },
   { path: "/admin/automation", element: <ProtectedRoute><AdminAutomation /></ProtectedRoute> },
   { path: "/admin/reports", element: <ProtectedRoute><AdminReports /></ProtectedRoute> },
+  { path: "/admin/system", element: <ProtectedRoute><AdminSystemHealth /></ProtectedRoute> },
 
   { path: "/user/:userId", element: <UserProfile /> },
   { path: "/friend/:friendId", element: <FriendDetails /> },
