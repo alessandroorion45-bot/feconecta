@@ -7071,6 +7071,7 @@ export type Database = {
         Returns: boolean
       }
       get_active_theme: { Args: { p_user_id: string }; Returns: string }
+      get_admin_fraud_signals: { Args: never; Returns: Json }
       get_admin_system_health: {
         Args: never
         Returns: {
