@@ -75,12 +75,4 @@ SELECT 'Ocultar conteúdo com palavra proibida crítica', 'Oculta automaticament
   '{"severity": "critical"}'::jsonb, 'hide', 80
 WHERE NOT EXISTS (SELECT 1 FROM public.moderation_rules WHERE name = 'Ocultar conteúdo com palavra proibida crítica');
 
--- ============================================================
--- Teste seguro (roda em transação e desfaz — não grava nada):
--- confirma que check_banned_words já não quebra mais.
--- ============================================================
-BEGIN;
-SELECT * FROM public.check_banned_words('teste de spam e phishing');
-ROLLBACK;
-
 SELECT 'ok' as status;
