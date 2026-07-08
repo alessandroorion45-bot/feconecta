@@ -27,7 +27,7 @@ export interface AdminContextType {
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,6 +89,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Espera o AuthContext terminar de resolver a sessão antes de decidir
+    // qualquer coisa aqui. Sem isso, "user" ainda está no estado inicial
+    // (null) no primeiro render, loadPermissions() conclui "sem admin"
+    // prematuramente (loading=false, isAdmin=false) e páginas que fazem
+    // `if (!isAdmin) navigate("/")` redirecionam antes da checagem real
+    // terminar — mesmo para o super_admin. Achado testando login com
+    // Playwright: /admin redirecionava pra /feed em toda navegação dura.
+    if (authLoading) return;
+
     const userKey = user?.id || 'no-user';
 
     // Guard: previne múltiplas chamadas para o mesmo user
@@ -99,7 +108,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     loadPermissionsRef.current = userKey;
     loadPermissions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Depende apenas do user.id, não do objeto user inteiro
+  }, [user?.id, authLoading]);
 
   const value: AdminContextType = {
     userRole,
