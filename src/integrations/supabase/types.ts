@@ -6941,6 +6941,29 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_reports_detailed: {
+        Row: {
+          content_id: string | null
+          content_type: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          reason: string | null
+          reported_user_email: string | null
+          reported_user_id: string | null
+          reported_user_name: string | null
+          reported_user_total_punishments: number | null
+          reported_user_total_reports: number | null
+          reporter_email: string | null
+          reporter_id: string | null
+          resolution: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
       admin_theme_stats: {
         Row: {
           description: string | null
@@ -7048,6 +7071,21 @@ export type Database = {
         Returns: boolean
       }
       get_active_theme: { Args: { p_user_id: string }; Returns: string }
+      get_admin_system_health: {
+        Args: never
+        Returns: {
+          active_connections: number
+          database_size_bytes: number
+          total_activity_logs: number
+          total_admin_logs: number
+          total_comments: number
+          total_photos: number
+          total_posts: number
+          total_prayers: number
+          total_reports: number
+          total_users: number
+        }[]
+      }
       get_available_themes: {
         Args: { p_user_id: string }
         Returns: {
@@ -7106,6 +7144,7 @@ export type Database = {
           verse_text: string
         }[]
       }
+      get_user_full_profile: { Args: { p_user_id: string }; Returns: Json }
       get_user_permissions: {
         Args: { input_user_id: string }
         Returns: {
