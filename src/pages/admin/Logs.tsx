@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/contexts/AdminContext";
-import { useAdminActions } from "@/hooks/useAdminActions";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -15,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AdminLog {
   id: string;
@@ -32,11 +33,39 @@ export default function AdminLogs() {
   const { user, isLoading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
-  const { getAdminLogs } = useAdminActions();
-
   const [logs, setLogs] = useState<AdminLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 30;
+
+  const loadLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from("admin_logs")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+      if (searchTerm.trim().length >= 2) {
+        query = query.or(
+          `admin_email.ilike.%${searchTerm}%,action_type.ilike.%${searchTerm}%,action_description.ilike.%${searchTerm}%`
+        );
+      }
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+
+      setLogs(data || []);
+      setTotalCount(count || 0);
+    } catch (error) {
+      console.error("Erro ao carregar logs:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, searchTerm]);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -47,25 +76,18 @@ export default function AdminLogs() {
     }
 
     loadLogs();
-  }, [isAdmin, authLoading, adminLoading, navigate]);
+  }, [isAdmin, authLoading, adminLoading, navigate, loadLogs]);
 
-  const loadLogs = async () => {
-    setLoading(true);
-    try {
-      const data = await getAdminLogs(200); // Buscar últimos 200 logs
-      setLogs(data);
-    } catch (error) {
-      console.error("Erro ao carregar logs:", error);
-    } finally {
-      setLoading(false);
+  // Busca reseta pra primeira página, com debounce
+  useEffect(() => {
+    if (page !== 0) {
+      setPage(0);
+      return;
     }
-  };
-
-  const filteredLogs = logs.filter((log) =>
-    log.admin_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.action_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.action_description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    const timeout = setTimeout(loadLogs, 350);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   const getActionBadgeVariant = (actionType: string) => {
     if (actionType.includes('ban') || actionType.includes('delete')) {
@@ -119,7 +141,7 @@ export default function AdminLogs() {
             <div className="flex items-center justify-between">
               <CardTitle>
                 <FileText className="h-5 w-5 inline mr-2" />
-                Últimas Ações ({filteredLogs.length})
+                Últimas Ações ({totalCount})
               </CardTitle>
             </div>
           </CardHeader>
@@ -141,7 +163,7 @@ export default function AdminLogs() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLogs.map((log) => (
+                  {logs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell className="text-sm">
                         {new Date(log.created_at).toLocaleString("pt-BR")}
@@ -175,9 +197,35 @@ export default function AdminLogs() {
               </Table>
             )}
 
-            {!loading && filteredLogs.length === 0 && (
+            {!loading && logs.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 Nenhum log encontrado.
+              </div>
+            )}
+
+            {totalCount > PAGE_SIZE && (
+              <div className="flex items-center justify-between pt-4 mt-4 border-t">
+                <p className="text-xs text-muted-foreground">
+                  Página {page + 1} de {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => (p + 1) * PAGE_SIZE < totalCount ? p + 1 : p)}
+                    disabled={(page + 1) * PAGE_SIZE >= totalCount}
+                  >
+                    Próxima <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

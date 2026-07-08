@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Image, Eye, EyeOff, Trash2, Flag, Check, AlertTriangle } from "lucide-react";
+import { Image, Eye, EyeOff, Trash2, Flag, Check, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Photo {
@@ -51,6 +51,9 @@ export default function AdminPhotos() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [actionType, setActionType] = useState<"hide" | "delete">("hide");
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 24;
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -61,10 +64,15 @@ export default function AdminPhotos() {
     if (isAdmin) {
       loadPhotos();
     }
-  }, [isAdmin, adminLoading, navigate, filter]);
+  }, [isAdmin, adminLoading, navigate, filter, page]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [filter]);
 
   const loadPhotos = async () => {
     try {
+      setLoading(true);
       let viewName = "admin_all_photos";
 
       if (filter === "recent") {
@@ -73,15 +81,16 @@ export default function AdminPhotos() {
         viewName = "admin_reported_photos";
       }
 
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from(viewName)
-        .select("*")
+        .select("*", { count: "exact" })
         .not("photo_url", "is", null)
-        .limit(100);
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
       if (error) throw error;
 
       setPhotos(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error("Erro ao carregar fotos:", error);
       toast({
@@ -260,7 +269,7 @@ export default function AdminPhotos() {
           <div className="flex gap-2">
             <Badge variant="outline" className="text-lg px-4 py-2">
               <Image className="h-4 w-4 mr-2" />
-              {photos.length} Fotos
+              {totalCount} Fotos
             </Badge>
           </div>
         </div>
@@ -394,6 +403,32 @@ export default function AdminPhotos() {
               <p>Nenhuma foto encontrada.</p>
             </CardContent>
           </Card>
+        )}
+
+        {totalCount > PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-xs text-muted-foreground">
+              Página {page + 1} de {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => (p + 1) * PAGE_SIZE < totalCount ? p + 1 : p)}
+                disabled={(page + 1) * PAGE_SIZE >= totalCount}
+              >
+                Próxima <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 
