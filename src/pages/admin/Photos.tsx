@@ -73,13 +73,8 @@ export default function AdminPhotos() {
   const loadPhotos = async () => {
     try {
       setLoading(true);
-      let viewName = "admin_all_photos";
-
-      if (filter === "recent") {
-        viewName = "admin_recent_photos";
-      } else if (filter === "reported") {
-        viewName = "admin_reported_photos";
-      }
+      const viewName: "admin_all_photos" | "admin_recent_photos" | "admin_reported_photos" =
+        filter === "recent" ? "admin_recent_photos" : filter === "reported" ? "admin_reported_photos" : "admin_all_photos";
 
       const { data, error, count } = await supabase
         .from(viewName)
