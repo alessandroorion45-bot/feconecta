@@ -37,14 +37,11 @@ import {
   AlertTriangle,
   Ban,
   Clock,
-  Shield,
-  User,
-  Calendar,
   Award,
-  Palette,
-  FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { UserProfileDialog } from "@/components/admin/UserProfileDialog";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -84,6 +81,9 @@ export default function AdminUsersEnhanced() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 25;
 
   // Selected user for actions
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -92,6 +92,10 @@ export default function AdminUsersEnhanced() {
   const [suspensionDays, setSuspensionDays] = useState("7");
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
+
+  // Ficha completa do usuário
+  const [profileDialogUserId, setProfileDialogUserId] = useState<string | null>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -102,15 +106,29 @@ export default function AdminUsersEnhanced() {
     if (isAdmin) {
       loadUsers();
     }
-  }, [isAdmin, adminLoading, navigate, filter]);
+  }, [isAdmin, adminLoading, navigate, filter, page]);
+
+  // Busca reseta para a primeira página, com debounce
+  useEffect(() => {
+    if (page !== 0) {
+      setPage(0);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      if (isAdmin) loadUsers();
+    }, 350);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   const loadUsers = async () => {
     try {
+      setLoading(true);
       let query = supabase
         .from("admin_user_profile")
-        .select("*")
+        .select("*", { count: "exact" })
         .order("registered_at", { ascending: false })
-        .limit(100);
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
       if (filter === "vip") {
         query = query.eq("is_vip", true);
@@ -122,11 +140,16 @@ export default function AdminUsersEnhanced() {
         query = query.in("risk_level", ["alto", "critico"]);
       }
 
-      const { data, error } = await query;
+      if (searchTerm.trim().length >= 2) {
+        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
       setUsers((data || []) as UserProfile[]);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
       toast({
@@ -201,13 +224,7 @@ export default function AdminUsersEnhanced() {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const search = searchTerm.toLowerCase();
-    return (
-      user.full_name?.toLowerCase().includes(search) ||
-      user.email?.toLowerCase().includes(search)
-    );
-  });
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   if (adminLoading || loading) {
     return (
@@ -267,7 +284,7 @@ export default function AdminUsersEnhanced() {
         {/* Users Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Usuários ({filteredUsers.length})</CardTitle>
+            <CardTitle>Usuários ({totalCount})</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -283,15 +300,21 @@ export default function AdminUsersEnhanced() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                      <button
+                        onClick={() => {
+                          setProfileDialogUserId(user.id);
+                          setShowProfileDialog(true);
+                        }}
+                        className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold shrink-0">
                           {user.full_name?.charAt(0) || "?"}
                         </div>
                         <div>
-                          <p className="font-medium">{user.full_name || "Sem nome"}</p>
+                          <p className="font-medium underline decoration-dotted underline-offset-2">{user.full_name || "Sem nome"}</p>
                           <div className="flex gap-1 mt-1">
                             {user.is_vip && (
                               <Badge variant="outline" className="text-xs">
@@ -311,7 +334,7 @@ export default function AdminUsersEnhanced() {
                             )}
                           </div>
                         </div>
-                      </div>
+                      </button>
                     </TableCell>
 
                     <TableCell className="text-sm text-muted-foreground">
@@ -402,14 +425,46 @@ export default function AdminUsersEnhanced() {
               </TableBody>
             </Table>
 
-            {filteredUsers.length === 0 && (
+            {users.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 Nenhum usuário encontrado.
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-xs text-muted-foreground">
+                  Página {page + 1} de {totalPages}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1}
+                  >
+                    Próxima <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <UserProfileDialog
+        userId={profileDialogUserId}
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+      />
 
       {/* Action Dialog */}
       <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>

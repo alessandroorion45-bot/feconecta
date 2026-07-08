@@ -6,8 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Flag, Check, X, AlertCircle } from "lucide-react";
+import { Flag, Check, X, AlertCircle, User as UserIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { UserProfileDialog } from "@/components/admin/UserProfileDialog";
 
 interface Report {
   id: string;
@@ -18,7 +19,12 @@ interface Report {
   content_type: string | null;
   created_at: string;
   reporter_id: string;
+  reporter_email: string | null;
   reported_user_id: string;
+  reported_user_email: string | null;
+  reported_user_name: string | null;
+  reported_user_total_reports: number;
+  reported_user_total_punishments: number;
 }
 
 export default function AdminReports() {
@@ -28,6 +34,8 @@ export default function AdminReports() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("pending");
+  const [profileDialogUserId, setProfileDialogUserId] = useState<string | null>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   useEffect(() => {
     if (!adminLoading && !hasPermission("reports.view")) {
@@ -43,7 +51,7 @@ export default function AdminReports() {
   const loadReports = async () => {
     try {
       let query = supabase
-        .from("user_reports")
+        .from("admin_reports_detailed")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
@@ -209,7 +217,37 @@ export default function AdminReports() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm mb-4">{report.description}</p>
+                <p className="text-sm mb-3">{report.description}</p>
+
+                <button
+                  onClick={() => {
+                    setProfileDialogUserId(report.reported_user_id);
+                    setShowProfileDialog(true);
+                  }}
+                  className="w-full flex items-center justify-between gap-3 p-3 mb-4 border rounded-lg hover:bg-accent transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium underline decoration-dotted underline-offset-2">
+                        {report.reported_user_name || report.reported_user_email || "Usuário denunciado"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Denunciado por: {report.reporter_email || "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Badge variant="outline" className="text-xs">
+                      {report.reported_user_total_reports} denúncia(s)
+                    </Badge>
+                    {report.reported_user_total_punishments > 0 && (
+                      <Badge variant="outline" className="text-xs text-orange-600">
+                        {report.reported_user_total_punishments} punição(ões)
+                      </Badge>
+                    )}
+                  </div>
+                </button>
 
                 {report.status === "pending" && hasPermission("reports.resolve") && (
                   <div className="flex gap-2">
@@ -255,6 +293,12 @@ export default function AdminReports() {
           )}
         </div>
       </div>
+
+      <UserProfileDialog
+        userId={profileDialogUserId}
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+      />
     </AdminLayout>
   );
 }
