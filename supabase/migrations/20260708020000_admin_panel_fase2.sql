@@ -9,6 +9,7 @@
 -- 1. Log de atividade do usuário (login/logout) — tabela já
 --    existia (user_activity_log) mas nunca era escrita.
 -- ============================================================
+DROP FUNCTION IF EXISTS public.log_user_activity(uuid, text, jsonb);
 CREATE OR REPLACE FUNCTION public.log_user_activity(
   p_user_id UUID,
   p_action_type TEXT,

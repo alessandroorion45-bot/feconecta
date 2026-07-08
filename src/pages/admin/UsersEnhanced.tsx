@@ -126,7 +126,7 @@ export default function AdminUsersEnhanced() {
 
       if (error) throw error;
 
-      setUsers(data || []);
+      setUsers((data || []) as UserProfile[]);
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
       toast({

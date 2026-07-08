@@ -6896,6 +6896,17 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_recent_activity: {
+        Row: {
+          action_type: string | null
+          actor: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          target_type: string | null
+        }
+        Relationships: []
+      }
       admin_recent_photos: {
         Row: {
           caption: string | null
@@ -6957,6 +6968,8 @@ export type Database = {
           last_sign_in_at: string | null
           level: number | null
           registered_at: string | null
+          risk_level: string | null
+          risk_score: number | null
           total_achievements: number | null
           total_comments: number | null
           total_posts: number | null
@@ -7194,7 +7207,7 @@ export type Database = {
       }
       log_user_activity: {
         Args: { p_action_type: string; p_details?: Json; p_user_id: string }
-        Returns: string
+        Returns: undefined
       }
       mark_messages_as_read: {
         Args: { conv_id: string; up_to_message_id: string }
