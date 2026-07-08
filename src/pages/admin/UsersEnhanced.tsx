@@ -63,8 +63,17 @@ interface UserProfile {
   total_suspensions: number;
   is_banned: boolean;
   registered_at: string;
-  last_seen_at: string;
+  last_sign_in_at: string;
+  risk_score: number;
+  risk_level: "baixo" | "medio" | "alto" | "critico";
 }
+
+const RISK_CONFIG: Record<UserProfile["risk_level"], { label: string; emoji: string; className: string }> = {
+  baixo: { label: "Baixo risco", emoji: "🟢", className: "text-green-700 dark:text-green-400 border-green-300 dark:border-green-800" },
+  medio: { label: "Médio risco", emoji: "🟡", className: "text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800" },
+  alto: { label: "Alto risco", emoji: "🟠", className: "text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-800" },
+  critico: { label: "Crítico", emoji: "🔴", className: "text-red-700 dark:text-red-400 border-red-300 dark:border-red-800" },
+};
 
 export default function AdminUsersEnhanced() {
   const { isAdmin, hasPermission, loading: adminLoading } = useAdmin();
@@ -109,6 +118,8 @@ export default function AdminUsersEnhanced() {
         query = query.eq("is_banned", true);
       } else if (filter === "warned") {
         query = query.gt("total_warnings", 0);
+      } else if (filter === "risk") {
+        query = query.in("risk_level", ["alto", "critico"]);
       }
 
       const { data, error } = await query;
@@ -246,6 +257,7 @@ export default function AdminUsersEnhanced() {
                   <SelectItem value="vip">Apenas VIP</SelectItem>
                   <SelectItem value="warned">Com Advertências</SelectItem>
                   <SelectItem value="banned">Banidos</SelectItem>
+                  <SelectItem value="risk">Alto Risco / Crítico</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -265,6 +277,7 @@ export default function AdminUsersEnhanced() {
                   <TableHead>Email</TableHead>
                   <TableHead>Nível</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Risco</TableHead>
                   <TableHead>Atividade</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -326,9 +339,19 @@ export default function AdminUsersEnhanced() {
                       </div>
                     </TableCell>
 
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${RISK_CONFIG[user.risk_level]?.className || ""}`}
+                        title={`Pontuação: ${user.risk_score}/100 — advertências, suspensões, denúncias aprovadas e idade da conta. A decisão final é sempre do administrador.`}
+                      >
+                        {RISK_CONFIG[user.risk_level]?.emoji} {RISK_CONFIG[user.risk_level]?.label || "—"}
+                      </Badge>
+                    </TableCell>
+
                     <TableCell className="text-xs text-muted-foreground">
-                      {user.last_seen_at
-                        ? new Date(user.last_seen_at).toLocaleDateString("pt-BR")
+                      {user.last_sign_in_at
+                        ? new Date(user.last_sign_in_at).toLocaleDateString("pt-BR")
                         : "Nunca"}
                     </TableCell>
 

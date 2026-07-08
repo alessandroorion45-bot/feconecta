@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const currentUserIdRef = useRef<string | null>(null);
 
   // Initialize auth state with Supabase session and react to changes.
   useEffect(() => {
@@ -63,14 +64,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.error('[AuthContext] Error getting session:', error.message);
           setSession(null);
           setUser(null);
+          currentUserIdRef.current = null;
         } else if (currentSession) {
           console.log('[AuthContext] Session found for user:', currentSession.user.email);
           setSession(currentSession);
           setUser(currentSession.user);
+          currentUserIdRef.current = currentSession.user.id;
         } else {
           console.log('[AuthContext] No session found');
           setSession(null);
           setUser(null);
+          currentUserIdRef.current = null;
         }
       } catch (error: any) {
         console.error('[AuthContext] Unexpected error:', error);
@@ -101,14 +105,46 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log('[AuthContext] Session updated:', event);
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        currentUserIdRef.current = newSession?.user?.id ?? null;
+
+        if (event === 'SIGNED_IN' && newSession?.user) {
+          const userId = newSession.user.id;
+          // Deferido com setTimeout: nunca fazer await de chamadas Supabase
+          // dentro do callback de onAuthStateChange (causa deadlock do lock
+          // interno de auth — ver memória "project-deadlock-supabase").
+          setTimeout(() => {
+            supabase.rpc('log_user_activity', {
+              p_user_id: userId,
+              p_action_type: 'login',
+              p_details: null,
+            }).then(({ error }) => {
+              if (error) console.error('[AuthContext] Erro ao logar login:', error);
+            });
+          }, 0);
+        }
       } else if (event === 'SIGNED_OUT') {
         console.warn('[AuthContext] User signed out - event triggered');
+        const loggedOutUserId = currentUserIdRef.current;
         setSession(null);
         setUser(null);
+        currentUserIdRef.current = null;
+
+        if (loggedOutUserId) {
+          setTimeout(() => {
+            supabase.rpc('log_user_activity', {
+              p_user_id: loggedOutUserId,
+              p_action_type: 'logout',
+              p_details: null,
+            }).then(({ error }) => {
+              if (error) console.error('[AuthContext] Erro ao logar logout:', error);
+            });
+          }, 0);
+        }
       } else if (event === 'INITIAL_SESSION') {
         console.log('[AuthContext] Initial session loaded');
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        currentUserIdRef.current = newSession?.user?.id ?? null;
       }
     });
 

@@ -17,6 +17,15 @@ interface DashboardStats {
   pendingReports: number;
 }
 
+interface ActivityItem {
+  id: string;
+  actor: string;
+  action_type: string;
+  description: string;
+  target_type: string | null;
+  created_at: string;
+}
+
 export default function AdminDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
@@ -30,6 +39,8 @@ export default function AdminDashboard() {
     pendingReports: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
     // Aguardar verificação de autenticação e permissões
@@ -43,7 +54,44 @@ export default function AdminDashboard() {
 
     // Carregar estatísticas
     loadStats();
+    loadActivity();
+
+    // Tempo real: qualquer novo log admin, denúncia ou cadastro
+    // atualiza o dashboard automaticamente, sem precisar recarregar.
+    const channel = supabase
+      .channel('admin-dashboard-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'admin_logs' }, () => {
+        loadStats();
+        loadActivity();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_reports' }, () => {
+        loadStats();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, () => {
+        loadStats();
+      })
+      .subscribe((status) => {
+        setIsLive(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isAdmin, authLoading, adminLoading, navigate]);
+
+  const loadActivity = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_recent_activity')
+        .select('*')
+        .limit(15);
+
+      if (error) throw error;
+      setActivity(data || []);
+    } catch (error) {
+      console.error('[Dashboard] Erro ao carregar atividade recente:', error);
+    }
+  };
 
   const loadStats = async () => {
     console.log('[Dashboard] loadStats started');
@@ -125,13 +173,19 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Dashboard Administrativo
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Visão geral da plataforma FeConecta Premium
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Dashboard Administrativo
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Visão geral da plataforma FeConecta Premium
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className={`h-2 w-2 rounded-full ${isLive ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
+            {isLive ? "Ao vivo" : "Conectando..."}
+          </div>
         </div>
 
         {/* Metrics Grid */}
@@ -233,12 +287,34 @@ export default function AdminDashboard() {
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>Atividade Recente</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Atividade Recente
+              {isLive && <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Sistema de logs em tempo real será implementado aqui.
-            </p>
+            {activity.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma ação administrativa registrada ainda.</p>
+            ) : (
+              <div className="space-y-3">
+                {activity.map((item) => (
+                  <div key={item.id} className="flex items-start justify-between gap-4 border-b pb-2 last:border-0 last:pb-0">
+                    <div>
+                      <p className="text-sm">
+                        <span className="font-medium">{item.actor}</span>{" "}
+                        <span className="text-muted-foreground">{item.description}</span>
+                      </p>
+                      {item.target_type && (
+                        <p className="text-xs text-muted-foreground">Alvo: {item.target_type}</p>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(item.created_at).toLocaleString("pt-BR")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

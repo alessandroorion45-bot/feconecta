@@ -14,9 +14,22 @@ import {
   Crown,
   Trophy,
   Palette,
-  Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  BarChart,
+  Bar,
+  Cell,
+} from "recharts";
+
+const CHART_COLORS = ["#a855f7", "#8b5cf6", "#6366f1", "#3b82f6", "#0ea5e9"];
 
 interface AnalyticsSummary {
   total_users: number;
@@ -41,7 +54,7 @@ interface AnalyticsSummary {
 interface UserGrowth {
   date: string;
   new_users: number;
-  total_users: number;
+  total_users?: number;
 }
 
 interface TopTheme {
@@ -243,35 +256,38 @@ export default function AdminAnalytics() {
 
           {/* TAB: Crescimento */}
           <TabsContent value="growth" className="space-y-6">
-            {/* User Growth Chart (Simple Bars) */}
+            {/* User Growth Chart */}
             <Card>
               <CardHeader>
                 <CardTitle>Crescimento de Usuários (Últimos 30 dias)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {userGrowth.slice(0, 10).map((item) => (
-                    <div key={item.date} className="flex items-center gap-4">
-                      <div className="text-xs text-muted-foreground w-24">
-                        {new Date(item.date).toLocaleDateString("pt-BR")}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="bg-blue-500 h-6 rounded transition-all"
-                            style={{
-                              width: `${Math.min(
-                                (item.new_users / Math.max(...userGrowth.map((u) => u.new_users))) * 100,
-                                100
-                              )}%`,
-                            }}
-                          />
-                          <span className="text-sm font-medium">{item.new_users}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {userGrowth.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem dados de crescimento ainda.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={[...userGrowth].reverse()}>
+                      <defs>
+                        <linearGradient id="growthGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={(d) => new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                        fontSize={12}
+                      />
+                      <YAxis fontSize={12} allowDecimals={false} />
+                      <Tooltip
+                        labelFormatter={(d) => new Date(d as string).toLocaleDateString("pt-BR")}
+                        formatter={(value: number) => [value, "Novos usuários"]}
+                      />
+                      <Area type="monotone" dataKey="new_users" stroke="#a855f7" fill="url(#growthGradient)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
 
@@ -364,33 +380,24 @@ export default function AdminAnalytics() {
                   Top 5 Temas Mais Usados
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {topThemes.map((theme, index) => (
-                  <div key={theme.theme_name} className="flex items-center gap-4">
-                    <Badge className="w-8 h-8 flex items-center justify-center">
-                      {index + 1}
-                    </Badge>
-                    <div className="flex-1">
-                      <p className="font-medium">{theme.theme_name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 bg-muted rounded-full h-2">
-                          <div
-                            className="bg-purple-500 h-2 rounded-full transition-all"
-                            style={{
-                              width: `${Math.min(
-                                (theme.users_using / Math.max(...topThemes.map((t) => t.users_using))) * 100,
-                                100
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {theme.users_using} usuários
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <CardContent>
+                {topThemes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem dados de temas ainda.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={topThemes} layout="vertical" margin={{ left: 24 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} horizontal={false} />
+                      <XAxis type="number" fontSize={12} allowDecimals={false} />
+                      <YAxis type="category" dataKey="theme_name" fontSize={12} width={140} />
+                      <Tooltip formatter={(value: number) => [value, "Usuários"]} />
+                      <Bar dataKey="users_using" radius={[0, 6, 6, 0]}>
+                        {topThemes.map((_, index) => (
+                          <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -443,38 +450,24 @@ export default function AdminAnalytics() {
                   Top 5 Conquistas Mais Desbloqueadas
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {topAchievements.map((achievement, index) => (
-                  <div key={achievement.name} className="flex items-center gap-4">
-                    <Badge
-                      variant="outline"
-                      className="w-8 h-8 flex items-center justify-center"
-                    >
-                      {index + 1}
-                    </Badge>
-                    <div className="flex-1">
-                      <p className="font-medium">{achievement.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 bg-muted rounded-full h-2">
-                          <div
-                            className="bg-yellow-500 h-2 rounded-full transition-all"
-                            style={{
-                              width: `${Math.min(
-                                (achievement.unlock_count /
-                                  Math.max(...topAchievements.map((a) => a.unlock_count))) *
-                                  100,
-                                100
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {achievement.unlock_count} desbloques
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <CardContent>
+                {topAchievements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem conquistas desbloqueadas ainda.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={topAchievements} layout="vertical" margin={{ left: 24 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} horizontal={false} />
+                      <XAxis type="number" fontSize={12} allowDecimals={false} />
+                      <YAxis type="category" dataKey="name" fontSize={12} width={160} />
+                      <Tooltip formatter={(value: number) => [value, "Desbloqueios"]} />
+                      <Bar dataKey="unlock_count" radius={[0, 6, 6, 0]}>
+                        {topAchievements.map((_, index) => (
+                          <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
