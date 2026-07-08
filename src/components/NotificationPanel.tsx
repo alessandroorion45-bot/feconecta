@@ -176,18 +176,26 @@ const NotificationPanel = () => {
                   }`}
                 >
                   <div className="flex gap-3">
-                    <UserAvatar
-                      src={notification.profiles?.avatar_url}
-                      fallback={notification.profiles?.username || "?"}
-                      size="xs"
-                    />
+                    {notification.actor_id ? (
+                      <UserAvatar
+                        src={notification.profiles?.avatar_url}
+                        fallback={notification.profiles?.username || "?"}
+                        size="xs"
+                      />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Bell className="h-3 w-3 text-primary" />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start gap-2">
                         {getNotificationIcon(notification.type)}
                         <p className="text-sm">
-                          <span className="font-semibold">
-                            {notification.profiles?.username || "Alguém"}
-                          </span>{" "}
+                          {notification.actor_id && (
+                            <span className="font-semibold">
+                              {notification.profiles?.username || "Alguém"}
+                            </span>
+                          )}{" "}
                           {notification.content}
                         </p>
                       </div>
