@@ -68,6 +68,7 @@ BEGIN
         WHERE full_name IS NOT NULL AND full_name != ''
         GROUP BY full_name
         HAVING COUNT(*) > 1
+        ORDER BY COUNT(*) DESC
         LIMIT 10
       ) dups
     )
