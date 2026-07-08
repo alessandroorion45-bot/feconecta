@@ -380,24 +380,36 @@ export type Database = {
       }
       banned_words: {
         Row: {
+          auto_action: string
           created_at: string
+          created_by: string | null
           id: string
           is_active: boolean
+          pattern: string | null
           severity: string
+          updated_at: string
           word: string
         }
         Insert: {
+          auto_action?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
+          pattern?: string | null
           severity?: string
+          updated_at?: string
           word: string
         }
         Update: {
+          auto_action?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
+          pattern?: string | null
           severity?: string
+          updated_at?: string
           word?: string
         }
         Relationships: []
@@ -3268,28 +3280,40 @@ export type Database = {
       }
       moderation_rules: {
         Row: {
+          action_params: Json | null
           action_type: string
           created_at: string
+          description: string | null
           id: string
           is_active: boolean
           name: string
+          priority: number
           trigger_type: string
+          trigger_value: Json
         }
         Insert: {
+          action_params?: Json | null
           action_type: string
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean
           name: string
+          priority?: number
           trigger_type: string
+          trigger_value?: Json
         }
         Update: {
+          action_params?: Json | null
           action_type?: string
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          priority?: number
           trigger_type?: string
+          trigger_value?: Json
         }
         Relationships: []
       }
