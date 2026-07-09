@@ -21,7 +21,8 @@ ALTER TABLE public.profile_photos ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT
 -- ------------------------------------------------------------
 -- 2. admin_all_photos: exclui vídeo, expõe is_hidden/moderation_status
 -- ------------------------------------------------------------
-CREATE OR REPLACE VIEW public.admin_all_photos AS
+DROP VIEW IF EXISTS public.admin_all_photos CASCADE;
+CREATE VIEW public.admin_all_photos AS
 SELECT * FROM (
   SELECT
     p.id,
@@ -81,7 +82,8 @@ SELECT * FROM (
 -- ------------------------------------------------------------
 -- 3. Views de vídeos (novo) — une posts de vídeo + public.user_videos
 -- ------------------------------------------------------------
-CREATE OR REPLACE VIEW public.admin_all_videos AS
+DROP VIEW IF EXISTS public.admin_all_videos CASCADE;
+CREATE VIEW public.admin_all_videos AS
 SELECT * FROM (
   SELECT
     p.id,
