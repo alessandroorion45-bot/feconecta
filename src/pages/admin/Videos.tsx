@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ContentModerationGrid } from "@/components/admin/ContentModerationGrid";
 
-export default function AdminPhotos() {
+export default function AdminVideos() {
   const { isLoading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
@@ -22,10 +22,10 @@ export default function AdminPhotos() {
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader
-          title="Gerenciador de Fotos"
-          description="Todas as fotos publicadas pelos usuários, com moderação em tempo real"
+          title="Gerenciador de Vídeos"
+          description="Todos os vídeos publicados pelos usuários, com moderação em tempo real"
         />
-        <ContentModerationGrid kind="photo" viewName="admin_all_photos" typeColumn="photo_type" urlColumn="photo_url" />
+        <ContentModerationGrid kind="video" viewName="admin_all_videos" typeColumn="video_type" urlColumn="video_url" />
       </div>
     </AdminLayout>
   );

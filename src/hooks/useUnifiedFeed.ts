@@ -47,7 +47,7 @@ function applyCommon(query: any, ctx: FetchCtx, dateCol = 'created_at', userCol 
 }
 
 async function fetchPosts(ctx: FetchCtx): Promise<FeedItem[]> {
-  let q = sb.from('posts').select('*');
+  let q = sb.from('posts').select('*').eq('is_hidden', false);
   if (ctx.search) q = q.ilike('content', `%${ctx.search}%`);
   const { data, error } = await applyCommon(q, ctx);
   if (error) throw error;

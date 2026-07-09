@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UserProfileDialog } from "@/components/admin/UserProfileDialog";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useAdminActions } from "@/hooks/useAdminActions";
+import { getReportReasonLabel } from "@/lib/reportReasons";
 
 interface Report {
   id: string;
@@ -152,18 +153,7 @@ export default function AdminReports() {
     }
   };
 
-  const getReportTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      spam: "Spam",
-      offensive_content: "Conteúdo Ofensivo",
-      harassment: "Assédio",
-      fake_profile: "Perfil Falso",
-      inappropriate_language: "Linguagem Inapropriada",
-      religious_attack: "Ataque Religioso",
-      other: "Outro",
-    };
-    return types[type] || type;
-  };
+  const getReportTypeLabel = getReportReasonLabel;
 
   const getStatusBadge = (report: Report) => {
     const displayStatus = report.status === "pending" ? "pending" : (report.resolution || "pending");

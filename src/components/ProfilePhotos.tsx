@@ -311,10 +311,14 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
   const loadPhotos = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // any: encadear mais um .eq() aqui faz o TS explodir em "type
+      // instantiation excessively deep" contra o schema gerado.
+      const sb: any = supabase;
+      const { data, error } = await sb
         .from("profile_photos")
         .select("*")
         .eq("user_id", userId)
+        .eq("is_hidden", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

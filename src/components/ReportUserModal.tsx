@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, Send, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { REPORT_REASONS } from "@/lib/reportReasons";
 
 interface ReportUserModalProps {
   open: boolean;
@@ -22,16 +23,6 @@ interface ReportUserModalProps {
   reportedUserName: string;
   currentUserId: string;
 }
-
-const REPORT_REASONS = [
-  { value: "spam", label: "Spam ou conteúdo indesejado" },
-  { value: "harassment", label: "Assédio ou bullying" },
-  { value: "inappropriate", label: "Conteúdo impróprio" },
-  { value: "fake_profile", label: "Perfil falso ou impostor" },
-  { value: "hate_speech", label: "Discurso de ódio" },
-  { value: "scam", label: "Golpe ou fraude" },
-  { value: "other", label: "Outro motivo" },
-];
 
 export const ReportUserModal = ({
   open,
@@ -135,18 +126,18 @@ export const ReportUserModal = ({
                   <RadioGroup value={reason} onValueChange={setReason} className="space-y-2">
                     {REPORT_REASONS.map((r) => (
                       <motion.div
-                        key={r.value}
+                        key={r.key}
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
                         className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                          reason === r.value
+                          reason === r.key
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/50 hover:bg-muted/50"
                         }`}
-                        onClick={() => setReason(r.value)}
+                        onClick={() => setReason(r.key)}
                       >
-                        <RadioGroupItem value={r.value} id={r.value} />
-                        <Label htmlFor={r.value} className="cursor-pointer flex-1">
+                        <RadioGroupItem value={r.key} id={r.key} />
+                        <Label htmlFor={r.key} className="cursor-pointer flex-1">
                           {r.label}
                         </Label>
                       </motion.div>
