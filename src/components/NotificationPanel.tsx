@@ -25,13 +25,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   Megaphone,
+  UserX,
+  Ban,
 } from "lucide-react";
 
-// Avisos do admin (Central de Notificações) usam um "type" com prefixo
-// admin_ (admin_info/admin_success/admin_warning/admin_announcement) pra
-// poder ter ícone/cor/destaque diferente de acordo com a gravidade —
-// pedido explícito: aviso do admin precisa chamar mais atenção que uma
-// notificação social comum.
+// Avisos do admin (Central de Notificações + punições) usam um "type"
+// com prefixo admin_ (admin_info/admin_success/admin_warning/
+// admin_announcement/admin_suspend/admin_ban) pra poder ter ícone/cor/
+// destaque diferente de acordo com a gravidade — pedido explícito: aviso
+// do admin precisa chamar mais atenção que uma notificação social comum.
 const ADMIN_NOTICE_STYLES: Record<string, { icon: JSX.Element; accent: string; bg: string }> = {
   admin_info: {
     icon: <Info className="h-4 w-4 text-blue-500" />,
@@ -52,6 +54,16 @@ const ADMIN_NOTICE_STYLES: Record<string, { icon: JSX.Element; accent: string; b
     icon: <Megaphone className="h-4 w-4 text-pink-500" />,
     accent: "border-l-pink-500",
     bg: "bg-pink-50 dark:bg-pink-950/30",
+  },
+  admin_suspend: {
+    icon: <UserX className="h-4 w-4 text-orange-500" />,
+    accent: "border-l-orange-500",
+    bg: "bg-orange-50 dark:bg-orange-950/30",
+  },
+  admin_ban: {
+    icon: <Ban className="h-4 w-4 text-red-600" />,
+    accent: "border-l-red-600",
+    bg: "bg-red-50 dark:bg-red-950/30",
   },
 };
 import { formatDistanceToNow } from "date-fns";
