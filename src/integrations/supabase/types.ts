@@ -3802,6 +3802,7 @@ export type Database = {
           content: string | null
           created_at: string | null
           id: string
+          is_hidden: boolean
           likes_count: number | null
           media_type: string | null
           media_url: string | null
@@ -3813,6 +3814,7 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           id?: string
+          is_hidden?: boolean
           likes_count?: number | null
           media_type?: string | null
           media_url?: string | null
@@ -3824,6 +3826,7 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           id?: string
+          is_hidden?: boolean
           likes_count?: number | null
           media_type?: string | null
           media_url?: string | null
@@ -4160,6 +4163,7 @@ export type Database = {
           compression_ratio: number | null
           created_at: string | null
           id: string
+          is_hidden: boolean
           likes_count: number | null
           location: string | null
           medium_url: string | null
@@ -4177,6 +4181,7 @@ export type Database = {
           compression_ratio?: number | null
           created_at?: string | null
           id?: string
+          is_hidden?: boolean
           likes_count?: number | null
           location?: string | null
           medium_url?: string | null
@@ -4194,6 +4199,7 @@ export type Database = {
           compression_ratio?: number | null
           created_at?: string | null
           id?: string
+          is_hidden?: boolean
           likes_count?: number | null
           location?: string | null
           medium_url?: string | null
@@ -6828,14 +6834,38 @@ export type Database = {
           comments_count: number | null
           created_at: string | null
           id: string | null
+          is_hidden: boolean | null
           likes_count: number | null
           moderation_status: string | null
           pending_reports: number | null
           photo_type: string | null
           photo_url: string | null
+          total_reports: number | null
           user_email: string | null
           user_id: string | null
           user_name: string | null
+        }
+        Relationships: []
+      }
+      admin_all_videos: {
+        Row: {
+          caption: string | null
+          comments_count: number | null
+          created_at: string | null
+          duration_seconds: number | null
+          id: string | null
+          is_hidden: boolean | null
+          likes_count: number | null
+          moderation_status: string | null
+          pending_reports: number | null
+          thumbnail_url: string | null
+          total_reports: number | null
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+          video_type: string | null
+          video_url: string | null
+          views_count: number | null
         }
         Relationships: []
       }
@@ -6924,14 +6954,38 @@ export type Database = {
           comments_count: number | null
           created_at: string | null
           id: string | null
+          is_hidden: boolean | null
           likes_count: number | null
           moderation_status: string | null
           pending_reports: number | null
           photo_type: string | null
           photo_url: string | null
+          total_reports: number | null
           user_email: string | null
           user_id: string | null
           user_name: string | null
+        }
+        Relationships: []
+      }
+      admin_recent_videos: {
+        Row: {
+          caption: string | null
+          comments_count: number | null
+          created_at: string | null
+          duration_seconds: number | null
+          id: string | null
+          is_hidden: boolean | null
+          likes_count: number | null
+          moderation_status: string | null
+          pending_reports: number | null
+          thumbnail_url: string | null
+          total_reports: number | null
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+          video_type: string | null
+          video_url: string | null
+          views_count: number | null
         }
         Relationships: []
       }
@@ -6941,14 +6995,38 @@ export type Database = {
           comments_count: number | null
           created_at: string | null
           id: string | null
+          is_hidden: boolean | null
           likes_count: number | null
           moderation_status: string | null
           pending_reports: number | null
           photo_type: string | null
           photo_url: string | null
+          total_reports: number | null
           user_email: string | null
           user_id: string | null
           user_name: string | null
+        }
+        Relationships: []
+      }
+      admin_reported_videos: {
+        Row: {
+          caption: string | null
+          comments_count: number | null
+          created_at: string | null
+          duration_seconds: number | null
+          id: string | null
+          is_hidden: boolean | null
+          likes_count: number | null
+          moderation_status: string | null
+          pending_reports: number | null
+          thumbnail_url: string | null
+          total_reports: number | null
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+          video_type: string | null
+          video_url: string | null
+          views_count: number | null
         }
         Relationships: []
       }
@@ -7253,6 +7331,8 @@ export type Database = {
           p_action_description: string
           p_action_type: string
           p_admin_id: string
+          p_target_id?: string
+          p_target_type?: string
         }
         Returns: string
       }
