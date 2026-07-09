@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Church, AlertCircle, Globe, WifiOff } from "lucide-react";
+import { AlertCircle, Globe, WifiOff } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { 
   emailSchema, 
@@ -755,18 +755,28 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
-      <Card className="w-full max-w-md shadow-medium mx-auto border-border/50">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 dark:from-amber-950 dark:via-yellow-950/60 dark:to-orange-950/60 p-3 sm:p-4">
+      {/* Elementos decorativos dourados */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-gradient-to-br from-amber-400/20 to-yellow-400/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-72 h-72 bg-gradient-to-tr from-orange-400/20 to-amber-300/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-yellow-300/20 to-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+
+      <Card className="relative w-full max-w-md shadow-2xl shadow-amber-900/10 mx-auto border-2 border-amber-200/60 dark:border-amber-800/40 bg-white/90 dark:bg-black/40 backdrop-blur-xl">
         <CardHeader className="text-center pb-4">
           <LanguageSelector />
           <NetworkIndicator />
-          <div className="mx-auto p-3 w-fit rounded-xl bg-primary mb-3">
-            <Church className="h-7 w-7 text-primary-foreground" />
+          <div className="mx-auto w-24 h-24 mb-3 relative">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400/40 to-orange-500/30 blur-xl animate-pulse" />
+            <img
+              src="/alianca-logo.png"
+              alt="Aliança"
+              className="relative w-24 h-24 object-contain drop-shadow-[0_0_18px_rgba(217,119,6,0.45)]"
+            />
           </div>
-          <CardTitle className="text-xl font-semibold text-foreground">
-            {language === 'pt' ? 'Aliança' : 
-             language === 'es' ? 'Red de Fe' : 
-             language === 'nl' ? 'Geloofsnetwerk' : 
+          <CardTitle className="text-2xl font-extrabold bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent tracking-wide">
+            {language === 'pt' ? 'Aliança' :
+             language === 'es' ? 'Red de Fe' :
+             language === 'nl' ? 'Geloofsnetwerk' :
              'Faith Network'}
           </CardTitle>
           <CardDescription className="text-sm">
@@ -775,9 +785,19 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
-              <TabsTrigger value="signup">{t('auth.signUp')}</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-amber-100/60 dark:bg-amber-950/40">
+              <TabsTrigger
+                value="signin"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                {t('auth.signIn')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="signup"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                {t('auth.signUp')}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
@@ -803,7 +823,7 @@ const Auth = () => {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full !bg-gradient-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white shadow-md"
                     disabled={loading}
                   >
                     {loading ? t('common.loading') : t('auth.sendRecoveryLink')}
@@ -849,7 +869,7 @@ const Auth = () => {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full !bg-gradient-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white shadow-md"
                     disabled={loading}
                   >
                     {loading ? t('common.loading') : t('auth.signIn')}
@@ -1011,7 +1031,7 @@ const Auth = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full !bg-gradient-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white shadow-md"
                   disabled={loading}
                 >
                   {loading ? t('common.loading') : t('auth.createAccount')}
