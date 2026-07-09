@@ -7208,6 +7208,10 @@ export type Database = {
         Args: { other_user_id: string }
         Returns: string
       }
+      get_reported_content: {
+        Args: { p_content_id: string; p_content_type: string }
+        Returns: Json
+      }
       get_testimonies_fast: {
         Args: never
         Returns: {
