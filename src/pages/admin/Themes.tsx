@@ -171,12 +171,15 @@ export default function AdminThemes() {
 
       // Avisa o usuário — sem isso ele só descobre o tema novo se notar
       // sozinho na galeria.
-      await supabase.from("notifications").insert({
+      const { error: notifyError } = await supabase.from("notifications").insert({
         user_id: selectedUser.id,
         actor_id: currentUser.user.id,
         type: "admin_success",
         content: `Você recebeu o tema "${selectedTheme.theme_name}"! 🎉`,
       });
+      if (notifyError) {
+        console.error("Erro ao notificar concessão de tema:", notifyError);
+      }
 
       toast({
         title: "Tema Concedido!",
