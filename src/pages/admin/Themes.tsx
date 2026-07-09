@@ -169,6 +169,15 @@ export default function AdminThemes() {
 
       if (error) throw error;
 
+      // Avisa o usuário — sem isso ele só descobre o tema novo se notar
+      // sozinho na galeria.
+      await supabase.from("notifications").insert({
+        user_id: selectedUser.id,
+        actor_id: currentUser.user.id,
+        type: "admin_success",
+        content: `Você recebeu o tema "${selectedTheme.theme_name}"! 🎉`,
+      });
+
       toast({
         title: "Tema Concedido!",
         description: `${selectedTheme.theme_name} concedido para ${selectedUser.full_name}`,
