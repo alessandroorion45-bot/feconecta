@@ -43,6 +43,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ContentActionsMenu } from "@/components/ContentActionsMenu";
 
 const categories = ["Saúde", "Família", "Trabalho", "Finanças", "Espiritual", "Esperança", "Outros"];
 
@@ -282,6 +283,26 @@ const Prayers = () => {
     if (!error && data) {
       setComments(prev => ({ ...prev, [prayerId]: data as unknown as PrayerComment[] }));
     }
+  };
+
+  const handleDeletePrayer = async (prayerId: string) => {
+    const { error } = await supabase.from("prayers").delete().eq("id", prayerId);
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível excluir a oração", variant: "destructive" });
+      return;
+    }
+    setPrayers(prev => prev.filter(p => p.id !== prayerId));
+    toast({ title: "Oração excluída" });
+  };
+
+  const handleDeletePrayerComment = async (prayerId: string, commentId: string) => {
+    const { error } = await supabase.from("prayer_comments").delete().eq("id", commentId);
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível excluir o comentário", variant: "destructive" });
+      return;
+    }
+    setComments(prev => ({ ...prev, [prayerId]: (prev[prayerId] || []).filter(c => c.id !== commentId) }));
+    setCommentCounts(prev => ({ ...prev, [prayerId]: Math.max(0, (prev[prayerId] || 0) - 1) }));
   };
 
   const handleCreatePrayer = async () => {
@@ -761,11 +782,24 @@ const Prayers = () => {
                   )}>
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-3">
-                        <PostAuthorBadges
-                          userId={prayer.user_id}
-                          fullName={prayer.profiles?.full_name}
-                          avatarUrl={prayer.profiles?.avatar_url}
-                        />
+                        <div className="flex items-center gap-1 min-w-0">
+                          <PostAuthorBadges
+                            userId={prayer.user_id}
+                            fullName={prayer.profiles?.full_name}
+                            avatarUrl={prayer.profiles?.avatar_url}
+                          />
+                          <ContentActionsMenu
+                            currentUserId={user?.id}
+                            ownerId={prayer.user_id}
+                            contentType="prayer"
+                            contentId={prayer.id}
+                            contentSnippet={`${prayer.title}: ${prayer.description.slice(0, 100)}`}
+                            shareUrl={`${window.location.origin}/prayers?id=${prayer.id}`}
+                            shareText={prayer.title}
+                            onDelete={() => handleDeletePrayer(prayer.id)}
+                            className="h-7 w-7 shrink-0"
+                          />
+                        </div>
                         <div className="flex flex-col items-end gap-1">
                           <div className="flex items-center gap-1.5">
                             {prayer.is_answered && (
@@ -902,13 +936,27 @@ const Prayers = () => {
                                       size="xs"
                                     />
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-medium text-sm">
-                                          {comment.profiles?.full_name || "Usuário"}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
-                                        </span>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="font-medium text-sm">
+                                            {comment.profiles?.full_name || "Usuário"}
+                                          </span>
+                                          <span className="text-xs text-muted-foreground">
+                                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
+                                          </span>
+                                        </div>
+                                        {user?.id && (
+                                          <ContentActionsMenu
+                                            currentUserId={user.id}
+                                            ownerId={comment.user_id}
+                                            contentType="prayer_comment"
+                                            contentId={comment.id}
+                                            contentSnippet={comment.content.slice(0, 100)}
+                                            shareUrl={`${window.location.origin}/prayers?id=${prayer.id}`}
+                                            onDelete={() => handleDeletePrayerComment(prayer.id, comment.id)}
+                                            className="h-6 w-6 shrink-0"
+                                          />
+                                        )}
                                       </div>
                                       <p className="text-sm mt-0.5">{comment.content}</p>
                                     </div>

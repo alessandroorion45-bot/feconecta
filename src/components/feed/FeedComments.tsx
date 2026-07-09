@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Reply } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ContentActionsMenu } from "@/components/ContentActionsMenu";
 
 interface FeedComment {
   id: string;
@@ -103,6 +104,16 @@ export const FeedComments = ({ postId, userId, onCountChange }: FeedCommentsProp
   const roots = comments.filter(c => !c.parent_id);
   const repliesOf = (id: string) => comments.filter(c => c.parent_id === id);
 
+  const handleDeleteComment = async (commentId: string) => {
+    const { error } = await supabase.from('post_comments').delete().eq('id', commentId);
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível excluir o comentário", variant: "destructive" });
+      return;
+    }
+    setComments(prev => prev.filter(c => c.id !== commentId));
+    onCountChange?.(-1);
+  };
+
   const CommentRow = ({ comment, isReply }: { comment: FeedComment; isReply?: boolean }) => (
     <div className={isReply ? "ml-8" : ""}>
       <div className="flex gap-2 p-2 rounded-lg bg-muted/50">
@@ -112,11 +123,25 @@ export const FeedComments = ({ postId, userId, onCountChange }: FeedCommentsProp
           size="xs"
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-sm">{comment.profile?.full_name || "Usuário"}</span>
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
-            </span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm">{comment.profile?.full_name || "Usuário"}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
+              </span>
+            </div>
+            {userId && (
+              <ContentActionsMenu
+                currentUserId={userId}
+                ownerId={comment.user_id}
+                contentType="post_comment"
+                contentId={comment.id}
+                contentSnippet={comment.content.slice(0, 100)}
+                shareUrl={window.location.href}
+                onDelete={() => handleDeleteComment(comment.id)}
+                className="h-6 w-6 shrink-0"
+              />
+            )}
           </div>
           <p className="text-sm mt-0.5 whitespace-pre-wrap">{comment.content}</p>
           {!isReply && threadsSupported && (

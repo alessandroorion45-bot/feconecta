@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ContentActionsMenu } from "@/components/ContentActionsMenu";
 import type { User } from "@supabase/supabase-js";
 
 interface TestimonyData {
@@ -51,6 +52,7 @@ const MAX_COMMENT_LENGTH = 300;
 
 const TestimonyDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [testimony, setTestimony] = useState<TestimonyData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -305,6 +307,27 @@ const TestimonyDetail = () => {
     }
   };
 
+  const handleDeleteTestimony = async () => {
+    if (!testimony) return;
+    const { error } = await supabase.from("testimonies").delete().eq("id", testimony.id);
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível excluir o testemunho", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Testemunho excluído" });
+    navigate("/testimonies");
+  };
+
+  const handleDeleteTestimonyComment = async (commentId: string) => {
+    const { error } = await supabase.from("testimony_comments").delete().eq("id", commentId);
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível excluir o comentário", variant: "destructive" });
+      return;
+    }
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    setTestimony((prev) => (prev ? { ...prev, comments_count: Math.max(0, (prev.comments_count || 0) - 1) } : null));
+  };
+
   // Generate meta description
   const metaDescription = testimony
     ? testimony.audio_url
@@ -387,6 +410,20 @@ const TestimonyDetail = () => {
               style={testimony.profiles?.cover_image_url ? { backgroundImage: `url(${testimony.profiles.cover_image_url})` } : undefined}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            </div>
+
+            <div className="absolute top-3 right-3">
+              <ContentActionsMenu
+                currentUserId={user?.id}
+                ownerId={testimony.user_id}
+                contentType="testimony"
+                contentId={testimony.id}
+                contentSnippet={`${testimony.title}: ${testimony.content.slice(0, 100)}`}
+                shareUrl={`${window.location.origin}/testemunho/${testimony.id}`}
+                shareText={testimony.title}
+                onDelete={handleDeleteTestimony}
+                className="h-8 w-8 bg-black/40 hover:bg-black/60 text-white"
+              />
             </div>
 
             {/* Profile info overlay */}
@@ -550,10 +587,22 @@ const TestimonyDetail = () => {
                         size="xs"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
+                        <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-medium truncate">
                             {comment.profiles?.full_name || "Usuário"}
                           </p>
+                          {user?.id && (
+                            <ContentActionsMenu
+                              currentUserId={user.id}
+                              ownerId={comment.user_id}
+                              contentType="testimony_comment"
+                              contentId={comment.id}
+                              contentSnippet={comment.content.slice(0, 100)}
+                              shareUrl={window.location.href}
+                              onDelete={() => handleDeleteTestimonyComment(comment.id)}
+                              className="h-6 w-6 shrink-0"
+                            />
+                          )}
                         </div>
                         <p className="text-sm text-foreground/90 mt-0.5 break-words">
                           {comment.content}

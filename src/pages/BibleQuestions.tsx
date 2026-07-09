@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
 import { AvatarPro } from "@/components/AvatarPro";
 import BibleRefText from "@/components/BibleRefText";
+import { ContentActionsMenu } from "@/components/ContentActionsMenu";
 
 /** Busca perfis em lote (joins embutidos falham no banco remoto) */
 async function attachProfiles<T extends { user_id: string }>(rows: T[]): Promise<(T & { profiles?: any })[]> {
@@ -269,6 +270,17 @@ const BibleQuestions = () => {
     toast({ title: "Resposta removida" });
   };
 
+  const deleteQuestion = async (questionId: string) => {
+    const { error } = await supabase.from("bible_questions").delete().eq("id", questionId);
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível excluir a pergunta", variant: "destructive" });
+      return;
+    }
+    setSelectedQuestion(null);
+    setQuestions(prev => prev.filter(q => q.id !== questionId));
+    toast({ title: "Pergunta excluída" });
+  };
+
   const formatDate = (d: string) => new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 
   // Detail view
@@ -295,6 +307,17 @@ const BibleQuestions = () => {
                     {selectedQuestion.profiles?.full_name} • {formatDate(selectedQuestion.created_at)}
                   </p>
                 </div>
+                <ContentActionsMenu
+                  currentUserId={user?.id}
+                  ownerId={selectedQuestion.user_id}
+                  contentType="question"
+                  contentId={selectedQuestion.id}
+                  contentSnippet={`${selectedQuestion.title}: ${selectedQuestion.body.slice(0, 100)}`}
+                  shareUrl={window.location.href}
+                  shareText={selectedQuestion.title}
+                  onDelete={() => deleteQuestion(selectedQuestion.id)}
+                  className="h-8 w-8 shrink-0"
+                />
               </div>
             </CardHeader>
             <CardContent>
@@ -341,6 +364,15 @@ const BibleQuestions = () => {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
+                  <ContentActionsMenu
+                    currentUserId={user?.id}
+                    ownerId={a.user_id}
+                    contentType="question_answer"
+                    contentId={a.id}
+                    contentSnippet={a.content.slice(0, 100)}
+                    shareUrl={window.location.href}
+                    className="h-8 w-8 ml-auto"
+                  />
                 </div>
               </CardContent>
             </Card>

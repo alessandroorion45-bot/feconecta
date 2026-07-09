@@ -1,9 +1,11 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { GlobalSearch } from "./GlobalSearch";
 import { AdminNotificationBell } from "./AdminNotificationBell";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   Users,
@@ -40,6 +42,27 @@ const navItems = [
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
+  const [pendingReports, setPendingReports] = useState(0);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      const { count } = await supabase
+        .from("user_reports")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+      setPendingReports(count || 0);
+    };
+    loadCount();
+
+    const channel = supabase
+      .channel("admin-reports-badge")
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_reports" }, loadCount)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--theme-background)' }}>
@@ -73,7 +96,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     )}
                   >
                     <Icon className="mr-2 h-4 w-4 shrink-0" />
-                    {item.label}
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {item.path === "/admin/reports" && pendingReports > 0 && (
+                      <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1.5 justify-center">
+                        {pendingReports > 99 ? "99+" : pendingReports}
+                      </Badge>
+                    )}
                   </Button>
                 </Link>
               );

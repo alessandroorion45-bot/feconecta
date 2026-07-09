@@ -10,29 +10,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import UserAvatar from "@/components/UserAvatar";
 import ImageLightbox from "@/components/ImageLightbox";
 import { FeedReactionPicker } from "./FeedReactionPicker";
 import { FeedComments } from "./FeedComments";
+import { ReportContentModal } from "@/components/ReportContentModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FEED_TYPE_META } from "@/lib/feed/feedTypes";
-import type { FeedItem } from "@/lib/feed/feedTypes";
+import type { FeedItem, FeedItemType } from "@/lib/feed/feedTypes";
 import {
   Heart, MessageCircle, Share2, Bookmark, Copy, Flag,
-  MoreHorizontal, ExternalLink, ChevronDown, ChevronUp, Play,
+  MoreHorizontal, ExternalLink, ChevronDown, ChevronUp, Play, Pencil, Trash2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { REPORT_REASONS } from "@/lib/reportReasons";
+
+// Tabela/coluna real por trás de cada tipo editável/exclúivel pelo dono —
+// só esses 4 tipos são conteúdo de fato autorado pelo usuário no feed
+// (study/devotional/community/reading são curados ou de outra área).
+const EDITABLE_TABLE: Partial<Record<FeedItemType, { table: string; column: string }>> = {
+  post: { table: "posts", column: "content" },
+  prayer: { table: "prayers", column: "description" },
+  testimony: { table: "testimonies", column: "content" },
+  question: { table: "bible_questions", column: "body" },
+};
 
 interface FeedItemCardProps {
   item: FeedItem;
@@ -47,13 +50,20 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
   const [showComments, setShowComments] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportReason, setReportReason] = useState(REPORT_REASONS[0].key);
-  const [reportDescription, setReportDescription] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(item.content);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
 
   const meta = FEED_TYPE_META[item.type];
   const displayName = item.profile?.full_name || item.author_name || meta.label;
   const isPost = item.type === 'post';
   const longContent = item.content.length > 380;
+  const isOwner = !!userId && item.user_id === userId;
+  const editableTarget = EDITABLE_TABLE[item.type];
+
+  if (deleted) return null;
 
   // --- Ações ---
 
@@ -128,22 +138,37 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
     toast({ title: "Copiado! 📋" });
   };
 
-  const submitReport = async () => {
-    if (!userId || !item.user_id) return;
-    const { error } = await supabase.from('user_reports').insert({
-      reporter_id: userId,
-      reported_user_id: item.user_id,
-      reason: reportReason,
-      description: `[${meta.label}] ${item.title || item.content.slice(0, 100)} — ${reportDescription}`.slice(0, 500),
-      content_type: item.type,
-      content_id: item.id,
-    });
-    if (error) {
-      toast({ title: "Erro", description: "Não foi possível enviar a denúncia", variant: "destructive" });
-    } else {
-      toast({ title: "Denúncia enviada", description: "Nossa equipe irá analisar. Obrigado por ajudar a comunidade." });
-      setReportOpen(false);
-      setReportDescription("");
+  const handleSaveEdit = async () => {
+    if (!editableTarget || !editContent.trim()) return;
+    setSaving(true);
+    try {
+      const { error } = await (supabase as any)
+        .from(editableTarget.table)
+        .update({ [editableTarget.column]: editContent.trim() })
+        .eq('id', item.id);
+      if (error) throw error;
+      onPatch(item.key, () => ({ content: editContent.trim() }));
+      setEditing(false);
+      toast({ title: "Publicação atualizada" });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Não foi possível editar", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editableTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await (supabase as any).from(editableTarget.table).delete().eq('id', item.id);
+      if (error) throw error;
+      setDeleted(true);
+      toast({ title: "Publicação excluída" });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Não foi possível excluir", variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -207,11 +232,28 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
                   <Copy className="h-4 w-4 mr-2" />
                   Copiar texto
                 </DropdownMenuItem>
-                {userId && item.user_id && item.user_id !== userId && (
-                  <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive">
-                    <Flag className="h-4 w-4 mr-2" />
-                    Denunciar
-                  </DropdownMenuItem>
+                <DropdownMenuItem onClick={share}>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Compartilhar
+                </DropdownMenuItem>
+                {isOwner && editableTarget ? (
+                  <>
+                    <DropdownMenuItem onClick={() => { setEditContent(item.content); setEditing(true); }}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDelete} disabled={deleting} className="text-destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deleting ? "Excluindo..." : "Excluir"}
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  userId && item.user_id && item.user_id !== userId && (
+                    <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive">
+                      <Flag className="h-4 w-4 mr-2" />
+                      Denunciar publicação
+                    </DropdownMenuItem>
+                  )
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -230,7 +272,24 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
         {item.category && (
           <Badge variant="outline" className="mb-2 text-xs">{item.category}</Badge>
         )}
-        {item.content && (
+        {editing ? (
+          <div className="mb-3 space-y-2">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSaveEdit} disabled={saving || !editContent.trim()}>
+                {saving ? "Salvando..." : "Salvar"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : item.content && (
           <div className="mb-3">
             <p className={cn("whitespace-pre-wrap text-sm sm:text-base", !expanded && longContent && "line-clamp-5")}>
               {item.content}
@@ -324,39 +383,17 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
         )}
       </CardContent>
 
-      {/* Dialog de denúncia */}
-      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Flag className="h-5 w-5 text-destructive" />
-              Denunciar conteúdo
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Select value={reportReason} onValueChange={setReportReason}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REPORT_REASONS.map(r => (
-                  <SelectItem key={r.key} value={r.key}>{r.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Textarea
-              placeholder="Descreva o problema (opcional)"
-              value={reportDescription}
-              onChange={(e) => setReportDescription(e.target.value)}
-              rows={3}
-              maxLength={300}
-            />
-            <Button onClick={submitReport} variant="destructive" className="w-full">
-              Enviar denúncia
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {userId && item.user_id && (
+        <ReportContentModal
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          reporterId={userId}
+          reportedUserId={item.user_id}
+          contentType={item.type}
+          contentId={item.id}
+          contentSnippet={`[${meta.label}] ${item.title || item.content.slice(0, 100)}`}
+        />
+      )}
     </Card>
   );
 };

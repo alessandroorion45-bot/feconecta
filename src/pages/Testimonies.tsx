@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import UserAvatar from "@/components/UserAvatar";
+import { ContentActionsMenu } from "@/components/ContentActionsMenu";
 
 import AudioRecorder from "@/components/AudioRecorder";
 
@@ -656,6 +657,30 @@ const Testimonies = () => {
     }
   };
 
+  const handleDeleteTestimony = async (testimonyId: string) => {
+    const { error } = await supabase.from("testimonies").delete().eq("id", testimonyId);
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível excluir o testemunho", variant: "destructive" });
+      return;
+    }
+    setTestimonies((prev) => prev.filter((t) => t.id !== testimonyId));
+    toast({ title: "Testemunho excluído" });
+  };
+
+  const handleDeleteTestimonyComment = async (commentId: string) => {
+    const { error } = await supabase.from("testimony_comments").delete().eq("id", commentId);
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível excluir o comentário", variant: "destructive" });
+      return;
+    }
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    if (commentsOpen) {
+      setTestimonies((prev) =>
+        prev.map((t) => (t.id === commentsOpen ? { ...t, comments_count: Math.max(0, (t.comments_count || 0) - 1) } : t))
+      );
+    }
+  };
+
   const handleAudioSuccess = () => {
     setAudioDialogOpen(false);
     if (user) {
@@ -802,11 +827,22 @@ const Testimonies = () => {
               <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-amber-400/10 to-orange-400/10 rounded-full blur-3xl" />
               <div className="absolute bottom-4 left-4 w-24 h-24 bg-gradient-to-tr from-yellow-400/10 to-amber-400/10 rounded-full blur-2xl" />
 
-              <CardHeader className="relative z-10">
+              <CardHeader className="relative z-10 flex-row items-start justify-between gap-2 space-y-0">
                 <PostAuthorBadges
                   userId={testimony.user_id}
                   fullName={testimony.profiles?.full_name || "Membro da Comunidade"}
                   avatarUrl={testimony.profiles?.avatar_url || null}
+                />
+                <ContentActionsMenu
+                  currentUserId={user?.id}
+                  ownerId={testimony.user_id}
+                  contentType="testimony"
+                  contentId={testimony.id}
+                  contentSnippet={`${testimony.title}: ${testimony.content.slice(0, 100)}`}
+                  shareUrl={`${window.location.origin}/testemunho/${testimony.id}`}
+                  shareText={testimony.title}
+                  onDelete={() => handleDeleteTestimony(testimony.id)}
+                  className="h-8 w-8 shrink-0"
                 />
               </CardHeader>
 
@@ -1014,10 +1050,22 @@ const Testimonies = () => {
                         size="xs"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
+                        <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-medium truncate">
                             {comment.profiles?.full_name || "Usuário"}
                           </p>
+                          {user?.id && (
+                            <ContentActionsMenu
+                              currentUserId={user.id}
+                              ownerId={comment.user_id}
+                              contentType="testimony_comment"
+                              contentId={comment.id}
+                              contentSnippet={comment.content.slice(0, 100)}
+                              shareUrl={`${window.location.origin}/testemunho/${commentsOpen}`}
+                              onDelete={() => handleDeleteTestimonyComment(comment.id)}
+                              className="h-6 w-6 shrink-0"
+                            />
+                          )}
                         </div>
                         <p className="text-sm text-foreground/90 mt-0.5 break-words">
                           {comment.content}

@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ReportContentModal } from '@/components/ReportContentModal';
 
 interface Comment {
   id: string;
@@ -59,6 +60,7 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [reportingComment, setReportingComment] = useState<Comment | null>(null);
 
   useEffect(() => {
     loadComments();
@@ -324,28 +326,9 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
     }
   };
 
-  const handleReport = async (commentId: string) => {
+  const handleReport = (comment: Comment) => {
     if (!user) return;
-
-    try {
-      // @ts-ignore - Schema types not updated
-      await supabase.from('verse_comment_reports').insert({
-        comment_id: commentId,
-        reporter_id: user.id,
-        reason: 'Conteúdo inapropriado',
-      });
-      toast({
-        title: '🚩 Comentário denunciado',
-        description: 'Nossa equipe irá analisar em breve',
-        className: 'animate-in slide-in-from-top',
-      });
-    } catch (error) {
-      toast({
-        title: '❌ Erro ao denunciar',
-        description: 'Tente novamente',
-        variant: 'destructive',
-      });
-    }
+    setReportingComment(comment);
   };
 
   // Componente recursivo para renderizar comentário e suas respostas
@@ -381,7 +364,7 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
                   Excluir
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={() => handleReport(comment.id)}>
+                <DropdownMenuItem onClick={() => handleReport(comment)}>
                   <Flag className="h-4 w-4 mr-2" />
                   Denunciar
                 </DropdownMenuItem>
@@ -525,6 +508,18 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
           ))
         )}
       </div>
+
+      {user && reportingComment && (
+        <ReportContentModal
+          open={!!reportingComment}
+          onOpenChange={(open) => !open && setReportingComment(null)}
+          reporterId={user.id}
+          reportedUserId={reportingComment.user_id}
+          contentType="verse_comment"
+          contentId={reportingComment.id}
+          contentSnippet={reportingComment.comment_text.slice(0, 100)}
+        />
+      )}
     </div>
   );
 };
