@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 
@@ -42,6 +42,9 @@ export function AdminMediaLightbox({ items, index, onClose, onNavigate }: AdminM
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-none bg-black/95">
+        <DialogTitle className="sr-only">
+          {item.kind === "image" ? "Visualização da foto" : "Visualização do vídeo"}
+        </DialogTitle>
         <div className="relative w-full h-[90vh] flex items-center justify-center overflow-hidden">
           <Button
             variant="ghost"
