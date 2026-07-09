@@ -170,12 +170,16 @@ export default function AdminThemes() {
       if (error) throw error;
 
       // Avisa o usuário — sem isso ele só descobre o tema novo se notar
-      // sozinho na galeria.
+      // sozinho na galeria. Sem actor_id: aparece como aviso oficial da
+      // Equipe Aliança, não com o perfil pessoal de quem tá logado como
+      // admin (mais autoridade, e o usuário não sabe qual admin concedeu).
+      const grantMessage = `Equipe Aliança concedeu o tema "${selectedTheme.theme_name}" pra você! 🎉${
+        grantReason ? ` — ${grantReason}` : ""
+      }`;
       const { error: notifyError } = await supabase.from("notifications").insert({
         user_id: selectedUser.id,
-        actor_id: currentUser.user.id,
         type: "admin_success",
-        content: `Você recebeu o tema "${selectedTheme.theme_name}"! 🎉`,
+        content: grantMessage,
       });
       if (notifyError) {
         console.error("Erro ao notificar concessão de tema:", notifyError);
