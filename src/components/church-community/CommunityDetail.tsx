@@ -14,7 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone,
-  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff, UserPlus, Crown, Home,
+  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff, UserPlus, Crown, Home, BookOpenCheck,
 } from "lucide-react";
 import { ImageCropModal } from "@/components/ImageCropModal";
 import EditCommunityModal from "./EditCommunityModal";
@@ -24,6 +24,7 @@ import CommunityCampaigns from "./CommunityCampaigns";
 import CommunityTree from "./CommunityTree";
 import CommunityLeaders from "./CommunityLeaders";
 import CommunityCells from "./CommunityCells";
+import CommunityQuizzes from "./CommunityQuizzes";
 import CommunityActivity from "./CommunityActivity";
 import VotingList from "./VotingList";
 import LeaderEvaluations from "./LeaderEvaluations";
@@ -472,6 +473,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
               <Home className="h-4 w-4" />
               Células
             </TabsTrigger>
+            <TabsTrigger value="quizzes" className="gap-2">
+              <BookOpenCheck className="h-4 w-4" />
+              Atividades
+            </TabsTrigger>
             <TabsTrigger value="tree" className="gap-2">
               <TreeDeciduous className="h-4 w-4" />
               Árvore
@@ -520,6 +525,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
 
         <TabsContent value="cells" className="mt-6">
           <CommunityCells communityId={communityId} userId={userId} myRole={myRole} isAdmin={isAdmin} />
+        </TabsContent>
+
+        <TabsContent value="quizzes" className="mt-6">
+          <CommunityQuizzes communityId={communityId} communityName={community.name} userId={userId} myRole={myRole} isAdmin={isAdmin} />
         </TabsContent>
 
         <TabsContent value="tree" className="mt-6">
