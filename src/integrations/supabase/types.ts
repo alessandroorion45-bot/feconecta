@@ -2179,11 +2179,15 @@ export type Database = {
       community_posts: {
         Row: {
           applications: string | null
+          attachments: Json
+          audio_url: string | null
           community_id: string
           content: string
           created_at: string
           id: string
+          image_url: string | null
           is_pinned: boolean
+          pdf_url: string | null
           reflection_questions: string | null
           title: string | null
           type: string
@@ -2191,14 +2195,20 @@ export type Database = {
           user_id: string
           verse_reference: string | null
           verse_text: string | null
+          video_url: string | null
+          youtube_url: string | null
         }
         Insert: {
           applications?: string | null
+          attachments?: Json
+          audio_url?: string | null
           community_id: string
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_pinned?: boolean
+          pdf_url?: string | null
           reflection_questions?: string | null
           title?: string | null
           type?: string
@@ -2206,14 +2216,20 @@ export type Database = {
           user_id: string
           verse_reference?: string | null
           verse_text?: string | null
+          video_url?: string | null
+          youtube_url?: string | null
         }
         Update: {
           applications?: string | null
+          attachments?: Json
+          audio_url?: string | null
           community_id?: string
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_pinned?: boolean
+          pdf_url?: string | null
           reflection_questions?: string | null
           title?: string | null
           type?: string
@@ -2221,6 +2237,8 @@ export type Database = {
           user_id?: string
           verse_reference?: string | null
           verse_text?: string | null
+          video_url?: string | null
+          youtube_url?: string | null
         }
         Relationships: [
           {
