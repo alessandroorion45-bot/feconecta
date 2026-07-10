@@ -9,12 +9,13 @@ import { AvatarPro } from "@/components/AvatarPro";
 import { useToast } from "@/hooks/use-toast";
 import {
   Home, Loader2, Plus, Search, MapPin, Clock, Users, Pencil, Trash2,
-  LogIn, LogOut, ExternalLink, BookOpen, Target, ClipboardCheck, HandHeart,
+  LogIn, LogOut, ExternalLink, BookOpen, Target, ClipboardCheck, HandHeart, Library,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import CellFormModal, { type EditableCell } from "./CellFormModal";
 import CellAttendanceModal from "./CellAttendanceModal";
 import CellPrayerModal from "./CellPrayerModal";
+import CellLibraryModal from "./CellLibraryModal";
 
 const sb = supabase as any;
 
@@ -47,6 +48,7 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
   const [joining, setJoining] = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
   const [showPrayers, setShowPrayers] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
 
   const canCreate = isAdmin || LEADER_ROLES_SET.includes(myRole || "");
 
@@ -321,9 +323,14 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
                     {selected.i_am_member ? "Sair da célula" : "Entrar na célula"}
                   </Button>
                   {(selected.i_am_member || canManageCell(selected)) && (
-                    <Button variant="outline" size="icon" onClick={() => setShowPrayers(true)} title="Pedidos de oração">
-                      <HandHeart className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button variant="outline" size="icon" onClick={() => setShowPrayers(true)} title="Pedidos de oração">
+                        <HandHeart className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => setShowLibrary(true)} title="Biblioteca">
+                        <Library className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                   {canManageCell(selected) && (
                     <>
@@ -370,6 +377,14 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
             communityId={communityId}
             userId={userId}
             canModerate={canManageCell(selected)}
+          />
+          <CellLibraryModal
+            open={showLibrary}
+            onOpenChange={setShowLibrary}
+            cellId={selected.id}
+            communityId={communityId}
+            userId={userId}
+            canCurate={canManageCell(selected)}
           />
         </>
       )}
