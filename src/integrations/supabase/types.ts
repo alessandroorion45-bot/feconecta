@@ -1540,37 +1540,64 @@ export type Database = {
       }
       church_leaders: {
         Row: {
+          area_of_activity: string | null
+          assumed_date: string | null
           bio: string | null
           community_id: string
           created_at: string | null
+          display_order: number
+          email: string | null
+          favorite_verse: string | null
+          hierarchy_level: number
           id: string
           is_active: boolean | null
+          ministry: string | null
           name: string
+          phone: string | null
           photo_url: string | null
           role: string
           user_id: string | null
+          whatsapp: string | null
         }
         Insert: {
+          area_of_activity?: string | null
+          assumed_date?: string | null
           bio?: string | null
           community_id: string
           created_at?: string | null
+          display_order?: number
+          email?: string | null
+          favorite_verse?: string | null
+          hierarchy_level?: number
           id?: string
           is_active?: boolean | null
+          ministry?: string | null
           name: string
+          phone?: string | null
           photo_url?: string | null
           role: string
           user_id?: string | null
+          whatsapp?: string | null
         }
         Update: {
+          area_of_activity?: string | null
+          assumed_date?: string | null
           bio?: string | null
           community_id?: string
           created_at?: string | null
+          display_order?: number
+          email?: string | null
+          favorite_verse?: string | null
+          hierarchy_level?: number
           id?: string
           is_active?: boolean | null
+          ministry?: string | null
           name?: string
+          phone?: string | null
           photo_url?: string | null
           role?: string
           user_id?: string | null
+          whatsapp?: string | null
         }
         Relationships: [
           {
