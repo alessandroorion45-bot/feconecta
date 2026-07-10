@@ -1398,6 +1398,7 @@ export type Database = {
           banner_url: string | null
           church_name: string
           city: string | null
+          complement: string | null
           country: string | null
           cover_image_url: string | null
           created_at: string | null
@@ -1408,16 +1409,22 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           main_verse: string | null
+          maps_link: string | null
           member_count: number | null
           name: string
+          neighborhood: string | null
+          number: string | null
           state: string | null
+          street: string | null
           updated_at: string | null
+          zip_code: string | null
         }
         Insert: {
           address?: string | null
           banner_url?: string | null
           church_name: string
           city?: string | null
+          complement?: string | null
           country?: string | null
           cover_image_url?: string | null
           created_at?: string | null
@@ -1428,16 +1435,22 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           main_verse?: string | null
+          maps_link?: string | null
           member_count?: number | null
           name: string
+          neighborhood?: string | null
+          number?: string | null
           state?: string | null
+          street?: string | null
           updated_at?: string | null
+          zip_code?: string | null
         }
         Update: {
           address?: string | null
           banner_url?: string | null
           church_name?: string
           city?: string | null
+          complement?: string | null
           country?: string | null
           cover_image_url?: string | null
           created_at?: string | null
@@ -1448,10 +1461,15 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           main_verse?: string | null
+          maps_link?: string | null
           member_count?: number | null
           name?: string
+          neighborhood?: string | null
+          number?: string | null
           state?: string | null
+          street?: string | null
           updated_at?: string | null
+          zip_code?: string | null
         }
         Relationships: [
           {
