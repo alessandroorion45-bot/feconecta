@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import UserAvatar from "@/components/UserAvatar";
 import { useToast } from "@/hooks/use-toast";
 import WordOfWeekModal from "./WordOfWeekModal";
+import WeeklyChallengeCard from "./WeeklyChallengeCard";
 import {
   MURAL_POST_TYPES, POST_TYPE_BY_VALUE,
   canPostWordOfWeek, canModerateMural, getRoleInfo,
@@ -405,6 +406,8 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
           {wordOfWeek ? "Publicar nova Palavra da Semana" : "Publicar Palavra da Semana"}
         </Button>
       )}
+
+      <WeeklyChallengeCard communityId={communityId} userId={userId} myRole={myRole} />
 
       {/* Composer do mural */}
       <Card>
