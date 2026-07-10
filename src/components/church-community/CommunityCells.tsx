@@ -9,11 +9,12 @@ import { AvatarPro } from "@/components/AvatarPro";
 import { useToast } from "@/hooks/use-toast";
 import {
   Home, Loader2, Plus, Search, MapPin, Clock, Users, Pencil, Trash2,
-  LogIn, LogOut, ExternalLink, BookOpen, Target, ClipboardCheck,
+  LogIn, LogOut, ExternalLink, BookOpen, Target, ClipboardCheck, HandHeart,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import CellFormModal, { type EditableCell } from "./CellFormModal";
 import CellAttendanceModal from "./CellAttendanceModal";
+import CellPrayerModal from "./CellPrayerModal";
 
 const sb = supabase as any;
 
@@ -45,6 +46,7 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
   const [joining, setJoining] = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
+  const [showPrayers, setShowPrayers] = useState(false);
 
   const canCreate = isAdmin || LEADER_ROLES_SET.includes(myRole || "");
 
@@ -318,6 +320,11 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
                     {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : selected.i_am_member ? <LogOut className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
                     {selected.i_am_member ? "Sair da célula" : "Entrar na célula"}
                   </Button>
+                  {(selected.i_am_member || canManageCell(selected)) && (
+                    <Button variant="outline" size="icon" onClick={() => setShowPrayers(true)} title="Pedidos de oração">
+                      <HandHeart className="h-4 w-4" />
+                    </Button>
+                  )}
                   {canManageCell(selected) && (
                     <>
                       <Button variant="outline" size="icon" onClick={() => setShowAttendance(true)} title="Presença">
@@ -348,13 +355,23 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
       />
 
       {selected && (
-        <CellAttendanceModal
-          open={showAttendance}
-          onOpenChange={setShowAttendance}
-          cellId={selected.id}
-          communityId={communityId}
-          userId={userId}
-        />
+        <>
+          <CellAttendanceModal
+            open={showAttendance}
+            onOpenChange={setShowAttendance}
+            cellId={selected.id}
+            communityId={communityId}
+            userId={userId}
+          />
+          <CellPrayerModal
+            open={showPrayers}
+            onOpenChange={setShowPrayers}
+            cellId={selected.id}
+            communityId={communityId}
+            userId={userId}
+            canModerate={canManageCell(selected)}
+          />
+        </>
       )}
     </div>
   );
