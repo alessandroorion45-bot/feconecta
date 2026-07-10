@@ -20,7 +20,7 @@ const ImageLightbox = ({ src, alt = "", className = "" }: ImageLightboxProps) =>
       <img
         src={src}
         alt={alt}
-        className={`cursor-pointer transition-transform hover:scale-[1.02] object-cover ${className}`}
+        className={`cursor-pointer transition-transform hover:scale-[1.02] ${className}`}
         onClick={() => setIsOpen(true)}
       />
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
