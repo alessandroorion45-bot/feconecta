@@ -14,7 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone,
-  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff, UserPlus, Crown,
+  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff, UserPlus, Crown, Home,
 } from "lucide-react";
 import { ImageCropModal } from "@/components/ImageCropModal";
 import EditCommunityModal from "./EditCommunityModal";
@@ -23,6 +23,7 @@ import CommunityMural from "./CommunityMural";
 import CommunityCampaigns from "./CommunityCampaigns";
 import CommunityTree from "./CommunityTree";
 import CommunityLeaders from "./CommunityLeaders";
+import CommunityCells from "./CommunityCells";
 import CommunityActivity from "./CommunityActivity";
 import VotingList from "./VotingList";
 import LeaderEvaluations from "./LeaderEvaluations";
@@ -467,6 +468,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
               <Crown className="h-4 w-4" />
               Líderes
             </TabsTrigger>
+            <TabsTrigger value="cells" className="gap-2">
+              <Home className="h-4 w-4" />
+              Células
+            </TabsTrigger>
             <TabsTrigger value="tree" className="gap-2">
               <TreeDeciduous className="h-4 w-4" />
               Árvore
@@ -511,6 +516,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
 
         <TabsContent value="leaders" className="mt-6">
           <CommunityLeaders communityId={communityId} canManage={isAdmin} onManage={() => setShowManageLeaders(true)} />
+        </TabsContent>
+
+        <TabsContent value="cells" className="mt-6">
+          <CommunityCells communityId={communityId} userId={userId} myRole={myRole} isAdmin={isAdmin} />
         </TabsContent>
 
         <TabsContent value="tree" className="mt-6">
