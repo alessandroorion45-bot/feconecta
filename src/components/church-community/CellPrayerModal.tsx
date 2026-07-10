@@ -11,6 +11,7 @@ import { HandHeart, Loader2, Send, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { notifyCellMembers } from "@/lib/communityNotifications";
 
 const sb = supabase as any;
 
@@ -103,6 +104,7 @@ const CellPrayerModal = ({ open, onOpenChange, cellId, communityId, userId, canM
         cell_id: cellId, community_id: communityId, user_id: userId, type, content: content.trim(),
       });
       if (error) throw error;
+      notifyCellMembers(cellId, userId, "cell_prayer_request", `${TYPE_INFO[type]?.emoji} Novo ${TYPE_INFO[type]?.label.toLowerCase()} na célula`, communityId);
       setContent("");
       toast({ title: "Publicado! 🙏" });
     } catch (error: any) {

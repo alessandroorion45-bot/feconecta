@@ -27,6 +27,12 @@ import {
   Megaphone,
   UserX,
   Ban,
+  BookOpenCheck,
+  HelpCircle,
+  CalendarDays,
+  Flame,
+  Crown,
+  HandHeart,
 } from "lucide-react";
 
 // Avisos do admin (Central de Notificações + punições) usam um "type"
@@ -108,6 +114,20 @@ const NotificationPanel = () => {
       case "testimonial_approved":
       case "testimonial_rejected":
         return <Star className="h-4 w-4 text-orange-500" />;
+      case "community_study":
+        return <BookOpenCheck className="h-4 w-4 text-amber-500" />;
+      case "community_activity":
+        return <HelpCircle className="h-4 w-4 text-amber-500" />;
+      case "community_event":
+        return <CalendarDays className="h-4 w-4 text-amber-500" />;
+      case "community_announcement":
+        return <Megaphone className="h-4 w-4 text-amber-500" />;
+      case "community_campaign":
+        return <Flame className="h-4 w-4 text-orange-500" />;
+      case "community_new_leader":
+        return <Crown className="h-4 w-4 text-amber-500" />;
+      case "cell_prayer_request":
+        return <HandHeart className="h-4 w-4 text-emerald-500" />;
       default:
         return <Bell className="h-4 w-4" />;
     }
@@ -165,6 +185,18 @@ const NotificationPanel = () => {
       case "achievement":
         navigate("/achievements");
         setOpen(false);
+        break;
+      case "community_study":
+      case "community_activity":
+      case "community_event":
+      case "community_announcement":
+      case "community_campaign":
+      case "community_new_leader":
+      case "cell_prayer_request":
+        if (notification.reference_id) {
+          navigate(`/church-community?join=${notification.reference_id}`);
+          setOpen(false);
+        }
         break;
       default:
         // Apenas marca como lida, não fecha o painel

@@ -19,6 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { getYoutubeEmbedUrl } from "@/lib/youtube";
+import { notifyCommunityMembers } from "@/lib/communityNotifications";
 
 const sb = supabase as any;
 
@@ -193,6 +194,9 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
         variant: "destructive",
       });
     } else {
+      if (newPostType === "announcement") {
+        notifyCommunityMembers(communityId, userId, "community_announcement", `📢 Novo aviso: "${(newPostTitle.trim() || newPostContent.trim()).slice(0, 80)}"`, communityId);
+      }
       setNewPostTitle("");
       setNewPostContent("");
       toast({ title: "Publicado no mural! 📌" });

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, Plus, Trash2, Loader2, Edit2, Check, X, Camera } from "lucide-react";
 import { LEADER_ROLES, LEADER_LEVELS, getLeaderRoleInfo } from "@/lib/leaderRoles";
 import { MINISTRIES } from "./MinistriesSelector";
+import { notifyCommunityMembers } from "@/lib/communityNotifications";
 
 const sb = supabase as any;
 
@@ -176,6 +177,9 @@ const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageL
       });
 
       if (error) throw error;
+
+      const payload = buildPayload();
+      notifyCommunityMembers(communityId, userId, "community_new_leader", `⭐ ${payload.name} agora é ${payload.role} da comunidade!`, communityId);
 
       toast({ title: "Líder adicionado!", description: "Já aparece na aba Líderes e no organograma." });
 

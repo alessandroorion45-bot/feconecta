@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { BookOpenCheck, Loader2, Save, Plus, Trash2, GripVertical, X } from "lucide-react";
 import { QUESTION_TYPES, TIMER_OPTIONS, type QuestionType } from "@/lib/quizTypes";
+import { notifyCommunityMembers } from "@/lib/communityNotifications";
 
 const sb = supabase as any;
 
@@ -183,6 +184,10 @@ const QuizFormModal = ({ open, onOpenChange, communityId, userId, quizId, onSave
 
       const { error: qErr } = await sb.from("community_quiz_questions").insert(rows);
       if (qErr) throw qErr;
+
+      if (!isEditing) {
+        notifyCommunityMembers(communityId, userId, "community_activity", `📝 Nova Atividade Bíblica: "${title.trim()}"`, communityId);
+      }
 
       toast({ title: isEditing ? "✅ Atividade atualizada!" : "✅ Atividade criada!" });
       onSaved();

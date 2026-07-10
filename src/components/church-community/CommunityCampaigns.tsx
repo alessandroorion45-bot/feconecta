@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CAMPAIGN_PRESETS, CAMPAIGN_EMOJI, canCreateCampaign } from "@/lib/communityRoles";
 import { Flame, Plus, Loader2, Users, CheckCircle2, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { notifyCommunityMembers } from "@/lib/communityNotifications";
 
 const sb = supabase as any;
 
@@ -126,6 +127,7 @@ const CommunityCampaigns = ({ communityId, userId, myRole }: CommunityCampaignsP
         variant: "destructive",
       });
     } else {
+      notifyCommunityMembers(communityId, userId, "community_campaign", `🔥 Nova campanha: "${name}"`, communityId);
       toast({ title: "🔥 Campanha criada!", description: `"${name}" já está aberta para a comunidade.` });
       setCreateOpen(false);
       setCustomName("");

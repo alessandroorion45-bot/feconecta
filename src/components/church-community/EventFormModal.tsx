@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CalendarPlus, Loader2, Save, Camera, X } from "lucide-react";
 import { ImageCropModal } from "@/components/ImageCropModal";
 import { EVENT_TYPES } from "@/lib/eventTypes";
+import { notifyCommunityMembers } from "@/lib/communityNotifications";
 
 const sb = supabase as any;
 
@@ -132,6 +133,7 @@ const EventFormModal = ({ open, onOpenChange, communityId, userId, event, onSave
       } else {
         const { error } = await sb.from("community_events").insert({ community_id: communityId, created_by: userId, ...payload });
         if (error) throw error;
+        notifyCommunityMembers(communityId, userId, "community_event", `📅 Novo evento: "${form.title.trim()}"`, communityId);
         toast({ title: "✅ Evento criado!" });
       }
       onSaved();

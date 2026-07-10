@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Loader2, Image as ImageIcon, FileText, Video, Music, Paperclip, X } from "lucide-react";
 import { isValidYoutubeUrl } from "@/lib/youtube";
+import { notifyCommunityMembers } from "@/lib/communityNotifications";
 
 interface WordOfWeekModalProps {
   open: boolean;
@@ -147,6 +148,8 @@ const WordOfWeekModal = ({ open, onOpenChange, communityId, userId, onSuccess }:
       });
 
       if (error) throw error;
+
+      notifyCommunityMembers(communityId, userId, "community_study", `📖 Novo Estudo da Semana: "${form.title.trim()}"`, communityId);
 
       toast({ title: "✨ Estudo da Semana publicado!", description: "Ele está em destaque no mural da comunidade." });
       resetAll();
