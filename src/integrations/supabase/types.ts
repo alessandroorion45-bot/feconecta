@@ -2254,6 +2254,108 @@ export type Database = {
           },
         ]
       }
+      community_event_rsvps: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_event_rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "community_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_event_rsvps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_events: {
+        Row: {
+          community_id: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          end_at: string | null
+          event_type: string
+          id: string
+          is_active: boolean
+          location: string | null
+          maps_link: string | null
+          start_at: string
+          title: string
+        }
+        Insert: {
+          community_id: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_at?: string | null
+          event_type?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          maps_link?: string | null
+          start_at: string
+          title: string
+        }
+        Update: {
+          community_id?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_at?: string | null
+          event_type?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          maps_link?: string | null
+          start_at?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "church_communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_post_amens: {
         Row: {
           created_at: string
@@ -8202,3 +8304,8 @@ export const Constants = {
     },
   },
 } as const
+npm notice
+npm notice New minor version of npm available! 11.11.0 -> 11.18.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.18.0
+npm notice To update run: npm install -g npm@11.18.0
+npm notice
