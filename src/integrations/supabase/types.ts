@@ -1927,6 +1927,67 @@ export type Database = {
           },
         ]
       }
+      community_cell_library_items: {
+        Row: {
+          added_by: string
+          cell_id: string
+          community_id: string
+          created_at: string
+          description: string | null
+          external_link: string | null
+          file_url: string | null
+          id: string
+          resource_type: string
+          title: string
+        }
+        Insert: {
+          added_by: string
+          cell_id: string
+          community_id: string
+          created_at?: string
+          description?: string | null
+          external_link?: string | null
+          file_url?: string | null
+          id?: string
+          resource_type: string
+          title: string
+        }
+        Update: {
+          added_by?: string
+          cell_id?: string
+          community_id?: string
+          created_at?: string
+          description?: string | null
+          external_link?: string | null
+          file_url?: string | null
+          id?: string
+          resource_type?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_cell_library_items_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_library_items_cell_id_fkey"
+            columns: ["cell_id"]
+            isOneToOne: false
+            referencedRelation: "community_cells"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_library_items_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "church_communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_cell_members: {
         Row: {
           cell_id: string
@@ -8304,8 +8365,3 @@ export const Constants = {
     },
   },
 } as const
-npm notice
-npm notice New minor version of npm available! 11.11.0 -> 11.18.0
-npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.18.0
-npm notice To update run: npm install -g npm@11.18.0
-npm notice
