@@ -2257,6 +2257,156 @@ export type Database = {
           },
         ]
       }
+      community_quiz_attempts: {
+        Row: {
+          answers: Json
+          community_id: string
+          completed_at: string
+          correct_count: number
+          id: string
+          quiz_id: string
+          score_percent: number
+          total_gradable: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          community_id: string
+          completed_at?: string
+          correct_count?: number
+          id?: string
+          quiz_id: string
+          score_percent?: number
+          total_gradable?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          community_id?: string
+          completed_at?: string
+          correct_count?: number
+          id?: string
+          quiz_id?: string
+          score_percent?: number
+          total_gradable?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_quiz_attempts_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "church_communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "community_quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_quiz_questions: {
+        Row: {
+          correct_answer: Json | null
+          id: string
+          options: Json
+          order_index: number
+          points: number
+          question_text: string
+          quiz_id: string
+          type: string
+        }
+        Insert: {
+          correct_answer?: Json | null
+          id?: string
+          options?: Json
+          order_index?: number
+          points?: number
+          question_text: string
+          quiz_id: string
+          type: string
+        }
+        Update: {
+          correct_answer?: Json | null
+          id?: string
+          options?: Json
+          order_index?: number
+          points?: number
+          question_text?: string
+          quiz_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "community_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_quizzes: {
+        Row: {
+          community_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          passing_score: number
+          timer_minutes: number | null
+          title: string
+        }
+        Insert: {
+          community_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          passing_score?: number
+          timer_minutes?: number | null
+          title: string
+        }
+        Update: {
+          community_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          passing_score?: number
+          timer_minutes?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_quizzes_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "church_communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_quizzes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_reactions: {
         Row: {
           comment_id: string | null
