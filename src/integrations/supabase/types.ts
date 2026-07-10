@@ -1862,6 +1862,177 @@ export type Database = {
           },
         ]
       }
+      community_cell_members: {
+        Row: {
+          cell_id: string
+          community_id: string
+          id: string
+          is_active: boolean
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          cell_id: string
+          community_id: string
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          cell_id?: string
+          community_id?: string
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_cell_members_cell_id_fkey"
+            columns: ["cell_id"]
+            isOneToOne: false
+            referencedRelation: "community_cells"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_members_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "church_communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_cells: {
+        Row: {
+          city: string | null
+          community_id: string
+          complement: string | null
+          country: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          leader_name: string | null
+          leader_user_id: string | null
+          maps_link: string | null
+          meeting_day: string | null
+          meeting_time: string | null
+          name: string
+          neighborhood: string | null
+          number: string | null
+          photos: string[]
+          state: string | null
+          street: string | null
+          supervisor_name: string | null
+          theme: string | null
+          updated_at: string
+          verse: string | null
+          vice_leader_name: string | null
+          vice_leader_user_id: string | null
+          weekly_objective: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          city?: string | null
+          community_id: string
+          complement?: string | null
+          country?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          leader_name?: string | null
+          leader_user_id?: string | null
+          maps_link?: string | null
+          meeting_day?: string | null
+          meeting_time?: string | null
+          name: string
+          neighborhood?: string | null
+          number?: string | null
+          photos?: string[]
+          state?: string | null
+          street?: string | null
+          supervisor_name?: string | null
+          theme?: string | null
+          updated_at?: string
+          verse?: string | null
+          vice_leader_name?: string | null
+          vice_leader_user_id?: string | null
+          weekly_objective?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          city?: string | null
+          community_id?: string
+          complement?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          leader_name?: string | null
+          leader_user_id?: string | null
+          maps_link?: string | null
+          meeting_day?: string | null
+          meeting_time?: string | null
+          name?: string
+          neighborhood?: string | null
+          number?: string | null
+          photos?: string[]
+          state?: string | null
+          street?: string | null
+          supervisor_name?: string | null
+          theme?: string | null
+          updated_at?: string
+          verse?: string | null
+          vice_leader_name?: string | null
+          vice_leader_user_id?: string | null
+          weekly_objective?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_cells_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "church_communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cells_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cells_leader_user_id_fkey"
+            columns: ["leader_user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cells_vice_leader_user_id_fkey"
+            columns: ["vice_leader_user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_comments: {
         Row: {
           audio_url: string | null
