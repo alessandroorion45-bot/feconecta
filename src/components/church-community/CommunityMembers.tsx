@@ -19,13 +19,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Crown, Trash2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MemberMinistryBadges from "./MemberMinistryBadges";
 import RectAvatar from "@/components/RectAvatar";
 import { COMMUNITY_ROLES, getRoleInfo } from "@/lib/communityRoles";
+import { PERMISSION_LEVELS } from "@/lib/permissionLevels";
+
+const PERMISSION_LEVEL_VALUES = new Set(PERMISSION_LEVELS.map(p => p.value));
+const OTHER_ROLES = COMMUNITY_ROLES.filter(r => !PERMISSION_LEVEL_VALUES.has(r.value));
 
 interface Member {
   id: string;
@@ -323,15 +327,30 @@ const CommunityMembers = ({ communityId, communityName, userId, isAdmin }: Commu
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="max-h-60">
-                            {COMMUNITY_ROLES.map((r) => (
-                              <SelectItem key={r.value} value={r.value}>
-                                <span className="flex items-center gap-2">
-                                  <span>{r.emoji}</span>
-                                  {r.label}
-                                </span>
-                              </SelectItem>
-                            ))}
+                          <SelectContent className="max-h-72">
+                            <SelectGroup>
+                              <SelectLabel>Níveis de permissão</SelectLabel>
+                              {[...PERMISSION_LEVELS].sort((a, b) => b.level - a.level).map((p) => (
+                                <SelectItem key={p.value} value={p.value}>
+                                  <span className="flex items-center gap-2">
+                                    <span>{p.emoji}</span>
+                                    {p.label}
+                                    <span className="text-[10px] text-muted-foreground">nível {p.level}</span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel>Outras funções (não alteram permissões)</SelectLabel>
+                              {OTHER_ROLES.map((r) => (
+                                <SelectItem key={r.value} value={r.value}>
+                                  <span className="flex items-center gap-2">
+                                    <span>{r.emoji}</span>
+                                    {r.label}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
                           </SelectContent>
                         </Select>
                       </div>

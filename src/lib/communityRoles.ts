@@ -28,6 +28,7 @@ export const COMMUNITY_ROLES: CommunityRole[] = [
   { value: 'secretario', label: 'Secretário', emoji: '📋' },
   { value: 'moderador', label: 'Moderador', emoji: '🛡️' },
   { value: 'member', label: 'Membro', emoji: '👤' },
+  { value: 'visitor', label: 'Visitante', emoji: '🚪' },
 ];
 
 export const ROLE_BY_VALUE = Object.fromEntries(
