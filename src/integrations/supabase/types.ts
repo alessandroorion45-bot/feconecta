@@ -1862,6 +1862,71 @@ export type Database = {
           },
         ]
       }
+      community_cell_attendance: {
+        Row: {
+          cell_id: string
+          community_id: string
+          created_at: string
+          guest_name: string | null
+          id: string
+          meeting_date: string
+          recorded_by: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          cell_id: string
+          community_id: string
+          created_at?: string
+          guest_name?: string | null
+          id?: string
+          meeting_date: string
+          recorded_by: string
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          cell_id?: string
+          community_id?: string
+          created_at?: string
+          guest_name?: string | null
+          id?: string
+          meeting_date?: string
+          recorded_by?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_cell_attendance_cell_id_fkey"
+            columns: ["cell_id"]
+            isOneToOne: false
+            referencedRelation: "community_cells"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_attendance_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "church_communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_attendance_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_cell_members: {
         Row: {
           cell_id: string
