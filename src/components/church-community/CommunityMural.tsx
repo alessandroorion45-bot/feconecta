@@ -13,10 +13,11 @@ import {
   MURAL_POST_TYPES, POST_TYPE_BY_VALUE,
   canPostWordOfWeek, canModerateMural, getRoleInfo,
 } from "@/lib/communityRoles";
-import { Send, Sparkles, Trash2, MessageCircle, Loader2, Megaphone, Share2, Bookmark } from "lucide-react";
+import { Send, Sparkles, Trash2, MessageCircle, Loader2, Megaphone, Share2, Bookmark, FileText, Paperclip, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { getYoutubeEmbedUrl } from "@/lib/youtube";
 
 const sb = supabase as any;
 
@@ -31,6 +32,12 @@ export interface MuralPost {
   verse_text: string | null;
   applications: string | null;
   reflection_questions: string | null;
+  image_url?: string | null;
+  pdf_url?: string | null;
+  video_url?: string | null;
+  audio_url?: string | null;
+  youtube_url?: string | null;
+  attachments?: { name: string; url: string }[] | null;
   is_pinned: boolean;
   created_at: string;
   profile?: { full_name: string; username: string; avatar_url: string | null };
@@ -302,6 +309,48 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
               </blockquote>
             )}
             <p className="whitespace-pre-wrap text-sm">{wordOfWeek.content}</p>
+
+            {wordOfWeek.image_url && (
+              <img src={wordOfWeek.image_url} alt={wordOfWeek.title || "Estudo da semana"} className="rounded-lg w-full max-h-72 object-cover" />
+            )}
+
+            {wordOfWeek.youtube_url && getYoutubeEmbedUrl(wordOfWeek.youtube_url) && (
+              <div className="rounded-lg overflow-hidden aspect-video">
+                <iframe
+                  title="Vídeo do estudo"
+                  className="w-full h-full"
+                  src={getYoutubeEmbedUrl(wordOfWeek.youtube_url) || undefined}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
+
+            {wordOfWeek.video_url && (
+              <video src={wordOfWeek.video_url} controls className="rounded-lg w-full max-h-72" />
+            )}
+
+            {wordOfWeek.audio_url && (
+              <audio src={wordOfWeek.audio_url} controls className="w-full" />
+            )}
+
+            {(wordOfWeek.pdf_url || (wordOfWeek.attachments && wordOfWeek.attachments.length > 0)) && (
+              <div className="flex flex-wrap gap-2">
+                {wordOfWeek.pdf_url && (
+                  <a href={wordOfWeek.pdf_url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs bg-background/60 hover:bg-background rounded-lg px-2.5 py-1.5 border">
+                    <FileText className="h-3.5 w-3.5 text-primary" /> Material em PDF <Download className="h-3 w-3" />
+                  </a>
+                )}
+                {(wordOfWeek.attachments || []).map(a => (
+                  <a key={a.url} href={a.url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs bg-background/60 hover:bg-background rounded-lg px-2.5 py-1.5 border">
+                    <Paperclip className="h-3.5 w-3.5" /> {a.name} <Download className="h-3 w-3" />
+                  </a>
+                ))}
+              </div>
+            )}
+
             {wordOfWeek.applications && (
               <div className="bg-background/60 rounded-lg p-3">
                 <p className="text-sm font-medium mb-1">🎯 Aplicações práticas</p>
