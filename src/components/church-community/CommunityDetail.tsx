@@ -14,7 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Users, Vote, Star, Plus, Settings, Heart, Shield, Megaphone,
-  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff, UserPlus, Crown, Home, BookOpenCheck,
+  Flame, TreeDeciduous, Camera, Pencil, Trash2, MoreVertical, Loader2, ImageOff, UserPlus, Crown, Home, BookOpenCheck, CalendarDays,
 } from "lucide-react";
 import { ImageCropModal } from "@/components/ImageCropModal";
 import EditCommunityModal from "./EditCommunityModal";
@@ -25,6 +25,7 @@ import CommunityTree from "./CommunityTree";
 import CommunityLeaders from "./CommunityLeaders";
 import CommunityCells from "./CommunityCells";
 import CommunityQuizzes from "./CommunityQuizzes";
+import CommunityCalendar from "./CommunityCalendar";
 import CommunityActivity from "./CommunityActivity";
 import VotingList from "./VotingList";
 import LeaderEvaluations from "./LeaderEvaluations";
@@ -477,6 +478,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
               <BookOpenCheck className="h-4 w-4" />
               Atividades
             </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Calendário
+            </TabsTrigger>
             <TabsTrigger value="tree" className="gap-2">
               <TreeDeciduous className="h-4 w-4" />
               Árvore
@@ -529,6 +534,10 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
 
         <TabsContent value="quizzes" className="mt-6">
           <CommunityQuizzes communityId={communityId} communityName={community.name} userId={userId} myRole={myRole} isAdmin={isAdmin} />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-6">
+          <CommunityCalendar communityId={communityId} userId={userId} myRole={myRole} isAdmin={isAdmin} />
         </TabsContent>
 
         <TabsContent value="tree" className="mt-6">
