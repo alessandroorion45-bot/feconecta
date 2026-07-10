@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Crown, Trash2, Loader2 } from "lucide-react";
+import { Users, Crown, Trash2, Loader2, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MemberMinistryBadges from "./MemberMinistryBadges";
@@ -199,6 +199,27 @@ const CommunityMembers = ({ communityId, communityName, userId, isAdmin }: Commu
     );
   };
 
+  const exportMembersCsv = () => {
+    const header = ["Nome", "Usuário", "Função", "Ministérios", "Entrou em"];
+    const rows = members.map(m => [
+      m.profile?.full_name || "",
+      m.profile?.username || "",
+      getRoleInfo(m.role).label,
+      (m.ministries || []).join("; "),
+      new Date(m.joined_at).toLocaleDateString("pt-BR"),
+    ]);
+    const csv = [header, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `membros-${(communityName || "comunidade").toLowerCase().replace(/\s+/g, "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleChangeRole = async (member: Member, newRole: string) => {
     try {
       const { error } = await supabase
@@ -278,9 +299,17 @@ const CommunityMembers = ({ communityId, communityName, userId, isAdmin }: Commu
         </Card>
 
         {/* Member count */}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>{members.length} membros</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Users className="h-4 w-4" />
+            <span>{members.length} membros</span>
+          </div>
+          {isAdmin && (
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={exportMembersCsv}>
+              <Download className="h-3.5 w-3.5" />
+              Exportar CSV
+            </Button>
+          )}
         </div>
 
         {/* Members grid */}

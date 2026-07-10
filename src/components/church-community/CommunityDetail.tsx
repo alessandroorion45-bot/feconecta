@@ -27,6 +27,7 @@ import CommunityCells from "./CommunityCells";
 import CommunityQuizzes from "./CommunityQuizzes";
 import CommunityCalendar from "./CommunityCalendar";
 import CommunityDashboard from "./CommunityDashboard";
+import CommunitySearch from "./CommunitySearch";
 import CommunityActivity from "./CommunityActivity";
 import VotingList from "./VotingList";
 import LeaderEvaluations from "./LeaderEvaluations";
@@ -458,6 +459,8 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
           </p>
         </CardContent>
       </Card>
+
+      <CommunitySearch communityId={communityId} onNavigate={setActiveTab} />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

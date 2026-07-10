@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,7 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
   const [comments, setComments] = useState<MuralComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [wordSaved, setWordSaved] = useState(false);
+  const [readStats, setReadStats] = useState<{ count: number; total: number } | null>(null);
 
   const shareWordOfWeek = async (post: MuralPost) => {
     const text = `✨ Palavra da Semana: ${post.title || ""}\n\n${post.verse_text ? `"${post.verse_text}" — ${post.verse_reference}\n\n` : ""}${post.content}`.slice(0, 500);
@@ -172,6 +173,24 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
       supabase.removeChannel(channel);
     };
   }, [communityId, loadPosts]);
+
+  const wordOfWeek = useMemo(() => posts.find(p => p.type === "word_of_week" && p.is_pinned), [posts]);
+
+  // Controle de leitura: marca como lido e carrega "X de Y leram"
+  useEffect(() => {
+    if (!wordOfWeek) { setReadStats(null); return; }
+    (async () => {
+      await sb.from("community_study_reads").upsert(
+        { post_id: wordOfWeek.id, user_id: userId },
+        { onConflict: "post_id,user_id", ignoreDuplicates: true }
+      );
+      const [{ count: readCount }, { count: memberCount }] = await Promise.all([
+        sb.from("community_study_reads").select("id", { count: "exact", head: true }).eq("post_id", wordOfWeek.id),
+        supabase.from("church_community_members").select("id", { count: "exact", head: true }).eq("community_id", communityId).eq("is_active", true),
+      ]);
+      setReadStats({ count: readCount || 0, total: memberCount || 0 });
+    })();
+  }, [wordOfWeek?.id, communityId, userId]);
 
   const publishPost = async () => {
     if (!newPostContent.trim()) return;
@@ -279,7 +298,6 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
     );
   }
 
-  const wordOfWeek = posts.find(p => p.type === "word_of_week" && p.is_pinned);
   const regularPosts = posts.filter(p => p.id !== wordOfWeek?.id);
 
   return (
@@ -303,6 +321,9 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
             <p className="text-xs text-muted-foreground">
               Por {wordOfWeek.profile?.full_name || "Liderança"} ({getRoleInfo(wordOfWeek.author_role).label}) ·{" "}
               {formatDistanceToNow(new Date(wordOfWeek.created_at), { addSuffix: true, locale: ptBR })}
+              {canModerateMural(myRole) && readStats && (
+                <span className="ml-1">· 👁️ {readStats.count} de {readStats.total} leram</span>
+              )}
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
