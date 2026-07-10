@@ -1979,6 +1979,94 @@ export type Database = {
           },
         ]
       }
+      community_cell_prayer_intercessions: {
+        Row: {
+          created_at: string
+          id: string
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_cell_prayer_intercessions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "community_cell_prayer_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_prayer_intercessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_cell_prayer_requests: {
+        Row: {
+          cell_id: string
+          community_id: string
+          content: string
+          created_at: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          cell_id: string
+          community_id: string
+          content: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          cell_id?: string
+          community_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_cell_prayer_requests_cell_id_fkey"
+            columns: ["cell_id"]
+            isOneToOne: false
+            referencedRelation: "community_cells"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_prayer_requests_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "church_communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_cell_prayer_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_cells: {
         Row: {
           city: string | null
