@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, Loader2, Save } from "lucide-react";
+import LocationPicker, { type LocationData } from "./LocationPicker";
 
 interface EditableCommunity {
   id: string;
@@ -16,6 +17,15 @@ interface EditableCommunity {
   city?: string | null;
   state?: string | null;
   main_verse?: string | null;
+  country?: string | null;
+  zip_code?: string | null;
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  maps_link?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface EditCommunityModalProps {
@@ -33,9 +43,21 @@ const EditCommunityModal = ({ open, onOpenChange, community, onSaved }: EditComm
     name: "",
     church_name: "",
     description: "",
-    city: "",
-    state: "",
     main_verse: "",
+  });
+  const [location, setLocation] = useState<LocationData>({
+    country: "Brasil",
+    state: "",
+    city: "",
+    zipCode: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    address: "",
+    mapsLink: "",
+    latitude: undefined,
+    longitude: undefined,
   });
 
   useEffect(() => {
@@ -44,9 +66,21 @@ const EditCommunityModal = ({ open, onOpenChange, community, onSaved }: EditComm
         name: community.name || "",
         church_name: community.church_name || "",
         description: community.description || "",
-        city: community.city || "",
-        state: community.state || "",
         main_verse: community.main_verse || "",
+      });
+      setLocation({
+        country: community.country || "Brasil",
+        state: community.state || "",
+        city: community.city || "",
+        zipCode: community.zip_code || "",
+        street: community.street || "",
+        number: community.number || "",
+        complement: community.complement || "",
+        neighborhood: community.neighborhood || "",
+        address: "",
+        mapsLink: community.maps_link || "",
+        latitude: community.latitude ?? undefined,
+        longitude: community.longitude ?? undefined,
       });
     }
   }, [open, community]);
@@ -65,9 +99,18 @@ const EditCommunityModal = ({ open, onOpenChange, community, onSaved }: EditComm
       name: form.name.trim(),
       church_name: form.church_name.trim(),
       description: form.description.trim() || null,
-      city: form.city.trim() || null,
-      state: form.state.trim() || null,
+      city: location.city.trim() || null,
+      state: location.state.trim() || null,
       main_verse: form.main_verse.trim() || null,
+      country: location.country || null,
+      zip_code: location.zipCode.trim() || null,
+      street: location.street.trim() || null,
+      number: location.number.trim() || null,
+      complement: location.complement.trim() || null,
+      neighborhood: location.neighborhood.trim() || null,
+      maps_link: location.mapsLink.trim() || null,
+      latitude: location.latitude ?? null,
+      longitude: location.longitude ?? null,
     };
 
     let { error } = await (supabase as any)
@@ -75,15 +118,27 @@ const EditCommunityModal = ({ open, onOpenChange, community, onSaved }: EditComm
       .update(patch)
       .eq("id", community.id);
 
-    if (error && /main_verse|column/i.test(error.message || "")) {
-      // Coluna main_verse ainda não existe no banco — salva sem ela
-      delete patch.main_verse;
-      ({ error } = await (supabase as any).from("church_communities").update(patch).eq("id", community.id));
+    if (error && /column/i.test(error.message || "")) {
+      // Alguma coluna nova (endereço detalhado) ainda não existe no banco —
+      // salva só os campos básicos pra não travar o usuário.
+      const basicPatch = {
+        name: patch.name,
+        church_name: patch.church_name,
+        description: patch.description,
+        city: patch.city,
+        state: patch.state,
+        main_verse: patch.main_verse,
+      };
+      ({ error } = await (supabase as any).from("church_communities").update(basicPatch).eq("id", community.id));
       if (!error) {
         toast({
-          title: "Salvo (sem o versículo)",
-          description: "Aplique APLICAR_COMUNIDADE4_SQL.sql para ativar o versículo principal.",
+          title: "Salvo (endereço detalhado pendente)",
+          description: "Aplique a migration do endereço inteligente pra ativar rua/CEP/link do mapa.",
         });
+        onSaved(basicPatch);
+        onOpenChange(false);
+        setSaving(false);
+        return;
       }
     }
 
@@ -110,7 +165,7 @@ const EditCommunityModal = ({ open, onOpenChange, community, onSaved }: EditComm
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3">
+        <div className="max-h-[65vh] overflow-y-auto pr-2 space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="ec-name">Nome da Comunidade *</Label>
             <Input id="ec-name" value={form.name} onChange={set("name")} maxLength={80} />
@@ -122,16 +177,6 @@ const EditCommunityModal = ({ open, onOpenChange, community, onSaved }: EditComm
           <div className="space-y-1.5">
             <Label htmlFor="ec-desc">Descrição / Objetivo</Label>
             <Textarea id="ec-desc" value={form.description} onChange={set("description")} rows={3} maxLength={500} className="resize-none" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="ec-city">Cidade</Label>
-              <Input id="ec-city" value={form.city} onChange={set("city")} maxLength={60} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ec-state">Estado</Label>
-              <Input id="ec-state" value={form.state} onChange={set("state")} maxLength={40} />
-            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ec-verse">Versículo principal da comunidade</Label>
@@ -145,6 +190,11 @@ const EditCommunityModal = ({ open, onOpenChange, community, onSaved }: EditComm
               className="resize-none"
             />
             <p className="text-xs text-muted-foreground">Aparece em destaque no topo da comunidade.</p>
+          </div>
+
+          <div className="border-t pt-3">
+            <h4 className="font-medium mb-3 flex items-center gap-2">📍 Localização da Igreja</h4>
+            <LocationPicker value={location} onChange={setLocation} />
           </div>
         </div>
 

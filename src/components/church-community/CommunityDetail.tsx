@@ -46,6 +46,15 @@ interface Community {
   state?: string | null;
   banner_url?: string | null;
   main_verse?: string | null;
+  country?: string | null;
+  zip_code?: string | null;
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  maps_link?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface CommunityDetailProps {
@@ -365,6 +374,16 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
                 ⛪ {community.church_name}
                 {community.city && <span className="text-sm"> · {community.city}{community.state ? ` - ${community.state}` : ""}</span>}
               </p>
+              {community.maps_link && (
+                <a
+                  href={community.maps_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                >
+                  📍 Ver localização
+                </a>
+              )}
             </div>
           </div>
 

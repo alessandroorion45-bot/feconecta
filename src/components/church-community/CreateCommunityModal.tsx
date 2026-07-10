@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Church, Loader2, Music, Users, Heart, Baby, Globe, BookOpen, HandHeart, Radio, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import LocationPicker from "./LocationPicker";
+import LocationPicker, { type LocationData } from "./LocationPicker";
 
 interface CreateCommunityModalProps {
   open: boolean;
@@ -42,21 +42,21 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
     church_name: "",
     description: "",
   });
-  const [location, setLocation] = useState<{
-    country: string;
-    state: string;
-    city: string;
-    address: string;
-    latitude?: number;
-    longitude?: number;
-  }>({
+  const emptyLocation: LocationData = {
     country: "Brasil",
     state: "",
     city: "",
+    zipCode: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
     address: "",
+    mapsLink: "",
     latitude: undefined,
     longitude: undefined,
-  });
+  };
+  const [location, setLocation] = useState<LocationData>(emptyLocation);
   const [selectedMinistries, setSelectedMinistries] = useState<string[]>([]);
 
   const toggleMinistry = (ministryId: string) => {
@@ -79,16 +79,22 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
       return;
     }
 
-    if (!location.state || !location.city || !location.address) {
+    if (!location.state || !location.city || !location.street || !location.number) {
       toast({
         title: "Localização incompleta",
-        description: "Preencha o estado, município e endereço da igreja.",
+        description: "Preencha o estado, município, rua e número da igreja.",
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+
+    const fullAddress = [
+      location.street && `${location.street}, ${location.number}`,
+      location.complement,
+      location.neighborhood,
+    ].filter(Boolean).join(" - ");
 
     console.log('[CreateCommunity] Criando comunidade:', {
       name: formData.name.trim(),
@@ -110,7 +116,13 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
           country: location.country,
           state: location.state,
           city: location.city,
-          address: location.address,
+          address: fullAddress,
+          zip_code: location.zipCode || null,
+          street: location.street || null,
+          number: location.number || null,
+          complement: location.complement || null,
+          neighborhood: location.neighborhood || null,
+          maps_link: location.mapsLink || null,
           latitude: location.latitude || null,
           longitude: location.longitude || null,
         })
@@ -143,14 +155,7 @@ const CreateCommunityModal = ({ open, onOpenChange, userId, onSuccess }: CreateC
 
       // Reset form
       setFormData({ name: "", church_name: "", description: "" });
-      setLocation({
-        country: "Brasil",
-        state: "",
-        city: "",
-        address: "",
-        latitude: undefined,
-        longitude: undefined,
-      });
+      setLocation(emptyLocation);
       setSelectedMinistries([]);
       
       toast({
