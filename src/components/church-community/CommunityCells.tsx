@@ -9,10 +9,11 @@ import { AvatarPro } from "@/components/AvatarPro";
 import { useToast } from "@/hooks/use-toast";
 import {
   Home, Loader2, Plus, Search, MapPin, Clock, Users, Pencil, Trash2,
-  LogIn, LogOut, ExternalLink, BookOpen, Target,
+  LogIn, LogOut, ExternalLink, BookOpen, Target, ClipboardCheck,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import CellFormModal, { type EditableCell } from "./CellFormModal";
+import CellAttendanceModal from "./CellAttendanceModal";
 
 const sb = supabase as any;
 
@@ -43,6 +44,7 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
   const [showForm, setShowForm] = useState(false);
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
   const [joining, setJoining] = useState(false);
+  const [showAttendance, setShowAttendance] = useState(false);
 
   const canCreate = isAdmin || LEADER_ROLES_SET.includes(myRole || "");
 
@@ -318,6 +320,9 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
                   </Button>
                   {canManageCell(selected) && (
                     <>
+                      <Button variant="outline" size="icon" onClick={() => setShowAttendance(true)} title="Presença">
+                        <ClipboardCheck className="h-4 w-4" />
+                      </Button>
                       <Button variant="outline" size="icon" onClick={() => { setEditingCell(selected); setShowForm(true); }}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -341,6 +346,16 @@ const CommunityCells = ({ communityId, userId, myRole, isAdmin }: CommunityCells
         cell={editingCell}
         onSaved={() => { load(); setSelected(null); }}
       />
+
+      {selected && (
+        <CellAttendanceModal
+          open={showAttendance}
+          onOpenChange={setShowAttendance}
+          cellId={selected.id}
+          communityId={communityId}
+          userId={userId}
+        />
+      )}
     </div>
   );
 };
