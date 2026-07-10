@@ -2821,6 +2821,42 @@ export type Database = {
           },
         ]
       }
+      community_study_reads: {
+        Row: {
+          id: string
+          post_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_study_reads_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_study_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_votes: {
         Row: {
           id: string
