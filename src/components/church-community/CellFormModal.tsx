@@ -167,6 +167,10 @@ const CellFormModal = ({ open, onOpenChange, communityId, userId, cell, onSaved 
       toast({ title: "Campo obrigatório", description: "Dê um nome para a célula.", variant: "destructive" });
       return;
     }
+    if (form.leader_user_id && form.leader_user_id === form.vice_leader_user_id) {
+      toast({ title: "Líder e vice-líder devem ser pessoas diferentes", variant: "destructive" });
+      return;
+    }
     setSaving(true);
 
     const payload = {
