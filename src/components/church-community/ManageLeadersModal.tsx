@@ -14,6 +14,7 @@ import { Users, Plus, Trash2, Loader2, Edit2, Check, X, Camera } from "lucide-re
 import { LEADER_ROLES, LEADER_LEVELS, getLeaderRoleInfo } from "@/lib/leaderRoles";
 import { MINISTRIES } from "./MinistriesSelector";
 import { notifyCommunityMembers } from "@/lib/communityNotifications";
+import MemberPicker, { type CommunityMemberOption } from "./MemberPicker";
 
 const sb = supabase as any;
 
@@ -21,6 +22,7 @@ const CUSTOM_ROLE = "__custom__";
 
 interface Leader {
   id: string;
+  user_id: string | null;
   name: string;
   role: string;
   photo_url: string | null;
@@ -42,7 +44,25 @@ interface ManageLeadersModalProps {
   userId: string;
 }
 
-const emptyForm = {
+interface LeaderFormData {
+  user_id: string | null;
+  name: string;
+  roleSelect: string;
+  customRole: string;
+  level: number;
+  ministry: string;
+  assumed_date: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  favorite_verse: string;
+  area_of_activity: string;
+  bio: string;
+  photo_url: string | null;
+}
+
+const emptyForm: LeaderFormData = {
+  user_id: null,
   name: "",
   roleSelect: "",
   customRole: "",
@@ -55,49 +75,31 @@ const emptyForm = {
   favorite_verse: "",
   area_of_activity: "",
   bio: "",
-  photo_url: "" as string | null,
+  photo_url: "",
 };
 
-const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageLeadersModalProps) => {
-  const { toast } = useToast();
-  const [leaders, setLeaders] = useState<Leader[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState(emptyForm);
-  const [uploading, setUploading] = useState(false);
-  const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface LeaderFormProps {
+  communityId: string;
+  formData: LeaderFormData;
+  setFormData: React.Dispatch<React.SetStateAction<LeaderFormData>>;
+  saving: boolean;
+  uploading: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  duplicateWarning: string | null;
+}
 
-  useEffect(() => {
-    if (open) {
-      loadLeaders();
-    }
-  }, [open, communityId]);
-
-  const loadLeaders = async () => {
-    try {
-      const { data, error } = await sb
-        .from("church_leaders")
-        .select("*")
-        .eq("community_id", communityId)
-        .eq("is_active", true)
-        .order("hierarchy_level", { ascending: true })
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-      setLeaders(data || []);
-    } catch (error) {
-      console.error("Error loading leaders:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetForm = () => setFormData(emptyForm);
-
+/**
+ * Hoisted pro módulo (fora do componente pai) de propósito — definir um
+ * componente dentro do corpo de outro faz o React recriar sua identidade a
+ * cada re-render do pai (cada tecla digitada), desmontando/remontando o
+ * formulário inteiro e derrubando o foco do input a cada caractere.
+ */
+const LeaderForm = ({
+  communityId, formData, setFormData, saving, uploading, fileInputRef, onFileSelect, onSave, onCancel, duplicateWarning,
+}: LeaderFormProps) => {
   const onRoleSelect = (value: string) => {
     if (value === CUSTOM_ROLE) {
       setFormData(prev => ({ ...prev, roleSelect: CUSTOM_ROLE }));
@@ -107,157 +109,38 @@ const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageL
     setFormData(prev => ({ ...prev, roleSelect: value, level: info?.level ?? prev.level }));
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Arquivo inválido", description: "Selecione uma imagem.", variant: "destructive" });
+  const selectedMember: CommunityMemberOption | null = formData.user_id
+    ? { user_id: formData.user_id, full_name: formData.name, avatar_url: formData.photo_url, city: null }
+    : null;
+
+  const onPickMember = (member: CommunityMemberOption | null) => {
+    if (!member) {
+      setFormData(prev => ({ ...prev, user_id: null }));
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setSelectedImage(ev.target?.result as string);
-      setCropModalOpen(true);
-    };
-    reader.readAsDataURL(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setFormData(prev => ({
+      ...prev,
+      user_id: member.user_id,
+      name: member.full_name,
+      photo_url: member.avatar_url || prev.photo_url,
+    }));
   };
 
-  const handleCropComplete = async (blob: Blob) => {
-    setCropModalOpen(false);
-    setSelectedImage(null);
-    setUploading(true);
-    try {
-      const filePath = `community-leaders/leader-${communityId}-${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage
-        .from("community-photos")
-        .upload(filePath, blob, { contentType: "image/jpeg", upsert: true });
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from("community-photos").getPublicUrl(filePath);
-      setFormData(prev => ({ ...prev, photo_url: urlData.publicUrl }));
-      toast({ title: "📸 Foto pronta!", description: "Ela será salva junto com o líder." });
-    } catch (error: any) {
-      toast({ title: "Erro ao enviar foto", description: error.message, variant: "destructive" });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const buildPayload = () => {
-    const role = formData.roleSelect === CUSTOM_ROLE ? formData.customRole.trim() : formData.roleSelect;
-    return {
-      name: formData.name.trim(),
-      role,
-      bio: formData.bio.trim() || null,
-      photo_url: formData.photo_url || null,
-      ministry: formData.ministry || null,
-      assumed_date: formData.assumed_date || null,
-      phone: formData.phone.trim() || null,
-      whatsapp: formData.whatsapp.trim() || null,
-      email: formData.email.trim() || null,
-      favorite_verse: formData.favorite_verse.trim() || null,
-      area_of_activity: formData.area_of_activity.trim() || null,
-      hierarchy_level: formData.level,
-    };
-  };
-
-  const handleAddLeader = async () => {
-    const role = formData.roleSelect === CUSTOM_ROLE ? formData.customRole.trim() : formData.roleSelect;
-    if (!formData.name.trim() || !role) {
-      toast({ title: "Campos obrigatórios", description: "Preencha o nome e a função do líder.", variant: "destructive" });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const { error } = await sb.from("church_leaders").insert({
-        community_id: communityId,
-        ...buildPayload(),
-      });
-
-      if (error) throw error;
-
-      const payload = buildPayload();
-      notifyCommunityMembers(communityId, userId, "community_new_leader", `⭐ ${payload.name} agora é ${payload.role} da comunidade!`, communityId);
-
-      toast({ title: "Líder adicionado!", description: "Já aparece na aba Líderes e no organograma." });
-
-      resetForm();
-      setShowAddForm(false);
-      loadLeaders();
-    } catch (error: any) {
-      toast({ title: "Erro ao adicionar líder", description: error.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleUpdateLeader = async (leader: Leader) => {
-    const role = formData.roleSelect === CUSTOM_ROLE ? formData.customRole.trim() : formData.roleSelect;
-    if (!formData.name.trim() || !role) {
-      toast({ title: "Campos obrigatórios", description: "Preencha o nome e a função do líder.", variant: "destructive" });
-      return;
-    }
-    setSaving(true);
-    try {
-      const { error } = await sb.from("church_leaders").update(buildPayload()).eq("id", leader.id);
-
-      if (error) throw error;
-
-      toast({ title: "Líder atualizado!" });
-      setEditingId(null);
-      resetForm();
-      loadLeaders();
-    } catch (error: any) {
-      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleRemoveLeader = async (leaderId: string) => {
-    setSaving(true);
-    try {
-      const { error } = await sb.from("church_leaders").update({ is_active: false }).eq("id", leaderId);
-
-      if (error) throw error;
-
-      toast({ title: "Líder removido" });
-      loadLeaders();
-    } catch (error: any) {
-      toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const startEditing = (leader: Leader) => {
-    setEditingId(leader.id);
-    const isKnown = LEADER_ROLES.some(r => r.value === leader.role);
-    setFormData({
-      name: leader.name,
-      roleSelect: isKnown ? leader.role : CUSTOM_ROLE,
-      customRole: isKnown ? "" : leader.role,
-      level: leader.hierarchy_level || getLeaderRoleInfo(leader.role).level,
-      ministry: leader.ministry || "",
-      assumed_date: leader.assumed_date || "",
-      phone: leader.phone || "",
-      whatsapp: leader.whatsapp || "",
-      email: leader.email || "",
-      favorite_verse: leader.favorite_verse || "",
-      area_of_activity: leader.area_of_activity || "",
-      bio: leader.bio || "",
-      photo_url: leader.photo_url,
-    });
-  };
-
-  const LeaderForm = ({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) => (
+  return (
     <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label>Vincular a um membro da comunidade (opcional)</Label>
+        <MemberPicker communityId={communityId} value={selectedMember} onSelect={onPickMember} disabled={saving} />
+        {duplicateWarning && (
+          <p className="text-xs text-destructive">{duplicateWarning}</p>
+        )}
+        <p className="text-[11px] text-muted-foreground">Preenche foto e nome automaticamente. Deixe em branco se o líder não tiver conta no app.</p>
+      </div>
+
       <div className="flex items-center gap-3">
         <div className="relative group shrink-0">
           <AvatarPro src={formData.photo_url} name={formData.name || "Líder"} size="lg" clickable={false} />
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileSelect} className="hidden" />
           <Button
             type="button"
             size="icon"
@@ -424,7 +307,7 @@ const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageL
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={onSave} disabled={saving} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
+        <Button onClick={onSave} disabled={saving || !!duplicateWarning} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
           Salvar
         </Button>
@@ -435,6 +318,203 @@ const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageL
       </div>
     </div>
   );
+};
+
+const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageLeadersModalProps) => {
+  const { toast } = useToast();
+  const [leaders, setLeaders] = useState<Leader[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [formData, setFormData] = useState<LeaderFormData>(emptyForm);
+  const [uploading, setUploading] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      loadLeaders();
+    }
+  }, [open, communityId]);
+
+  const loadLeaders = async () => {
+    try {
+      const { data, error } = await sb
+        .from("church_leaders")
+        .select("*")
+        .eq("community_id", communityId)
+        .eq("is_active", true)
+        .order("hierarchy_level", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      setLeaders(data || []);
+    } catch (error) {
+      console.error("Error loading leaders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => setFormData(emptyForm);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Arquivo inválido", description: "Selecione uma imagem.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setSelectedImage(ev.target?.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCropComplete = async (blob: Blob) => {
+    setCropModalOpen(false);
+    setSelectedImage(null);
+    setUploading(true);
+    try {
+      const filePath = `community-leaders/leader-${communityId}-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("community-photos")
+        .upload(filePath, blob, { contentType: "image/jpeg", upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("community-photos").getPublicUrl(filePath);
+      setFormData(prev => ({ ...prev, photo_url: urlData.publicUrl }));
+      toast({ title: "📸 Foto pronta!", description: "Ela será salva junto com o líder." });
+    } catch (error: any) {
+      toast({ title: "Erro ao enviar foto", description: error.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const buildPayload = (data: LeaderFormData) => {
+    const role = data.roleSelect === CUSTOM_ROLE ? data.customRole.trim() : data.roleSelect;
+    return {
+      user_id: data.user_id,
+      name: data.name.trim(),
+      role,
+      bio: data.bio.trim() || null,
+      photo_url: data.photo_url || null,
+      ministry: data.ministry || null,
+      assumed_date: data.assumed_date || null,
+      phone: data.phone.trim() || null,
+      whatsapp: data.whatsapp.trim() || null,
+      email: data.email.trim() || null,
+      favorite_verse: data.favorite_verse.trim() || null,
+      area_of_activity: data.area_of_activity.trim() || null,
+      hierarchy_level: data.level,
+    };
+  };
+
+  // Membro já vinculado a outro líder ativo? (evita duplicidade ao adicionar)
+  const duplicateWarning = !editingId && formData.user_id && leaders.some(l => l.user_id === formData.user_id)
+    ? "Este membro já faz parte da liderança. Edite o cargo existente em vez de duplicar."
+    : null;
+
+  const handleAddLeader = async () => {
+    const role = formData.roleSelect === CUSTOM_ROLE ? formData.customRole.trim() : formData.roleSelect;
+    if (!formData.name.trim() || !role) {
+      toast({ title: "Campos obrigatórios", description: "Preencha o nome e a função do líder.", variant: "destructive" });
+      return;
+    }
+    if (duplicateWarning) {
+      toast({ title: "Membro já é líder", description: duplicateWarning, variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = buildPayload(formData);
+      const { error } = await sb.from("church_leaders").insert({
+        community_id: communityId,
+        ...payload,
+      });
+
+      if (error) throw error;
+
+      notifyCommunityMembers(communityId, userId, "community_new_leader", `⭐ ${payload.name} agora é ${payload.role} da comunidade!`, communityId);
+
+      toast({ title: "Líder adicionado!", description: "Já aparece na aba Líderes e no organograma." });
+
+      resetForm();
+      setShowAddForm(false);
+      loadLeaders();
+    } catch (error: any) {
+      toast({ title: "Erro ao adicionar líder", description: error.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateLeader = async (leader: Leader) => {
+    const role = formData.roleSelect === CUSTOM_ROLE ? formData.customRole.trim() : formData.roleSelect;
+    if (!formData.name.trim() || !role) {
+      toast({ title: "Campos obrigatórios", description: "Preencha o nome e a função do líder.", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await sb.from("church_leaders").update(buildPayload(formData)).eq("id", leader.id);
+
+      if (error) throw error;
+
+      toast({ title: "Líder atualizado!" });
+      setEditingId(null);
+      resetForm();
+      loadLeaders();
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveLeader = async (leaderId: string) => {
+    setSaving(true);
+    try {
+      const { error } = await sb.from("church_leaders").update({ is_active: false }).eq("id", leaderId);
+
+      if (error) throw error;
+
+      toast({ title: "Líder removido" });
+      loadLeaders();
+    } catch (error: any) {
+      toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEditing = (leader: Leader) => {
+    setEditingId(leader.id);
+    const isKnown = LEADER_ROLES.some(r => r.value === leader.role);
+    setFormData({
+      user_id: leader.user_id,
+      name: leader.name,
+      roleSelect: isKnown ? leader.role : CUSTOM_ROLE,
+      customRole: isKnown ? "" : leader.role,
+      level: leader.hierarchy_level || getLeaderRoleInfo(leader.role).level,
+      ministry: leader.ministry || "",
+      assumed_date: leader.assumed_date || "",
+      phone: leader.phone || "",
+      whatsapp: leader.whatsapp || "",
+      email: leader.email || "",
+      favorite_verse: leader.favorite_verse || "",
+      area_of_activity: leader.area_of_activity || "",
+      bio: leader.bio || "",
+      photo_url: leader.photo_url,
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -472,7 +552,18 @@ const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageL
                 <Card key={leader.id}>
                   <CardContent className="p-4">
                     {editingId === leader.id ? (
-                      <LeaderForm onSave={() => handleUpdateLeader(leader)} onCancel={() => { setEditingId(null); resetForm(); }} />
+                      <LeaderForm
+                        communityId={communityId}
+                        formData={formData}
+                        setFormData={setFormData}
+                        saving={saving}
+                        uploading={uploading}
+                        fileInputRef={fileInputRef}
+                        onFileSelect={handleFileSelect}
+                        onSave={() => handleUpdateLeader(leader)}
+                        onCancel={() => { setEditingId(null); resetForm(); }}
+                        duplicateWarning={null}
+                      />
                     ) : (
                       <div className="flex items-center gap-3">
                         <AvatarPro src={leader.photo_url} name={leader.name} size="sm" clickable={false} />
@@ -507,7 +598,18 @@ const ManageLeadersModal = ({ open, onOpenChange, communityId, userId }: ManageL
           {showAddForm ? (
             <Card className="border-dashed">
               <CardContent className="p-4">
-                <LeaderForm onSave={handleAddLeader} onCancel={() => { setShowAddForm(false); resetForm(); }} />
+                <LeaderForm
+                  communityId={communityId}
+                  formData={formData}
+                  setFormData={setFormData}
+                  saving={saving}
+                  uploading={uploading}
+                  fileInputRef={fileInputRef}
+                  onFileSelect={handleFileSelect}
+                  onSave={handleAddLeader}
+                  onCancel={() => { setShowAddForm(false); resetForm(); }}
+                  duplicateWarning={duplicateWarning}
+                />
               </CardContent>
             </Card>
           ) : (

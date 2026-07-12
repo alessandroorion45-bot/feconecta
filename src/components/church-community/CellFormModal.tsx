@@ -10,15 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Home, Loader2, Save, Camera, X } from "lucide-react";
 import { ImageCropModal } from "@/components/ImageCropModal";
 import LocationPicker, { type LocationData } from "./LocationPicker";
+import MemberPicker, { type CommunityMemberOption } from "./MemberPicker";
 
 const sb = supabase as any;
 
 const WEEKDAYS = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
-
-interface MemberOption {
-  user_id: string;
-  full_name: string;
-}
 
 export interface EditableCell {
   id: string;
@@ -64,7 +60,6 @@ const CellFormModal = ({ open, onOpenChange, communityId, userId, cell, onSaved 
   const isEditing = !!cell;
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [members, setMembers] = useState<MemberOption[]>([]);
   const [location, setLocation] = useState<LocationData>(emptyLocation);
   const [form, setForm] = useState({
     name: "",
@@ -83,24 +78,6 @@ const CellFormModal = ({ open, onOpenChange, communityId, userId, cell, onSaved 
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    (async () => {
-      const { data } = await supabase
-        .from("church_community_members")
-        .select("user_id")
-        .eq("community_id", communityId)
-        .eq("is_active", true);
-      const ids = [...new Set((data || []).map((m: any) => m.user_id))];
-      if (!ids.length) return;
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", ids);
-      setMembers((profiles || []).map(p => ({ user_id: p.id, full_name: p.full_name || "Sem nome" })));
-    })();
-  }, [open, communityId]);
 
   useEffect(() => {
     if (!open) return;
@@ -140,13 +117,12 @@ const CellFormModal = ({ open, onOpenChange, communityId, userId, cell, onSaved 
     }
   }, [open, cell]);
 
-  const pickLeader = (field: "leader" | "vice_leader", userId2: string) => {
-    if (userId2 === "none") {
+  const pickLeader = (field: "leader" | "vice_leader", member: CommunityMemberOption | null) => {
+    if (!member) {
       setForm(prev => ({ ...prev, [`${field}_user_id`]: "", [`${field}_name`]: "" }));
       return;
     }
-    const m = members.find(m => m.user_id === userId2);
-    setForm(prev => ({ ...prev, [`${field}_user_id`]: userId2, [`${field}_name`]: m?.full_name || prev[`${field}_name` as "leader_name"] }));
+    setForm(prev => ({ ...prev, [`${field}_user_id`]: member.user_id, [`${field}_name`]: member.full_name }));
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,13 +240,12 @@ const CellFormModal = ({ open, onOpenChange, communityId, userId, cell, onSaved 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Líder</Label>
-              <Select value={form.leader_user_id || "none"} onValueChange={(v) => pickLeader("leader", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {members.map(m => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <MemberPicker
+                communityId={communityId}
+                value={form.leader_user_id ? { user_id: form.leader_user_id, full_name: form.leader_name, avatar_url: null, city: null } : null}
+                onSelect={(m) => pickLeader("leader", m)}
+                disabled={saving}
+              />
               <Input
                 className="mt-1"
                 placeholder="Nome (se não for membro)"
@@ -281,13 +256,12 @@ const CellFormModal = ({ open, onOpenChange, communityId, userId, cell, onSaved 
             </div>
             <div className="space-y-1.5">
               <Label>Vice-líder</Label>
-              <Select value={form.vice_leader_user_id || "none"} onValueChange={(v) => pickLeader("vice_leader", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {members.map(m => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <MemberPicker
+                communityId={communityId}
+                value={form.vice_leader_user_id ? { user_id: form.vice_leader_user_id, full_name: form.vice_leader_name, avatar_url: null, city: null } : null}
+                onSelect={(m) => pickLeader("vice_leader", m)}
+                disabled={saving}
+              />
               <Input
                 className="mt-1"
                 placeholder="Nome (se não for membro)"
