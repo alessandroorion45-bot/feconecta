@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import SEO from "@/components/SEO";
 
 interface Devotional {
   id: string;
@@ -284,6 +285,12 @@ const Devotional = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
+      <SEO
+        path="/devotional"
+        title="Devocional Diário"
+        description="Devocional cristão diário com reflexão, versículo do dia e aplicação prática para sua vida de fé."
+        keywords="devocional, devocional diário, versículo do dia, palavra de Deus, reflexão cristã"
+      />
       <Header />
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Header com Título */}

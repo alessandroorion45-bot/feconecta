@@ -16,6 +16,7 @@ import UserAvatar from "@/components/UserAvatar";
 import { ContentActionsMenu } from "@/components/ContentActionsMenu";
 
 import AudioRecorder from "@/components/AudioRecorder";
+import SEO from "@/components/SEO";
 
 interface Testimony {
   id: string;
@@ -693,6 +694,12 @@ const Testimonies = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero flex flex-col">
+      <SEO
+        path="/testimonies"
+        title="Depoimentos e Testemunhos"
+        description="Compartilhe e leia testemunhos cristãos de como Deus tem agido na vida das pessoas. Fortaleça sua fé com histórias reais da comunidade."
+        keywords="testemunho cristão, depoimento, testemunho de fé, vida cristã, comunhão cristã"
+      />
       <Header />
       <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 md:py-8">
         {/* Hero Section Magnético */}

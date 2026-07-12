@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import SEO from "@/components/SEO";
 import BibleReferenceModal from "@/components/BibleReferenceModal";
 
 /** Versículo do dia (determinístico pela data — igual para todos) */
@@ -436,6 +437,12 @@ const BibleStudies = () => {
   // Lista de estudos
   return (
     <div className="min-h-screen bg-gradient-hero">
+      <SEO
+        path="/studies"
+        title="Estudos Bíblicos"
+        description="Estudos bíblicos aprofundados em vídeo, áudio e texto para crescer no conhecimento da Palavra de Deus."
+        keywords="estudo bíblico, estudo da célula, discipulado cristão, escola bíblica"
+      />
       <Header />
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}

@@ -7,6 +7,7 @@ import LoadingFallback from "@/components/LoadingFallback";
 import { Book, Heart, Church, Sparkles, User, Gamepad2, MessageSquare, BookOpen, HelpCircle, Search, Star, Users, Brain, BookMarked } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import SEO from "@/components/SEO";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -56,6 +57,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero flex flex-col">
+      <SEO
+        path="/"
+        title="Início"
+        description="Aliança Kingdom é uma plataforma cristã completa para igrejas, líderes, células, comunidades, estudos bíblicos, pedidos de oração, eventos, discipulado, evangelismo e comunhão."
+        keywords="plataforma cristã, rede social cristã, comunidade cristã, igreja online, bíblia online, pedido de oração, igreja em células"
+      />
       <Header />
       
       {/* Hero Section */}

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Crown, Star, Medal, Flame, Book, Target, HelpCircle, TrendingUp } from "lucide-react";
 import { UserBadge } from "@/components/UserBadge";
+import SEO from "@/components/SEO";
 
 interface RankedUser {
   user_id: string;
@@ -237,6 +238,11 @@ const Ranking = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero flex flex-col">
+      <SEO
+        path="/ranking"
+        title="Ranking da Comunidade"
+        description="Veja o ranking dos membros mais ativos do Aliança Kingdom: leitura bíblica, testemunhos e orações compartilhadas."
+      />
       <Header />
       <main className="flex-1 w-full max-w-3xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 md:py-8 space-y-6">
         {/* Header Card */}

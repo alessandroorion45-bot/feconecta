@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReportUserModal from "@/components/ReportUserModal";
+import SEO from "@/components/SEO";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -480,6 +481,7 @@ const FriendDetails = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero flex flex-col">
+      <SEO path={`/friend/${friendId}`} title={friend.full_name} description={`Perfil de ${friend.full_name} no Aliança Kingdom.`} noindex />
       <Header />
       <main className="flex-1 w-full max-w-2xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 md:py-8 space-y-4">
         {/* Header with back button */}

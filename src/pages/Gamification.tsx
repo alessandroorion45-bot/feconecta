@@ -13,6 +13,7 @@ import {
   Trophy, TrendingUp, Target, Award, Flame, Star, Zap, Crown
 } from "lucide-react";
 import { formatLargeNumber, getTitleIcon } from "@/lib/gamification";
+import SEO from "@/components/SEO";
 
 const Gamification = () => {
   const { user } = useAuth();
@@ -80,6 +81,11 @@ const Gamification = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
+      <SEO
+        path="/gamification"
+        title="Conquistas e Gamificação"
+        description="Acompanhe suas conquistas, nível e desafios diários no Aliança Kingdom."
+      />
       <Header />
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Header com Stats do Usuário */}

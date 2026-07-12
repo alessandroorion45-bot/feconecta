@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle, Globe, WifiOff } from "lucide-react";
+import SEO from "@/components/SEO";
 import { FcGoogle } from "react-icons/fc";
 import { 
   emailSchema, 
@@ -756,6 +757,7 @@ const Auth = () => {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 dark:from-amber-950 dark:via-yellow-950/60 dark:to-orange-950/60 p-3 sm:p-4">
+      <SEO path="/auth" title="Entrar ou Criar Conta" description="Entre ou crie sua conta gratuita no Aliança Kingdom e conecte-se com uma comunidade cristã completa." noindex />
       {/* Elementos decorativos dourados */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-gradient-to-br from-amber-400/20 to-yellow-400/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-72 h-72 bg-gradient-to-tr from-orange-400/20 to-amber-300/10 rounded-full blur-3xl pointer-events-none" />

@@ -18,6 +18,7 @@ import {
   Loader2,
   Film
 } from "lucide-react";
+import SEO from "@/components/SEO";
 
 interface VideoData {
   id: string;
@@ -138,6 +139,11 @@ const Videos = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero flex flex-col">
+      <SEO
+        path="/videos"
+        title="Vídeos Cristãos"
+        description="Assista vídeos cristãos, pregações e conteúdo de edificação da comunidade Aliança Kingdom."
+      />
       <Header />
       <main className="flex-1 w-full max-w-6xl mx-auto py-6 px-4">
         {/* Header Section */}

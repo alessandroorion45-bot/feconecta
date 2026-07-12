@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import SEO from "@/components/SEO";
 
 interface DictionaryEntry {
   id: string;
@@ -279,6 +280,11 @@ const BibleDictionary = () => {
   // Lista de verbetes
   return (
     <div className="min-h-screen bg-gradient-hero">
+      <SEO
+        path="/dictionary"
+        title="Dicionário Bíblico"
+        description="Consulte o dicionário bíblico do Aliança Kingdom: pessoas, lugares e termos das Escrituras explicados."
+      />
       <Header />
       <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}

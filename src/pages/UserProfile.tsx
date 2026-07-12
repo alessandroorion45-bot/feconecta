@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import SEO from "@/components/SEO";
 
 interface Profile {
   id: string;
@@ -388,6 +389,14 @@ const UserProfile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
+      <SEO
+        path={`/profile/${userId}`}
+        title={profile.full_name || profile.username}
+        description={profile.bio || `Perfil de ${profile.full_name || profile.username} no Aliança Kingdom${profile.church_name ? ` — ${profile.church_name}` : ""}.`}
+        image={profile.avatar_url || undefined}
+        type="profile"
+        noindex={profile.is_private}
+      />
       <Header />
       <main className="container py-0 sm:py-8 max-w-2xl px-0 sm:px-4">
         <Card className={`shadow-divine overflow-hidden rounded-none sm:rounded-lg transition-all duration-500 ease-out ${

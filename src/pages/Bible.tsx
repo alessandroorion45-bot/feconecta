@@ -3,10 +3,17 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 import { BibleReader } from "@/components/bible/BibleReader";
 import { TrendingVerses } from "@/components/bible/TrendingVerses";
 import { DailyVerse } from "@/components/bible/DailyVerse";
+import SEO from "@/components/SEO";
 
 const Bible = () => {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--theme-background)' }}>
+      <SEO
+        path="/bible"
+        title="Bíblia Online"
+        description="Leia a Bíblia Sagrada online, versículo do dia e estudo bíblico com uma interface moderna. Antigo e Novo Testamento completos."
+        keywords="bíblia online, bíblia sagrada, leitura da bíblia, versículo do dia, evangelho, novo testamento, antigo testamento"
+      />
       <Header />
       <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 md:py-8">
         <div className="mb-4 sm:mb-6 md:mb-8 text-center">
