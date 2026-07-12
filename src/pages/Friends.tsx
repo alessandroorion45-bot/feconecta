@@ -413,7 +413,8 @@ const Friends = () => {
       if (error.code === "23505") {
         toast({ title: "Pedido já enviado", description: "Aguarde a confirmação do outro usuário" });
       } else {
-        toast({ title: "Erro", description: "Não foi possível enviar o pedido", variant: "destructive" });
+        console.error("[sendFriendRequest] insert failed:", error);
+        toast({ title: "Erro", description: error.message || "Não foi possível enviar o pedido", variant: "destructive" });
       }
     } else {
       toast({ title: "Pedido enviado! 🎉", description: `Pedido de amizade enviado para ${u.full_name}` });
