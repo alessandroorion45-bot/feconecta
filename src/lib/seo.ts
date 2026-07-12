@@ -1,10 +1,9 @@
 /**
- * Config central de SEO. SITE_URL usa o domínio atual da Vercel —
- * troque só esta linha quando AliancaKingdom.com.br estiver
- * registrado e apontado pro projeto (afeta canonical, OG, sitemap.xml
- * e o JSON-LD do index.html, que precisa ser atualizado à mão).
+ * Config central de SEO. Trocar aqui também exige atualizar as URLs
+ * fixas em index.html, public/robots.txt e public/sitemap.xml (não
+ * são gerados a partir desta constante, é uma SPA sem build step de SEO).
  */
-export const SITE_URL = "https://feconecta-69w6.vercel.app";
+export const SITE_URL = "https://aliancakingdom.com.br";
 export const SITE_NAME = "Aliança Kingdom";
 export const SITE_DESCRIPTION =
   "Aliança Kingdom é uma plataforma cristã completa para igrejas, líderes, células, comunidades, estudos bíblicos, pedidos de oração, eventos, discipulado, evangelismo e comunhão.";

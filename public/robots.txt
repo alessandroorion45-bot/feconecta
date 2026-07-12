@@ -18,4 +18,4 @@ Disallow: /favorites
 Disallow: /themes
 Disallow: /favorite-verses
 
-Sitemap: https://feconecta-69w6.vercel.app/sitemap.xml
+Sitemap: https://aliancakingdom.com.br/sitemap.xml
