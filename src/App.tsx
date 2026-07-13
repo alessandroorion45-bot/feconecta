@@ -49,6 +49,7 @@ const FavoritesHub = lazy(() => import("./pages/FavoritesHub"));
 const ThemesGallery = lazy(() => import("./pages/ThemesGallery"));
 const FavoriteVerses = lazy(() => import("./pages/FavoriteVerses"));
 const Gamification = lazy(() => import("./pages/Gamification"));
+const AboutProject = lazy(() => import("./pages/AboutProject"));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -111,6 +112,7 @@ const routes: RouteObject[] = [
   { path: "/themes", element: <ProtectedRoute><ThemesGallery /></ProtectedRoute> },
   { path: "/favorite-verses", element: <ProtectedRoute><FavoriteVerses /></ProtectedRoute> },
   { path: "/gamification", element: <Gamification /> },
+  { path: "/sobre-o-projeto", element: <AboutProject /> },
 
   // Admin Routes
   { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
