@@ -18,5 +18,8 @@ verify_jwt = false
 [functions.create-donation-preference]
 verify_jwt = false
 
+[functions.process-donation-payment]
+verify_jwt = false
+
 [functions.mercadopago-webhook]
 verify_jwt = false
