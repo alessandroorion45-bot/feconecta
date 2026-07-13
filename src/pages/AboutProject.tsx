@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import SEO from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import DonationModal from "@/components/about/DonationModal";
+import { supabase } from "@/integrations/supabase/client";
 import {
   HandHeart,
   Heart,
@@ -15,7 +18,14 @@ import {
   KeyRound,
   Sparkles,
   Users,
+  PartyPopper,
+  Clock,
+  XCircle,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+const sb = supabase as any;
 
 const COSTS = [
   { icon: <Server className="h-5 w-5" />, label: "Hospedagem e servidores" },
@@ -25,8 +35,42 @@ const COSTS = [
   { icon: <Code2 className="h-5 w-5" />, label: "Manutenção e desenvolvimento" },
 ];
 
+interface Supporter {
+  id: string;
+  donor_name: string | null;
+  donor_city: string | null;
+  amount: number;
+  created_at: string;
+}
+
 const AboutProject = () => {
   const [showDonationModal, setShowDonationModal] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [thankYouStatus, setThankYouStatus] = useState<"success" | "pending" | "failure" | null>(null);
+  const [supporters, setSupporters] = useState<Supporter[]>([]);
+
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status === "success" || status === "pending" || status === "failure") {
+      setThankYouStatus(status);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const loadSupporters = useCallback(async () => {
+    const { data } = await sb
+      .from("donations")
+      .select("id, donor_name, donor_city, amount, created_at")
+      .eq("status", "approved")
+      .eq("is_public", true)
+      .order("created_at", { ascending: false })
+      .limit(24);
+    setSupporters(data || []);
+  }, []);
+
+  useEffect(() => {
+    loadSupporters();
+  }, [loadSupporters, thankYouStatus]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -149,6 +193,34 @@ const AboutProject = () => {
           </CardContent>
         </Card>
 
+        {/* Mural de apoiadores (opt-in) */}
+        {supporters.length > 0 && (
+          <Card className="mb-6 border-primary/20 bg-card/60 backdrop-blur-sm">
+            <CardContent className="p-6 md:p-8">
+              <h2 className="text-xl font-bold text-foreground mb-1">Mural de Apoiadores</h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Pessoas que escolheram aparecer aqui como forma de incentivo à comunidade.
+              </p>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {supporters.map((s) => (
+                  <div
+                    key={s.id}
+                    className="rounded-lg border border-border bg-muted/30 px-4 py-3"
+                  >
+                    <p className="font-medium text-foreground text-sm">
+                      {s.donor_name || "Apoiador(a)"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.donor_city ? `${s.donor_city} · ` : ""}
+                      {formatDistanceToNow(new Date(s.created_at), { addSuffix: true, locale: ptBR })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Rodapé com versículo */}
         <div className="text-center pt-6">
           <p className="text-muted-foreground italic max-w-lg mx-auto leading-relaxed">
@@ -160,6 +232,53 @@ const AboutProject = () => {
       </main>
 
       <DonationModal open={showDonationModal} onOpenChange={setShowDonationModal} />
+
+      <Dialog open={thankYouStatus !== null} onOpenChange={(open) => !open && setThankYouStatus(null)}>
+        <DialogContent className="sm:max-w-sm text-center">
+          {thankYouStatus === "success" && (
+            <>
+              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
+                <PartyPopper className="h-7 w-7 text-emerald-500" />
+              </div>
+              <DialogHeader>
+                <DialogTitle className="text-center">Muito obrigado! 🎉</DialogTitle>
+                <DialogDescription className="text-center">
+                  Sua doação foi recebida com alegria. Que Deus abençoe sua generosidade — ela ajuda
+                  a manter o Aliança Kingdom gratuito para muitas outras pessoas.
+                </DialogDescription>
+              </DialogHeader>
+            </>
+          )}
+          {thankYouStatus === "pending" && (
+            <>
+              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
+                <Clock className="h-7 w-7 text-amber-500" />
+              </div>
+              <DialogHeader>
+                <DialogTitle className="text-center">Pagamento em processamento</DialogTitle>
+                <DialogDescription className="text-center">
+                  Recebemos sua doação e ela está sendo confirmada (comum em PIX ou boleto). Assim
+                  que aprovada, o registro é atualizado automaticamente.
+                </DialogDescription>
+              </DialogHeader>
+            </>
+          )}
+          {thankYouStatus === "failure" && (
+            <>
+              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                <XCircle className="h-7 w-7 text-destructive" />
+              </div>
+              <DialogHeader>
+                <DialogTitle className="text-center">Não foi possível concluir</DialogTitle>
+                <DialogDescription className="text-center">
+                  O pagamento não foi aprovado. Nenhum valor foi cobrado. Fique à vontade para
+                  tentar novamente quando quiser.
+                </DialogDescription>
+              </DialogHeader>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

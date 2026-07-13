@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { QrCode, CreditCard, Wallet, HandHeart, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,9 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
   const [customAmount, setCustomAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [anonymous, setAnonymous] = useState(false);
+  const [showOnWall, setShowOnWall] = useState(false);
+  const [donorName, setDonorName] = useState("");
+  const [donorCity, setDonorCity] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const finalAmount = customAmount ? Number(customAmount.replace(",", ".")) : selectedAmount;
@@ -46,23 +50,44 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
     setSelectedAmount(null);
   };
 
+  const handleAnonymousChange = (checked: boolean) => {
+    setAnonymous(checked);
+    if (checked) setShowOnWall(false);
+  };
+
   const handleSubmit = async () => {
     if (!isValidAmount) return;
     setSubmitting(true);
-    // A geração real da preferência de pagamento no Mercado Pago depende
-    // de uma Edge Function com o Access Token do projeto, que ainda não
-    // foi configurado. Sem fabricar um fluxo de pagamento falso.
-    await new Promise((r) => setTimeout(r, 600));
-    setSubmitting(false);
-    toast({
-      title: "Doações chegando em breve",
-      description: "A integração com o Mercado Pago está sendo finalizada. Assim que estiver ativa, você poderá concluir sua doação por aqui.",
+
+    const { data, error } = await supabase.functions.invoke("create-donation-preference", {
+      body: {
+        amount: finalAmount,
+        isAnonymous: anonymous,
+        isPublic: showOnWall,
+        donorName: showOnWall ? donorName : null,
+        donorCity: showOnWall ? donorCity : null,
+        preferredMethod: method,
+      },
     });
+
+    setSubmitting(false);
+
+    if (error || !data?.initPoint) {
+      console.error("[DonationModal] falha ao criar preferência:", error, data);
+      toast({
+        title: "Não foi possível iniciar o pagamento",
+        description: "Tente novamente em instantes. Se o problema persistir, avise a gente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    window.location.href = data.initPoint;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <HandHeart className="h-5 w-5 text-amber-500" />
@@ -124,12 +149,39 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
                 </button>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              A forma final de pagamento é escolhida na tela segura do Mercado Pago.
+            </p>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-            <Checkbox checked={anonymous} onCheckedChange={(v) => setAnonymous(!!v)} />
-            Prefiro doar de forma anônima
-          </label>
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+              <Checkbox checked={anonymous} onCheckedChange={(v) => handleAnonymousChange(!!v)} />
+              Prefiro doar de forma anônima
+            </label>
+
+            {!anonymous && (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                <Checkbox checked={showOnWall} onCheckedChange={(v) => setShowOnWall(!!v)} />
+                Quero aparecer no mural de apoiadores (opcional)
+              </label>
+            )}
+
+            {showOnWall && !anonymous && (
+              <div className="grid grid-cols-2 gap-2 pl-6">
+                <Input
+                  placeholder="Seu nome"
+                  value={donorName}
+                  onChange={(e) => setDonorName(e.target.value)}
+                />
+                <Input
+                  placeholder="Cidade (opcional)"
+                  value={donorCity}
+                  onChange={(e) => setDonorCity(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
 
           <Button
             onClick={handleSubmit}
