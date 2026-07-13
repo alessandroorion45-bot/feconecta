@@ -1152,6 +1152,7 @@ export type Database = {
           id: string
           is_muted: boolean
           is_pinned: boolean
+          pinned_message_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1161,6 +1162,7 @@ export type Database = {
           id?: string
           is_muted?: boolean
           is_pinned?: boolean
+          pinned_message_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1170,6 +1172,7 @@ export type Database = {
           id?: string
           is_muted?: boolean
           is_pinned?: boolean
+          pinned_message_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -3338,6 +3341,68 @@ export type Database = {
           verse_text?: string
         }
         Relationships: []
+      }
+      donations: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          donor_city: string | null
+          donor_name: string | null
+          id: string
+          is_anonymous: boolean
+          is_public: boolean
+          mp_payment_id: string | null
+          mp_payment_method_id: string | null
+          mp_preference_id: string | null
+          preferred_method: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          donor_city?: string | null
+          donor_name?: string | null
+          id?: string
+          is_anonymous?: boolean
+          is_public?: boolean
+          mp_payment_id?: string | null
+          mp_payment_method_id?: string | null
+          mp_preference_id?: string | null
+          preferred_method?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          donor_city?: string | null
+          donor_name?: string | null
+          id?: string
+          is_anonymous?: boolean
+          is_public?: boolean
+          mp_payment_id?: string | null
+          mp_payment_method_id?: string | null
+          mp_preference_id?: string | null
+          preferred_method?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_participants: {
         Row: {
@@ -8118,6 +8183,10 @@ export type Database = {
       is_admin: { Args: { user_id: string }; Returns: boolean }
       is_community_member: {
         Args: { p_community_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_conversation_participant: {
+        Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
       }
       is_reading_room_member: {
