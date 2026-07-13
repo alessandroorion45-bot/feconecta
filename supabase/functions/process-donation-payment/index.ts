@@ -22,7 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, isAnonymous, isPublic, donorName, donorCity, formData } = await req.json();
+    const { amount, isAnonymous, isPublic, donorName, donorCity, formData, deviceId } = await req.json();
 
     const parsedAmount = Number(amount);
     if (!parsedAmount || parsedAmount <= 0) {
@@ -90,13 +90,16 @@ serve(async (req) => {
       statement_descriptor: "ALIANCA KINGDOM",
     };
 
+    const mpHeaders: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Idempotency-Key": donation.id,
+    };
+    if (deviceId) mpHeaders["X-meli-session-id"] = deviceId;
+
     const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        "X-Idempotency-Key": donation.id,
-      },
+      headers: mpHeaders,
       body: JSON.stringify(paymentBody),
     });
 

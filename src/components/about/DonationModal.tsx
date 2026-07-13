@@ -89,6 +89,8 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
     submittingRef.current = true;
 
     try {
+      const deviceId = (window as any).MP_DEVICE_SESSION_ID;
+
       const { data, error } = await supabase.functions.invoke("process-donation-payment", {
         body: {
           amount: finalAmount,
@@ -97,6 +99,7 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
           donorName: showOnWall ? donorName : null,
           donorCity: showOnWall ? donorCity : null,
           formData,
+          deviceId,
         },
       });
 
