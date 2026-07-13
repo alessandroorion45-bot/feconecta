@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import DonationModal from "@/components/about/DonationModal";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+// Pagamentos aguardando o Mercado Pago liberar a conta pra processar
+// via API (chamado aberto no suporte deles). Trocar pra true assim que
+// confirmarmos que uma doação de teste passa de ponta a ponta.
+const DONATIONS_ENABLED = false;
 import {
   HandHeart,
   Heart,
@@ -44,7 +50,19 @@ interface Supporter {
 }
 
 const AboutProject = () => {
+  const { toast } = useToast();
   const [showDonationModal, setShowDonationModal] = useState(false);
+
+  const handleDonateClick = () => {
+    if (!DONATIONS_ENABLED) {
+      toast({
+        title: "Doações chegando em breve",
+        description: "Estamos finalizando a integração de pagamentos com segurança. Volte em breve para apoiar o projeto!",
+      });
+      return;
+    }
+    setShowDonationModal(true);
+  };
   const [searchParams, setSearchParams] = useSearchParams();
   const [thankYouStatus, setThankYouStatus] = useState<"success" | "pending" | "failure" | null>(null);
   const [supporters, setSupporters] = useState<Supporter[]>([]);
@@ -184,12 +202,17 @@ const AboutProject = () => {
             </p>
             <Button
               size="lg"
-              onClick={() => setShowDonationModal(true)}
+              onClick={handleDonateClick}
               className="h-12 px-8 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white font-semibold hover:opacity-90 hover:scale-105 transition-all shadow-lg"
             >
               <HandHeart className="h-5 w-5 mr-2" />
               Fazer uma Doação
             </Button>
+            {!DONATIONS_ENABLED && (
+              <p className="text-xs text-muted-foreground mt-3">
+                Estamos com a integração de pagamentos em fase final de ativação.
+              </p>
+            )}
           </CardContent>
         </Card>
 
