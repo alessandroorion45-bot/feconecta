@@ -471,9 +471,10 @@ const Chat = () => {
       .single();
 
     if (error) {
+      console.error('[sendMessage] insert failed:', error);
       toast({
         title: 'Erro ao enviar mensagem',
-        description: 'Tente novamente',
+        description: error.message || 'Tente novamente',
         variant: 'destructive'
       });
       return;
