@@ -224,8 +224,6 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
               initialization={{ amount: finalAmount! }}
               customization={{
                 paymentMethods: {
-                  creditCard: "all",
-                  debitCard: "all",
                   bankTransfer: "all",
                 },
               }}
