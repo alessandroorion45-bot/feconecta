@@ -351,11 +351,16 @@ export type Database = {
           category: string
           created_at: string | null
           description: string
+          evolution_chain_key: string | null
+          evolution_tier: number
           icon: string
           id: string
+          is_exclusive: boolean
           name: string
           rarity: string
           unlock_criteria: Json
+          unlock_story: string | null
+          verse_reference: string | null
           xp_reward: number | null
         }
         Insert: {
@@ -363,11 +368,16 @@ export type Database = {
           category: string
           created_at?: string | null
           description: string
+          evolution_chain_key?: string | null
+          evolution_tier?: number
           icon: string
           id?: string
+          is_exclusive?: boolean
           name: string
           rarity: string
           unlock_criteria: Json
+          unlock_story?: string | null
+          verse_reference?: string | null
           xp_reward?: number | null
         }
         Update: {
@@ -375,11 +385,16 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string
+          evolution_chain_key?: string | null
+          evolution_tier?: number
           icon?: string
           id?: string
+          is_exclusive?: boolean
           name?: string
           rarity?: string
           unlock_criteria?: Json
+          unlock_story?: string | null
+          verse_reference?: string | null
           xp_reward?: number | null
         }
         Relationships: []

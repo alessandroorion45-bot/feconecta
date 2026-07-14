@@ -12,6 +12,12 @@ ALTER TABLE public.badges
   ADD COLUMN IF NOT EXISTS evolution_tier INTEGER NOT NULL DEFAULT 1,
   ADD COLUMN IF NOT EXISTS evolution_chain_key TEXT;
 
+-- O CHECK original só permitia common/rare/epic/legendary/mythic.
+-- Selos Kingdom usa 7 níveis de raridade (adiciona special e kingdom_exclusive).
+ALTER TABLE public.badges DROP CONSTRAINT IF EXISTS badges_rarity_check;
+ALTER TABLE public.badges ADD CONSTRAINT badges_rarity_check
+  CHECK (rarity IN ('common', 'special', 'rare', 'epic', 'mythic', 'legendary', 'kingdom_exclusive'));
+
 -- "early_adopter" já existia com o espírito certo (primeiros usuários,
 -- nunca mais volta) — vira o selo-bandeira "Fundador Kingdom" em vez
 -- de duplicar o conceito numa linha nova.
