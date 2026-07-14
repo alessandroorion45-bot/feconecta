@@ -9,12 +9,9 @@ import DonationModal from "@/components/about/DonationModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-// Ainda usando credenciais de TESTE do Mercado Pago em produção — um
-// visitante real digitaria o e-mail dele de verdade, que o sandbox
-// recusa. Em desenvolvimento local (npm run dev) o fluxo real fica
-// habilitado pra facilitar o teste; trocar pra `true` fixo quando as
-// credenciais de produção estiverem configuradas.
-const DONATIONS_ENABLED = import.meta.env.DEV;
+// Credenciais de produção do Mercado Pago ativas e testadas com uma
+// doação real (2026-07-13) — fluxo de doação liberado.
+const DONATIONS_ENABLED = true;
 import {
   HandHeart,
   Heart,

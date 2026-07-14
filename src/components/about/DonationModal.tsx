@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { HandHeart, Loader2, ArrowLeft, PartyPopper, Clock, XCircle, Copy, Check } from "lucide-react";
+import { HandHeart, ArrowLeft, PartyPopper, Clock, XCircle, Copy, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 let mpInitialized = false;
@@ -27,15 +28,29 @@ interface DonationModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const QUICK_AMOUNTS = [5, 10, 20, 50, 100];
+const QUICK_AMOUNTS = [
+  { value: 5, tag: "Um cafezinho de apoio ☕" },
+  { value: 10, tag: "Ajuda com o essencial" },
+  { value: 20, tag: "Sustenta um dia no ar", featured: true },
+  { value: 50, tag: "Grande impacto no projeto" },
+  { value: 100, tag: "Apoio generoso 🙏" },
+];
 
 type Step = "amount" | "payment" | "result";
 
 interface PaymentResult {
-  status: "approved" | "pending" | "rejected" | string;
+  donationId?: string;
+  status: "approved" | "pending" | "rejected" | "cancelled" | string;
   qrCode?: string | null;
   qrCodeBase64?: string | null;
+  amount?: number;
 }
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+const POLL_INTERVAL_MS = 3000;
+const POLL_MAX_ATTEMPTS = 100; // ~5 minutos
 
 const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
   const { toast } = useToast();
@@ -67,6 +82,40 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
       }, 200);
     }
   }, [open]);
+
+  // Checa automaticamente se o Pix pendente já foi pago — a API de Orders
+  // não manda webhook, então o próprio modal confere de tempos em tempos.
+  useEffect(() => {
+    if (step !== "result" || result?.status !== "pending" || !result?.donationId) return;
+
+    let attempts = 0;
+
+    const interval = setInterval(async () => {
+      attempts += 1;
+      if (attempts > POLL_MAX_ATTEMPTS) {
+        clearInterval(interval);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${SUPABASE_URL}/functions/v1/check-donation-status?id=${result.donationId}`,
+          { headers: { apikey: SUPABASE_ANON_KEY } },
+        );
+        if (!response.ok) return;
+        const data = await response.json();
+
+        if (data.status && data.status !== "pending") {
+          clearInterval(interval);
+          setResult((prev) => (prev ? { ...prev, status: data.status, amount: data.amount } : prev));
+        }
+      } catch {
+        // falha de rede pontual — tenta de novo no próximo ciclo
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [step, result?.status, result?.donationId]);
 
   const handleSelectQuick = (value: number) => {
     setSelectedAmount(value);
@@ -139,6 +188,34 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <AnimatePresence>
+          {result?.status === "approved" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 pointer-events-none z-[60] flex items-center justify-center"
+            >
+              {[...Array(24)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute text-3xl"
+                  initial={{ x: 0, y: 0, scale: 0, rotate: 0 }}
+                  animate={{
+                    x: (Math.random() - 0.5) * 500,
+                    y: (Math.random() - 0.5) * 500,
+                    scale: [0, 1, 0],
+                    rotate: Math.random() * 360,
+                  }}
+                  transition={{ duration: 1.8, delay: i * 0.04, ease: "easeOut" }}
+                >
+                  {["🎉", "✨", "💛", "🙏", "❤️", "🌟"][i % 6]}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {step === "amount" && (
           <>
             <DialogHeader>
@@ -154,31 +231,46 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
             <div className="space-y-5">
               <div>
                 <Label className="mb-2 block text-sm font-medium">Escolha um valor</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {QUICK_AMOUNTS.map((amount) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {QUICK_AMOUNTS.map(({ value, tag, featured }) => (
                     <button
-                      key={amount}
+                      key={value}
                       type="button"
-                      onClick={() => handleSelectQuick(amount)}
+                      onClick={() => handleSelectQuick(value)}
                       className={cn(
-                        "rounded-lg border py-2.5 text-sm font-semibold transition-all hover:scale-[1.03]",
-                        selectedAmount === amount && !customAmount
-                          ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                          : "border-border bg-muted/40 text-foreground",
+                        "relative rounded-lg border py-2.5 px-2 text-left transition-all hover:scale-[1.02]",
+                        selectedAmount === value && !customAmount
+                          ? "border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/40"
+                          : "border-border bg-muted/40",
                       )}
                     >
-                      R$ {amount}
+                      {featured && (
+                        <span className="absolute -top-2 right-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+                          Mais escolhido
+                        </span>
+                      )}
+                      <span
+                        className={cn(
+                          "block text-sm font-bold",
+                          selectedAmount === value && !customAmount
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-foreground",
+                        )}
+                      >
+                        R$ {value}
+                      </span>
+                      <span className="block text-[11px] text-muted-foreground leading-tight mt-0.5">
+                        {tag}
+                      </span>
                     </button>
                   ))}
-                  <div className="col-span-3 sm:col-span-1">
-                    <Input
-                      placeholder="Outro valor"
-                      value={customAmount}
-                      onChange={(e) => handleCustomChange(e.target.value)}
-                      className="text-center"
-                      inputMode="decimal"
-                    />
-                  </div>
+                  <Input
+                    placeholder="Outro valor"
+                    value={customAmount}
+                    onChange={(e) => handleCustomChange(e.target.value)}
+                    className="text-center h-full"
+                    inputMode="decimal"
+                  />
                 </div>
               </div>
 
@@ -206,8 +298,9 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
               <Button
                 onClick={() => setStep("payment")}
                 disabled={!isValidAmount}
-                className="w-full h-11 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white font-semibold hover:opacity-90 transition-opacity"
+                className="w-full h-11 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white font-semibold hover:opacity-90 hover:shadow-lg hover:shadow-amber-500/30 transition-all"
               >
+                <Sparkles className="h-4 w-4 mr-1.5" />
                 Continuar {isValidAmount ? `· R$ ${finalAmount!.toFixed(2).replace(".", ",")}` : ""}
               </Button>
             </div>
@@ -249,28 +342,30 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
         {step === "result" && result && (
           <div className="text-center py-2">
             {result.status === "approved" && (
-              <>
+              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200 }}>
                 <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
                   <PartyPopper className="h-7 w-7 text-emerald-500" />
                 </div>
                 <DialogHeader>
                   <DialogTitle className="text-center">Muito obrigado! 🎉</DialogTitle>
                   <DialogDescription className="text-center">
-                    Sua doação foi recebida com alegria. Que Deus abençoe sua generosidade.
+                    Sua doação de R$ {Number(result.amount ?? finalAmount).toFixed(2).replace(".", ",")} foi recebida
+                    com alegria. Que Deus abençoe sua generosidade — ela ajuda a manter o Aliança Kingdom gratuito
+                    para muitas outras pessoas.
                   </DialogDescription>
                 </DialogHeader>
-              </>
+              </motion.div>
             )}
 
             {result.status === "pending" && result.qrCode && (
               <>
                 <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
-                  <Clock className="h-7 w-7 text-amber-500" />
+                  <Clock className="h-7 w-7 text-amber-500 animate-pulse" />
                 </div>
                 <DialogHeader>
                   <DialogTitle className="text-center">Escaneie o PIX para concluir</DialogTitle>
                   <DialogDescription className="text-center">
-                    Assim que o pagamento for confirmado, sua doação é registrada automaticamente.
+                    Assim que o pagamento for confirmado, esta tela atualiza sozinha.
                   </DialogDescription>
                 </DialogHeader>
                 {result.qrCodeBase64 && (
