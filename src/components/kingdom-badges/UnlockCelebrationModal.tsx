@@ -6,7 +6,9 @@ interface UnlockedBadge {
   name: string;
   description: string;
   rarity: BadgeRarity | string;
+  rarityColors?: { corInicio: string; corFim: string } | null;
   icon?: React.ReactNode;
+  imageUrl?: string | null;
   emoji?: string;
   verseReference?: string | null;
 }
@@ -17,7 +19,10 @@ interface UnlockCelebrationModalProps {
 }
 
 const UnlockCelebrationModal = ({ badge, onClose }: UnlockCelebrationModalProps) => {
-  const style = badge ? (RARITY_STYLES[badge.rarity as BadgeRarity] ?? RARITY_STYLES.common) : null;
+  const baseStyle = badge ? (RARITY_STYLES[badge.rarity as BadgeRarity] ?? RARITY_STYLES.common) : null;
+  const style = badge?.rarityColors && baseStyle
+    ? { ...baseStyle, particleColor: badge.rarityColors.corInicio, label: baseStyle.label }
+    : baseStyle;
 
   return (
     <AnimatePresence>
@@ -72,7 +77,7 @@ const UnlockCelebrationModal = ({ badge, onClose }: UnlockCelebrationModalProps)
             </motion.p>
 
             <div className="flex justify-center mb-5">
-              <KingdomBadge rarity={badge.rarity} icon={badge.icon} emoji={badge.emoji} size="lg" />
+              <KingdomBadge rarity={badge.rarity} rarityColors={badge.rarityColors} icon={badge.icon} imageUrl={badge.imageUrl} emoji={badge.emoji} size="lg" />
             </div>
 
             <h2 className="text-xl font-bold text-white mb-1">{badge.name}</h2>

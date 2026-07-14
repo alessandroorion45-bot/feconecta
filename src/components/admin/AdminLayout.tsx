@@ -20,6 +20,7 @@ import {
   Bell,
   Bot,
   HeartPulse,
+  Award,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -30,6 +31,7 @@ const navItems = [
   { path: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/admin/users", icon: Users, label: "Usuários" },
   { path: "/admin/themes", icon: Palette, label: "Temas VIP" },
+  { path: "/admin/badges", icon: Award, label: "Selos Kingdom" },
   { path: "/admin/photos", icon: Image, label: "Fotos" },
   { path: "/admin/videos", icon: Video, label: "Vídeos" },
   { path: "/admin/reports", icon: Flag, label: "Denúncias" },

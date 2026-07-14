@@ -16,6 +16,7 @@ interface BadgeData {
   name: string;
   description: string;
   icon: string;
+  image_url?: string | null;
   rarity: BadgeRarity;
   category: string;
   xp_reward: number;
@@ -23,6 +24,18 @@ interface BadgeData {
   unlocked?: boolean;
   unlocked_at?: string;
   is_equipped?: boolean;
+}
+
+interface RarityRow {
+  nome: string;
+  slug: string;
+  cor_inicio: string;
+  cor_fim: string;
+}
+
+interface CategoryRow {
+  nome: string;
+  icone: string | null;
 }
 
 // Selos-bandeira com arte própria — os demais usam o emoji do catálogo
@@ -37,9 +50,17 @@ const BadgeShowcase = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [badges, setBadges] = useState<BadgeData[]>([]);
+  const [rarities, setRarities] = useState<RarityRow[]>([]);
+  const [categoryList, setCategoryList] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [celebrating, setCelebrating] = useState<BadgeData | null>(null);
+
+  const rarityColorsFor = (slug: string) => {
+    const r = rarities.find((x) => x.slug === slug);
+    return r ? { corInicio: r.cor_inicio, corFim: r.cor_fim } : null;
+  };
+  const rarityLabelFor = (slug: string) => rarities.find((x) => x.slug === slug)?.nome ?? RARITY_STYLES[slug as BadgeRarity]?.label ?? slug;
 
   useEffect(() => {
     loadBadges();
@@ -72,11 +93,14 @@ const BadgeShowcase = () => {
   const loadBadges = async () => {
     setLoading(true);
 
-    // Buscar todos os badges
-    const { data: allBadges, error: badgesError } = await supabase
-      .from('badges')
-      .select('*')
-      .order('rarity', { ascending: false });
+    const [{ data: allBadges, error: badgesError }, { data: rarityRows }, { data: categoryRows }] = await Promise.all([
+      supabase.from('badges').select('*').eq('status', 'active').order('ordem', { ascending: true }),
+      supabase.from('badge_rarities').select('nome, slug, cor_inicio, cor_fim').order('ordem', { ascending: true }),
+      supabase.from('badge_categories').select('nome, icone').order('ordem', { ascending: true }),
+    ]);
+
+    setRarities(rarityRows || []);
+    setCategoryList(categoryRows || []);
 
     if (badgesError) {
       console.error('[Badges] Erro ao carregar:', badgesError);
@@ -145,7 +169,7 @@ const BadgeShowcase = () => {
     loadBadges();
   };
 
-  const categories = ['all', ...new Set(badges.map(b => b.category))];
+  const categories = ['all', ...categoryList.map((c) => c.nome)];
 
   const filteredBadges = selectedCategory === 'all'
     ? badges
@@ -192,22 +216,25 @@ const BadgeShowcase = () => {
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-2">
-        {categories.map(cat => (
-          <Button
-            key={cat}
-            variant={selectedCategory === cat ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedCategory(cat)}
-          >
-            {cat === 'all' ? 'Todos' : cat.charAt(0).toUpperCase() + cat.slice(1)}
-          </Button>
-        ))}
+        {categories.map(cat => {
+          const catInfo = categoryList.find((c) => c.nome === cat);
+          return (
+            <Button
+              key={cat}
+              variant={selectedCategory === cat ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory(cat)}
+            >
+              {cat === 'all' ? 'Todos' : `${catInfo?.icone ? catInfo.icone + ' ' : ''}${cat}`}
+            </Button>
+          );
+        })}
       </div>
 
       {/* Grid de Badges */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {filteredBadges.map(badge => {
-          const style = RARITY_STYLES[badge.rarity] ?? RARITY_STYLES.common;
+          const rarityColors = rarityColorsFor(badge.rarity);
 
           return (
             <Card
@@ -220,7 +247,9 @@ const BadgeShowcase = () => {
                 <div className="mb-3">
                   <KingdomBadge
                     rarity={badge.rarity}
-                    icon={badge.unlocked ? CUSTOM_ICONS[badge.badge_key] : undefined}
+                    rarityColors={rarityColors}
+                    icon={badge.unlocked && !badge.image_url ? CUSTOM_ICONS[badge.badge_key] : undefined}
+                    imageUrl={badge.unlocked ? badge.image_url : undefined}
                     emoji={badge.icon}
                     locked={!badge.unlocked}
                     equipped={badge.is_equipped}
@@ -234,8 +263,8 @@ const BadgeShowcase = () => {
                 </h3>
 
                 {/* Raridade */}
-                <Badge variant="outline" className="text-xs mb-2" style={{ color: style.particleColor, borderColor: style.particleColor }}>
-                  {style.label}
+                <Badge variant="outline" className="text-xs mb-2" style={{ color: rarityColors?.corInicio, borderColor: rarityColors?.corInicio }}>
+                  {rarityLabelFor(badge.rarity)}
                 </Badge>
 
                 {/* Descrição */}
@@ -282,7 +311,9 @@ const BadgeShowcase = () => {
                 name: celebrating.name,
                 description: celebrating.description,
                 rarity: celebrating.rarity,
-                icon: CUSTOM_ICONS[celebrating.badge_key],
+                rarityColors: rarityColorsFor(celebrating.rarity),
+                icon: !celebrating.image_url ? CUSTOM_ICONS[celebrating.badge_key] : undefined,
+                imageUrl: celebrating.image_url,
                 emoji: celebrating.icon,
                 verseReference: celebrating.verse_reference,
               }

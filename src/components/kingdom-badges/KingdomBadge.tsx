@@ -5,12 +5,11 @@ import { cn } from "@/lib/utils";
 
 export type BadgeRarity =
   | "common"
-  | "special"
+  | "uncommon"
   | "rare"
   | "epic"
-  | "mythic"
   | "legendary"
-  | "kingdom_exclusive";
+  | "exclusive";
 
 interface RarityStyle {
   label: string;
@@ -29,8 +28,8 @@ export const RARITY_STYLES: Record<BadgeRarity, RarityStyle> = {
     particleColor: "#c9ccd1",
     particleCount: 0,
   },
-  special: {
-    label: "Especial",
+  uncommon: {
+    label: "Incomum",
     rim: "linear-gradient(135deg, #6ee7b7, #059669)",
     glow: "rgba(16,185,129,0.5)",
     particleColor: "#6ee7b7",
@@ -49,13 +48,6 @@ export const RARITY_STYLES: Record<BadgeRarity, RarityStyle> = {
     glow: "rgba(147,51,234,0.55)",
     particleColor: "#d8b4fe",
     particleCount: 8,
-  },
-  mythic: {
-    label: "Mítico",
-    rim: "linear-gradient(135deg, #fda4af, #be123c)",
-    glow: "rgba(225,29,72,0.55)",
-    particleColor: "#fda4af",
-    particleCount: 10,
     aura: true,
   },
   legendary: {
@@ -66,8 +58,8 @@ export const RARITY_STYLES: Record<BadgeRarity, RarityStyle> = {
     particleCount: 12,
     aura: true,
   },
-  kingdom_exclusive: {
-    label: "Kingdom Exclusive",
+  exclusive: {
+    label: "Exclusivo",
     rim: "linear-gradient(135deg, #fff8dc, #f5d060 45%, #b8860b)",
     glow: "rgba(245,208,96,0.7)",
     particleColor: "#fff2b3",
@@ -86,14 +78,25 @@ interface KingdomBadgeProps {
   rarity: BadgeRarity | string;
   icon?: React.ReactNode;
   emoji?: string;
+  imageUrl?: string | null;
+  /** Cores vindas do banco (badge_rarities), quando a raridade é administrável e não bate com o mapa fixo */
+  rarityColors?: { corInicio: string; corFim: string } | null;
   locked?: boolean;
   equipped?: boolean;
   size?: keyof typeof SIZE_MAP;
   className?: string;
 }
 
-const KingdomBadge = ({ rarity, icon, emoji, locked, equipped, size = "md", className }: KingdomBadgeProps) => {
-  const style = RARITY_STYLES[rarity as BadgeRarity] ?? RARITY_STYLES.common;
+const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equipped, size = "md", className }: KingdomBadgeProps) => {
+  const baseStyle = RARITY_STYLES[rarity as BadgeRarity] ?? RARITY_STYLES.common;
+  const style = rarityColors
+    ? {
+        ...baseStyle,
+        rim: `linear-gradient(135deg, ${rarityColors.corInicio}, ${rarityColors.corFim})`,
+        glow: `${rarityColors.corFim}80`,
+        particleColor: rarityColors.corInicio,
+      }
+    : baseStyle;
   const dims = SIZE_MAP[size];
 
   const ref = useRef<HTMLDivElement>(null);
@@ -189,6 +192,14 @@ const KingdomBadge = ({ rarity, icon, emoji, locked, equipped, size = "md", clas
         >
           {locked ? (
             <Lock className="text-white/70" style={{ width: dims.icon * 0.6, height: dims.icon * 0.6 }} />
+          ) : imageUrl ? (
+            <img
+              src={imageUrl}
+              alt=""
+              loading="lazy"
+              style={{ width: dims.icon * 1.3, height: dims.icon * 1.3 }}
+              className="object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
+            />
           ) : icon ? (
             <div style={{ width: dims.icon, height: dims.icon }} className="drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
               {icon}

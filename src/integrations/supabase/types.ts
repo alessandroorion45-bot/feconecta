@@ -345,8 +345,63 @@ export type Database = {
           },
         ]
       }
+      badge_categories: {
+        Row: {
+          created_at: string
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
+      badge_rarities: {
+        Row: {
+          cor_fim: string
+          cor_inicio: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          slug: string
+        }
+        Insert: {
+          cor_fim: string
+          cor_inicio: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          slug: string
+        }
+        Update: {
+          cor_fim?: string
+          cor_inicio?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
+          automatico: boolean
           badge_key: string
           category: string
           created_at: string | null
@@ -355,15 +410,20 @@ export type Database = {
           evolution_tier: number
           icon: string
           id: string
+          image_url: string | null
           is_exclusive: boolean
           name: string
+          ordem: number
           rarity: string
+          slug: string | null
+          status: string
           unlock_criteria: Json
           unlock_story: string | null
           verse_reference: string | null
           xp_reward: number | null
         }
         Insert: {
+          automatico?: boolean
           badge_key: string
           category: string
           created_at?: string | null
@@ -372,15 +432,20 @@ export type Database = {
           evolution_tier?: number
           icon: string
           id?: string
+          image_url?: string | null
           is_exclusive?: boolean
           name: string
+          ordem?: number
           rarity: string
+          slug?: string | null
+          status?: string
           unlock_criteria: Json
           unlock_story?: string | null
           verse_reference?: string | null
           xp_reward?: number | null
         }
         Update: {
+          automatico?: boolean
           badge_key?: string
           category?: string
           created_at?: string | null
@@ -389,9 +454,13 @@ export type Database = {
           evolution_tier?: number
           icon?: string
           id?: string
+          image_url?: string | null
           is_exclusive?: boolean
           name?: string
+          ordem?: number
           rarity?: string
+          slug?: string | null
+          status?: string
           unlock_criteria?: Json
           unlock_story?: string | null
           verse_reference?: string | null
@@ -6408,25 +6477,31 @@ export type Database = {
       user_badges: {
         Row: {
           badge_id: string
+          concedido_por: string | null
           display_order: number | null
           id: string
           is_equipped: boolean | null
+          observacao: string | null
           unlocked_at: string | null
           user_id: string
         }
         Insert: {
           badge_id: string
+          concedido_por?: string | null
           display_order?: number | null
           id?: string
           is_equipped?: boolean | null
+          observacao?: string | null
           unlocked_at?: string | null
           user_id: string
         }
         Update: {
           badge_id?: string
+          concedido_por?: string | null
           display_order?: number | null
           id?: string
           is_equipped?: boolean | null
+          observacao?: string | null
           unlocked_at?: string | null
           user_id?: string
         }
@@ -6436,6 +6511,13 @@ export type Database = {
             columns: ["badge_id"]
             isOneToOne: false
             referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_concedido_por_fkey"
+            columns: ["concedido_por"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
             referencedColumns: ["id"]
           },
           {

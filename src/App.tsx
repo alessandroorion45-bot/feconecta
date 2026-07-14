@@ -55,6 +55,7 @@ const AboutProject = lazy(() => import("./pages/AboutProject"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/UsersEnhanced"));
 const AdminThemes = lazy(() => import("./pages/admin/Themes"));
+const AdminBadges = lazy(() => import("./pages/admin/Badges"));
 const AdminPhotos = lazy(() => import("./pages/admin/Photos"));
 const AdminVideos = lazy(() => import("./pages/admin/Videos"));
 const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
@@ -118,6 +119,7 @@ const routes: RouteObject[] = [
   { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
   { path: "/admin/users", element: <ProtectedRoute><AdminUsers /></ProtectedRoute> },
   { path: "/admin/themes", element: <ProtectedRoute><AdminThemes /></ProtectedRoute> },
+  { path: "/admin/badges", element: <ProtectedRoute><AdminBadges /></ProtectedRoute> },
   { path: "/admin/photos", element: <ProtectedRoute><AdminPhotos /></ProtectedRoute> },
   { path: "/admin/videos", element: <ProtectedRoute><AdminVideos /></ProtectedRoute> },
   { path: "/admin/notifications", element: <ProtectedRoute><AdminNotifications /></ProtectedRoute> },
