@@ -690,6 +690,24 @@ All colors MUST be HSL.
   to { transform: rotate(360deg); }
 }
 
+/* Selos Kingdom — medalha animada (KingdomBadge.tsx) */
+@keyframes kingdom-sheen-rotate {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes kingdom-glow-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+.kingdom-badge-sheen {
+  animation: kingdom-sheen-rotate 7s linear infinite;
+}
+
+.kingdom-badge-glow {
+  animation: kingdom-glow-pulse 2.6s ease-in-out infinite;
+}
+
 .pv-theme-cross-bg {
   position: absolute;
   top: 0.75rem;

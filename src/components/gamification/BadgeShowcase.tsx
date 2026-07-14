@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, Sparkles, Trophy, Star, Crown } from "lucide-react";
+import { Lock, Trophy } from "lucide-react";
+import KingdomBadge, { BadgeRarity, RARITY_STYLES } from "@/components/kingdom-badges/KingdomBadge";
+import UnlockCelebrationModal from "@/components/kingdom-badges/UnlockCelebrationModal";
+import { CrownIcon, OpenBookIcon, GenerousHeartIcon } from "@/components/kingdom-badges/badgeIcons";
 
 interface BadgeData {
   id: string;
@@ -14,50 +16,21 @@ interface BadgeData {
   name: string;
   description: string;
   icon: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+  rarity: BadgeRarity;
   category: string;
   xp_reward: number;
+  verse_reference?: string | null;
   unlocked?: boolean;
   unlocked_at?: string;
   is_equipped?: boolean;
 }
 
-const RARITY_CONFIG = {
-  common: {
-    label: 'Comum',
-    color: 'bg-gray-500',
-    borderColor: 'border-gray-400',
-    textColor: 'text-gray-600',
-    icon: Star,
-  },
-  rare: {
-    label: 'Raro',
-    color: 'bg-blue-500',
-    borderColor: 'border-blue-400',
-    textColor: 'text-blue-600',
-    icon: Sparkles,
-  },
-  epic: {
-    label: 'Épico',
-    color: 'bg-purple-500',
-    borderColor: 'border-purple-400',
-    textColor: 'text-purple-600',
-    icon: Trophy,
-  },
-  legendary: {
-    label: 'Lendário',
-    color: 'bg-orange-500',
-    borderColor: 'border-orange-400',
-    textColor: 'text-orange-600',
-    icon: Crown,
-  },
-  mythic: {
-    label: 'Mítico',
-    color: 'bg-gradient-to-r from-pink-500 to-yellow-500',
-    borderColor: 'border-pink-400',
-    textColor: 'text-pink-600',
-    icon: Crown,
-  },
+// Selos-bandeira com arte própria — os demais usam o emoji do catálogo
+// dentro da mesma moldura premium.
+const CUSTOM_ICONS: Record<string, React.ReactNode> = {
+  early_adopter: <CrownIcon />,
+  semeador_da_palavra: <OpenBookIcon />,
+  coracao_generoso: <GenerousHeartIcon />,
 };
 
 const BadgeShowcase = () => {
@@ -66,9 +39,34 @@ const BadgeShowcase = () => {
   const [badges, setBadges] = useState<BadgeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [celebrating, setCelebrating] = useState<BadgeData | null>(null);
 
   useEffect(() => {
     loadBadges();
+  }, [user]);
+
+  // Celebra automaticamente quando um novo selo é desbloqueado em tempo real
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`kingdom-badges-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'user_badges', filter: `user_id=eq.${user.id}` },
+        async (payload) => {
+          const badgeId = (payload.new as { badge_id: string }).badge_id;
+          const { data: badge } = await supabase.from('badges').select('*').eq('id', badgeId).maybeSingle();
+          if (badge) setCelebrating(badge as BadgeData);
+          loadBadges();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadBadges = async () => {
@@ -171,7 +169,7 @@ const BadgeShowcase = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              🏆 Meus Badges
+              👑 Selos Kingdom
             </span>
             <Badge variant="secondary" className="text-lg">
               {unlockedCount} / {totalCount}
@@ -179,12 +177,12 @@ const BadgeShowcase = () => {
           </CardTitle>
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-muted-foreground">Progresso</span>
+              <span className="text-muted-foreground">Progresso da coleção</span>
               <span className="font-bold">{Math.round((unlockedCount / totalCount) * 100)}%</span>
             </div>
             <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
+                className="h-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 transition-all"
                 style={{ width: `${(unlockedCount / totalCount) * 100}%` }}
               />
             </div>
@@ -209,45 +207,40 @@ const BadgeShowcase = () => {
       {/* Grid de Badges */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {filteredBadges.map(badge => {
-          const config = RARITY_CONFIG[badge.rarity];
-          const Icon = config.icon;
+          const style = RARITY_STYLES[badge.rarity] ?? RARITY_STYLES.common;
 
           return (
             <Card
               key={badge.id}
-              className={`relative overflow-hidden transition-all hover:scale-105 ${
-                badge.unlocked
-                  ? `border-2 ${config.borderColor} shadow-lg`
-                  : 'opacity-50 grayscale'
-              } ${badge.is_equipped ? 'ring-4 ring-yellow-400' : ''}`}
+              className={`relative overflow-hidden transition-all hover:scale-[1.03] ${
+                badge.unlocked ? 'shadow-lg' : 'opacity-70'
+              }`}
             >
-              <CardContent className="p-4 text-center">
-                {/* Raridade Badge */}
-                <div className="absolute top-2 right-2">
-                  <Icon className={`h-4 w-4 ${config.textColor}`} />
-                </div>
-
-                {/* Icon */}
-                <div className={`text-5xl mb-3 ${!badge.unlocked && 'blur-sm'}`}>
-                  {badge.unlocked ? badge.icon : '🔒'}
+              <CardContent className="p-4 text-center flex flex-col items-center">
+                <div className="mb-3">
+                  <KingdomBadge
+                    rarity={badge.rarity}
+                    icon={badge.unlocked ? CUSTOM_ICONS[badge.badge_key] : undefined}
+                    emoji={badge.icon}
+                    locked={!badge.unlocked}
+                    equipped={badge.is_equipped}
+                    size="md"
+                  />
                 </div>
 
                 {/* Nome */}
-                <h3 className={`font-bold text-sm mb-1 ${config.textColor}`}>
+                <h3 className="font-bold text-sm mb-1">
                   {badge.unlocked ? badge.name : '???'}
                 </h3>
 
                 {/* Raridade */}
-                <Badge
-                  variant="outline"
-                  className={`text-xs mb-2 ${config.textColor} border-current`}
-                >
-                  {config.label}
+                <Badge variant="outline" className="text-xs mb-2" style={{ color: style.particleColor, borderColor: style.particleColor }}>
+                  {style.label}
                 </Badge>
 
                 {/* Descrição */}
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                  {badge.unlocked ? badge.description : 'Badge bloqueado'}
+                  {badge.unlocked ? badge.description : 'Selo bloqueado'}
                 </p>
 
                 {/* Ações */}
@@ -281,6 +274,22 @@ const BadgeShowcase = () => {
           <p className="text-muted-foreground">Tente outra categoria</p>
         </div>
       )}
+
+      <UnlockCelebrationModal
+        badge={
+          celebrating
+            ? {
+                name: celebrating.name,
+                description: celebrating.description,
+                rarity: celebrating.rarity,
+                icon: CUSTOM_ICONS[celebrating.badge_key],
+                emoji: celebrating.icon,
+                verseReference: celebrating.verse_reference,
+              }
+            : null
+        }
+        onClose={() => setCelebrating(null)}
+      />
     </div>
   );
 };
