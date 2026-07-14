@@ -513,7 +513,7 @@ export default function AdminBadges() {
                 {filtered.map((badge) => (
                   <TableRow key={badge.id} className={badge.status !== "active" ? "opacity-60" : ""}>
                     <TableCell>
-                      <KingdomBadge rarity={badge.rarity} emoji={!badge.image_url ? badge.icon : undefined} size="sm" />
+                      <KingdomBadge rarity={badge.rarity} imageUrl={badge.image_url} emoji={!badge.image_url ? badge.icon : undefined} size="sm" />
                     </TableCell>
                     <TableCell className="font-medium">{badge.name}</TableCell>
                     <TableCell>{badge.category}</TableCell>
