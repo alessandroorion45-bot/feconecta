@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
-import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, HelpCircle, Search as SearchIcon, Star, BookMarked, HandHeart } from "lucide-react";
+import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, HelpCircle, Search as SearchIcon, Star, BookMarked, HandHeart, Crown } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -114,6 +114,7 @@ const Header = () => {
                   <MenuItem path="/quiz" icon={<Brain className="h-5 w-5" />} label="Quiz" currentPath={currentPath} onClick={handleNavClick} iconColor="text-indigo-500" />
                   <MenuItem path="/challenges" icon={<Target className="h-5 w-5" />} label="Desafios" currentPath={currentPath} onClick={handleNavClick} iconColor="text-orange-500" />
                   <MenuItem path="/achievements" icon={<Trophy className="h-5 w-5" />} label="Conquistas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
+                  <MenuItem path="/gamification" icon={<Crown className="h-5 w-5" />} label="Selos Kingdom" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
                   <MenuItem path="/ranking" icon={<TrendingUp className="h-5 w-5" />} label="Ranking" currentPath={currentPath} onClick={handleNavClick} iconColor="text-green-500" />
                   <MenuItem path="/palavra-viva" icon={<SearchIcon className="h-5 w-5" />} label="Caça-Palavras" currentPath={currentPath} onClick={handleNavClick} iconColor="text-purple-500" />
 
@@ -245,6 +246,7 @@ const Header = () => {
 
                     <MenuSection title="Ferramentas" />
                     <MenuItem path="/achievements" icon={<Trophy className="h-5 w-5" />} label="Conquistas" currentPath={currentPath} onClick={handleNavClick} iconColor="text-yellow-500" />
+                    <MenuItem path="/gamification" icon={<Crown className="h-5 w-5" />} label="Selos Kingdom" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
                     <MenuItem path="/ranking" icon={<TrendingUp className="h-5 w-5" />} label="Ranking" currentPath={currentPath} onClick={handleNavClick} iconColor="text-green-500" />
                     <MenuItem path="/challenges" icon={<Target className="h-5 w-5" />} label="Desafios" currentPath={currentPath} onClick={handleNavClick} iconColor="text-orange-500" />
                     <MenuItem path="/quiz" icon={<Brain className="h-5 w-5" />} label="Quiz" currentPath={currentPath} onClick={handleNavClick} iconColor="text-indigo-500" />
