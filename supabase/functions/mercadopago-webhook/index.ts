@@ -6,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Mapeia os status de pagamento do Mercado Pago para os status internos
-const STATUS_MAP: Record<string, string> = {
+// Status da API antiga de Payments
+const PAYMENT_STATUS_MAP: Record<string, string> = {
   approved: "approved",
   rejected: "rejected",
   cancelled: "cancelled",
@@ -15,6 +15,15 @@ const STATUS_MAP: Record<string, string> = {
   charged_back: "refunded",
   in_process: "pending",
   pending: "pending",
+};
+
+// Status da API de Orders (a que esta aplicação realmente usa)
+const ORDER_STATUS_MAP: Record<string, string> = {
+  processed: "approved",
+  action_required: "pending",
+  created: "pending",
+  canceled: "cancelled",
+  cancelled: "cancelled",
 };
 
 serve(async (req) => {
@@ -27,18 +36,18 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     const type = url.searchParams.get("type") ?? url.searchParams.get("topic");
-    let paymentId = url.searchParams.get("data.id") ?? url.searchParams.get("id");
+    let resourceId = url.searchParams.get("data.id") ?? url.searchParams.get("id");
 
     if (req.method === "POST") {
       try {
         const body = await req.json();
-        paymentId = body?.data?.id ?? paymentId;
+        resourceId = body?.data?.id ?? resourceId;
       } catch {
-        // corpo vazio/ inválido — segue só com os query params
+        // corpo vazio/inválido — segue só com os query params
       }
     }
 
-    if (type !== "payment" || !paymentId) {
+    if (!resourceId || !type) {
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -47,20 +56,25 @@ serve(async (req) => {
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     if (!accessToken) throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado.");
 
-    // Nunca confiar no corpo do webhook — sempre buscar o pagamento real na API do MP
-    const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+    const isOrder = type.includes("order");
+    const endpoint = isOrder
+      ? `https://api.mercadopago.com/v1/orders/${resourceId}`
+      : `https://api.mercadopago.com/v1/payments/${resourceId}`;
+
+    // Nunca confiar no corpo do webhook — sempre buscar o recurso real na API do MP
+    const resourceResponse = await fetch(endpoint, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-    if (!paymentResponse.ok) {
-      console.error("Erro ao buscar pagamento no Mercado Pago:", paymentResponse.status);
+    if (!resourceResponse.ok) {
+      console.error("Erro ao buscar recurso no Mercado Pago:", resourceResponse.status);
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const payment = await paymentResponse.json();
-    const donationId = payment.external_reference;
+    const resource = await resourceResponse.json();
+    const donationId = resource.external_reference;
     if (!donationId) {
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -72,14 +86,27 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const mappedStatus = STATUS_MAP[payment.status] ?? "pending";
+    let mappedStatus: string;
+    let mpPaymentId: string | null;
+    let mpPaymentMethodId: string | null;
+
+    if (isOrder) {
+      const paymentInOrder = resource.transactions?.payments?.[0];
+      mappedStatus = ORDER_STATUS_MAP[resource.status] ?? "pending";
+      mpPaymentId = paymentInOrder?.id ? String(paymentInOrder.id) : null;
+      mpPaymentMethodId = paymentInOrder?.payment_method?.id ?? null;
+    } else {
+      mappedStatus = PAYMENT_STATUS_MAP[resource.status] ?? "pending";
+      mpPaymentId = String(resource.id);
+      mpPaymentMethodId = resource.payment_method_id ?? null;
+    }
 
     await serviceClient
       .from("donations")
       .update({
         status: mappedStatus,
-        mp_payment_id: String(payment.id),
-        mp_payment_method_id: payment.payment_method_id ?? null,
+        mp_payment_id: mpPaymentId,
+        mp_payment_method_id: mpPaymentMethodId,
         updated_at: new Date().toISOString(),
       })
       .eq("id", donationId);

@@ -6,14 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const STATUS_MAP: Record<string, string> = {
-  approved: "approved",
-  rejected: "rejected",
+// Status da Order (não confundir com status de payment da API antiga)
+const ORDER_STATUS_MAP: Record<string, string> = {
+  processed: "approved",
+  action_required: "pending",
+  created: "pending",
+  canceled: "cancelled",
   cancelled: "cancelled",
-  refunded: "refunded",
-  charged_back: "refunded",
-  in_process: "pending",
-  pending: "pending",
 };
 
 serve(async (req) => {
@@ -32,7 +31,7 @@ serve(async (req) => {
       );
     }
 
-    if (!formData?.payment_method_id) {
+    if (!formData?.payment_method_id || !formData?.payer?.email) {
       return new Response(
         JSON.stringify({ error: "Dados de pagamento incompletos." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -77,17 +76,22 @@ serve(async (req) => {
       throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado.");
     }
 
-    const paymentBody = {
-      transaction_amount: parsedAmount,
-      token: formData.token,
-      description: "Doação - Aliança Kingdom",
-      installments: formData.installments || 1,
-      payment_method_id: formData.payment_method_id,
-      issuer_id: formData.issuer_id,
-      payer: formData.payer,
+    const amountStr = parsedAmount.toFixed(2);
+
+    const orderBody = {
+      type: "online",
+      processing_mode: "automatic",
       external_reference: donation.id,
-      notification_url: `${supabaseUrl}/functions/v1/mercadopago-webhook`,
-      statement_descriptor: "ALIANCA KINGDOM",
+      total_amount: amountStr,
+      payer: { email: formData.payer.email },
+      transactions: {
+        payments: [
+          {
+            amount: amountStr,
+            payment_method: { id: formData.payment_method_id, type: "bank_transfer" },
+          },
+        ],
+      },
     };
 
     const mpHeaders: Record<string, string> = {
@@ -97,16 +101,16 @@ serve(async (req) => {
     };
     if (deviceId) mpHeaders["X-meli-session-id"] = deviceId;
 
-    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+    const mpResponse = await fetch("https://api.mercadopago.com/v1/orders", {
       method: "POST",
       headers: mpHeaders,
-      body: JSON.stringify(paymentBody),
+      body: JSON.stringify(orderBody),
     });
 
-    const payment = await mpResponse.json();
+    const order = await mpResponse.json();
 
     if (!mpResponse.ok) {
-      console.error("Erro do Mercado Pago:", mpResponse.status, JSON.stringify(payment));
+      console.error("Erro do Mercado Pago:", mpResponse.status, JSON.stringify(order));
       await serviceClient
         .from("donations")
         .update({ status: "rejected" })
@@ -114,21 +118,24 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({
-          error: payment?.message || "Não foi possível processar o pagamento.",
+          error: order?.message || order?.errors?.[0]?.message || "Não foi possível processar o pagamento.",
+          errorDetails: order?.errors ?? order?.cause ?? null,
           donationId: donation.id,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const mappedStatus = STATUS_MAP[payment.status] ?? "pending";
+    const paymentInOrder = order.transactions?.payments?.[0];
+    const mappedStatus = ORDER_STATUS_MAP[order.status] ?? "pending";
 
     await serviceClient
       .from("donations")
       .update({
         status: mappedStatus,
-        mp_payment_id: String(payment.id),
-        mp_payment_method_id: payment.payment_method_id ?? null,
+        mp_preference_id: order.id,
+        mp_payment_id: paymentInOrder?.id ? String(paymentInOrder.id) : null,
+        mp_payment_method_id: paymentInOrder?.payment_method?.id ?? null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", donation.id);
@@ -137,10 +144,10 @@ serve(async (req) => {
       JSON.stringify({
         donationId: donation.id,
         status: mappedStatus,
-        statusDetail: payment.status_detail,
-        qrCode: payment.point_of_interaction?.transaction_data?.qr_code ?? null,
-        qrCodeBase64: payment.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
-        ticketUrl: payment.point_of_interaction?.transaction_data?.ticket_url ?? null,
+        statusDetail: order.status_detail,
+        qrCode: paymentInOrder?.payment_method?.qr_code ?? null,
+        qrCodeBase64: paymentInOrder?.payment_method?.qr_code_base64 ?? null,
+        ticketUrl: paymentInOrder?.payment_method?.ticket_url ?? null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
