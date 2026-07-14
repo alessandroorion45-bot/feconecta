@@ -104,12 +104,22 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
       });
 
       if (error || data?.error) {
+        let message = data?.error;
+        if (!message && error && "context" in error) {
+          try {
+            const body = await (error as any).context.json();
+            message = body?.error;
+          } catch {
+            // corpo não era JSON, segue com a mensagem genérica
+          }
+        }
+
         toast({
           title: "Pagamento não aprovado",
-          description: data?.error || "Verifique os dados e tente novamente.",
+          description: message || "Verifique os dados e tente novamente.",
           variant: "destructive",
         });
-        throw new Error(data?.error || "Falha no pagamento");
+        throw new Error(message || "Falha no pagamento");
       }
 
       setResult(data);
