@@ -185,7 +185,7 @@ const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equ
 
         {/* disco de vidro */}
         <div
-          className="relative h-full w-full rounded-full flex items-center justify-center backdrop-blur-sm"
+          className="relative h-full w-full rounded-full overflow-hidden flex items-center justify-center backdrop-blur-sm"
           style={{
             background: "linear-gradient(160deg, rgba(255,255,255,0.25), rgba(255,255,255,0.05) 60%, rgba(0,0,0,0.15))",
           }}
@@ -197,8 +197,7 @@ const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equ
               src={imageUrl}
               alt=""
               loading="lazy"
-              style={{ width: dims.icon * 1.3, height: dims.icon * 1.3 }}
-              className="object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
+              className="absolute inset-0 h-full w-full object-cover"
             />
           ) : icon ? (
             <div style={{ width: dims.icon, height: dims.icon }} className="drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">

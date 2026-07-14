@@ -20,6 +20,7 @@ import {
   ArrowUp, ArrowDown, Download, FileUp,
 } from "lucide-react";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
+import { ImageCropModal } from "@/components/ImageCropModal";
 
 interface BadgeCategory {
   id: string;
@@ -115,6 +116,8 @@ export default function AdminBadges() {
   const [form, setForm] = useState(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [showCrop, setShowCrop] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -188,8 +191,15 @@ export default function AdminBadges() {
   };
 
   const handleImageChange = (file: File | null) => {
+    if (!file) return;
+    setCropSrc(URL.createObjectURL(file));
+    setShowCrop(true);
+  };
+
+  const handleCropComplete = (blob: Blob) => {
+    const file = new File([blob], "selo.jpg", { type: "image/jpeg" });
     setImageFile(file);
-    if (file) setImagePreview(URL.createObjectURL(file));
+    setImagePreview(URL.createObjectURL(blob));
   };
 
   const createCategory = async () => {
@@ -576,16 +586,16 @@ export default function AdminBadges() {
             <div>
               <label className="text-sm font-medium mb-2 block">Imagem do selo</label>
               <div className="flex items-center gap-4">
-                <div className="h-20 w-20 flex items-center justify-center rounded-lg border border-dashed">
+                <div className="h-20 w-20 flex items-center justify-center rounded-full border border-dashed overflow-hidden shrink-0">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover rounded-lg" />
+                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
                   ) : (
                     <Upload className="h-6 w-6 text-muted-foreground" />
                   )}
                 </div>
                 <Input type="file" accept="image/png,image/svg+xml,image/webp,image/jpeg" onChange={(e) => handleImageChange(e.target.files?.[0] || null)} />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">PNG, SVG ou WEBP — 512x512 recomendado. Sem imagem, usa o emoji abaixo.</p>
+              <p className="text-xs text-muted-foreground mt-1">PNG, SVG ou WEBP. Depois de escolher, você recorta a parte redonda antes de salvar. Sem imagem, usa o emoji abaixo.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -777,6 +787,18 @@ export default function AdminBadges() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {cropSrc && (
+        <ImageCropModal
+          open={showCrop}
+          onOpenChange={setShowCrop}
+          imageSrc={cropSrc}
+          aspectRatio={1}
+          round
+          title="Recortar imagem do selo"
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </AdminLayout>
   );
 }

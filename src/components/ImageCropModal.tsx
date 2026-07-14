@@ -18,6 +18,8 @@ interface ImageCropModalProps {
   aspectRatio: number; // e.g., 9/16 for avatar, 16/9 for cover
   onCropComplete: (croppedImageBlob: Blob) => void;
   title: string;
+  /** Moldura de recorte redonda (selos, avatares) em vez de retangular */
+  round?: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ export const ImageCropModal = ({
   aspectRatio,
   onCropComplete,
   title,
+  round,
 }: ImageCropModalProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -143,7 +146,8 @@ export const ImageCropModal = ({
               onCropChange={onCropChange}
               onZoomChange={onZoomChange}
               onCropComplete={onCropAreaComplete}
-              showGrid
+              cropShape={round ? "round" : "rect"}
+              showGrid={!round}
               zoomWithScroll
               minZoom={1}
               maxZoom={4}
