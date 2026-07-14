@@ -420,6 +420,7 @@ export type Database = {
           unlock_criteria: Json
           unlock_story: string | null
           verse_reference: string | null
+          verse_text: string | null
           xp_reward: number | null
         }
         Insert: {
@@ -442,6 +443,7 @@ export type Database = {
           unlock_criteria: Json
           unlock_story?: string | null
           verse_reference?: string | null
+          verse_text?: string | null
           xp_reward?: number | null
         }
         Update: {
@@ -464,6 +466,7 @@ export type Database = {
           unlock_criteria?: Json
           unlock_story?: string | null
           verse_reference?: string | null
+          verse_text?: string | null
           xp_reward?: number | null
         }
         Relationships: []

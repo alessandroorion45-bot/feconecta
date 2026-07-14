@@ -17,6 +17,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Crown, Search, Plus, Pencil, Copy, Eye, EyeOff, Archive, Gift, Upload, UserPlus, Loader2,
+  ArrowUp, ArrowDown, Download, FileUp,
 } from "lucide-react";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
 
@@ -291,6 +292,67 @@ export default function AdminBadges() {
     loadAll();
   };
 
+  const moveBadge = async (badge: BadgeRow, direction: "up" | "down") => {
+    const sorted = [...badges].sort((a, b) => a.ordem - b.ordem);
+    const index = sorted.findIndex((b) => b.id === badge.id);
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= sorted.length) return;
+    const neighbor = sorted[swapIndex];
+
+    await Promise.all([
+      supabase.from("badges").update({ ordem: neighbor.ordem }).eq("id", badge.id),
+      supabase.from("badges").update({ ordem: badge.ordem }).eq("id", neighbor.id),
+    ]);
+    loadAll();
+  };
+
+  const exportBadges = () => {
+    const exportable = badges.map(({ id, users_count, created_at, ...rest }) => rest);
+    const blob = new Blob([JSON.stringify(exportable, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `selos-kingdom-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importBadges = async (file: File) => {
+    try {
+      const text = await file.text();
+      const items = JSON.parse(text) as Partial<BadgeRow>[];
+      if (!Array.isArray(items)) throw new Error("Arquivo precisa ser uma lista de selos.");
+
+      let created = 0;
+      for (const item of items) {
+        if (!item.name) continue;
+        const badge_key = `${slugify(item.name)}-${Date.now().toString(36)}-${created}`;
+        const { error } = await supabase.from("badges").insert({
+          badge_key,
+          slug: slugify(item.name),
+          name: item.name,
+          description: item.description || "",
+          icon: item.icon || "🏅",
+          image_url: item.image_url || null,
+          rarity: item.rarity || "common",
+          category: item.category || categories[0]?.nome || "Especiais",
+          unlock_criteria: item.unlock_criteria || { type: "manual" },
+          automatico: item.automatico || false,
+          status: item.status || "hidden",
+          xp_reward: item.xp_reward || 0,
+          verse_reference: item.verse_reference || null,
+          verse_text: item.verse_text || null,
+          unlock_story: item.unlock_story || null,
+        });
+        if (!error) created++;
+      }
+      toast({ title: `${created} selo(s) importado(s)`, description: created < items.length ? "Alguns itens foram ignorados (sem nome)." : undefined });
+      loadAll();
+    } catch (error) {
+      toast({ title: "Erro ao importar", description: (error as Error).message, variant: "destructive" });
+    }
+  };
+
   const searchUsers = async (query: string) => {
     if (!query || query.length < 2) {
       setUserResults([]);
@@ -368,10 +430,27 @@ export default function AdminBadges() {
               {badges.length} selo{badges.length !== 1 ? "s" : ""} cadastrado{badges.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button onClick={openCreate} className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Selo
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={exportBadges}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+            <Button variant="outline" onClick={() => document.getElementById("import-badges-input")?.click()}>
+              <FileUp className="h-4 w-4 mr-2" />
+              Importar
+            </Button>
+            <input
+              id="import-badges-input"
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) importBadges(f); e.target.value = ""; }}
+            />
+            <Button onClick={openCreate} className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Selo
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -445,6 +524,12 @@ export default function AdminBadges() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => moveBadge(badge, "up")} title="Mover pra cima">
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => moveBadge(badge, "down")} title="Mover pra baixo">
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" onClick={() => openEdit(badge)} title="Editar">
                           <Pencil className="h-4 w-4" />
                         </Button>

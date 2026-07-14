@@ -8,7 +8,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Lock, Trophy } from "lucide-react";
 import KingdomBadge, { BadgeRarity, RARITY_STYLES } from "@/components/kingdom-badges/KingdomBadge";
 import UnlockCelebrationModal from "@/components/kingdom-badges/UnlockCelebrationModal";
+import BadgeDetailModal, { BadgeDetail } from "@/components/kingdom-badges/BadgeDetailModal";
+import CollectorsRanking from "@/components/kingdom-badges/CollectorsRanking";
 import { CrownIcon, OpenBookIcon, GenerousHeartIcon } from "@/components/kingdom-badges/badgeIcons";
+import { playUnlockChime } from "@/lib/badgeSound";
 
 interface BadgeData {
   id: string;
@@ -21,6 +24,10 @@ interface BadgeData {
   category: string;
   xp_reward: number;
   verse_reference?: string | null;
+  verse_text?: string | null;
+  unlock_story?: string | null;
+  unlock_criteria?: { type: string } | null;
+  created_at: string;
   unlocked?: boolean;
   unlocked_at?: string;
   is_equipped?: boolean;
@@ -55,6 +62,8 @@ const BadgeShowcase = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [celebrating, setCelebrating] = useState<BadgeData | null>(null);
+  const [detailBadge, setDetailBadge] = useState<BadgeData | null>(null);
+  const [usersCount, setUsersCount] = useState<Record<string, number>>({});
 
   const rarityColorsFor = (slug: string) => {
     const r = rarities.find((x) => x.slug === slug);
@@ -78,7 +87,10 @@ const BadgeShowcase = () => {
         async (payload) => {
           const badgeId = (payload.new as { badge_id: string }).badge_id;
           const { data: badge } = await supabase.from('badges').select('*').eq('id', badgeId).maybeSingle();
-          if (badge) setCelebrating(badge as BadgeData);
+          if (badge) {
+            setCelebrating(badge as BadgeData);
+            playUnlockChime();
+          }
           loadBadges();
         },
       )
@@ -101,6 +113,14 @@ const BadgeShowcase = () => {
 
     setRarities(rarityRows || []);
     setCategoryList(categoryRows || []);
+
+    supabase.from('user_badges').select('badge_id').then(({ data }) => {
+      const counts: Record<string, number> = {};
+      (data || []).forEach((row: { badge_id: string }) => {
+        counts[row.badge_id] = (counts[row.badge_id] || 0) + 1;
+      });
+      setUsersCount(counts);
+    });
 
     if (badgesError) {
       console.error('[Badges] Erro ao carregar:', badgesError);
@@ -214,6 +234,8 @@ const BadgeShowcase = () => {
         </CardHeader>
       </Card>
 
+      <CollectorsRanking />
+
       {/* Filtros */}
       <div className="flex flex-wrap gap-2">
         {categories.map(cat => {
@@ -239,9 +261,10 @@ const BadgeShowcase = () => {
           return (
             <Card
               key={badge.id}
-              className={`relative overflow-hidden transition-all hover:scale-[1.03] ${
+              className={`relative overflow-hidden transition-all hover:scale-[1.03] cursor-pointer ${
                 badge.unlocked ? 'shadow-lg' : 'opacity-70'
               }`}
+              onClick={() => setDetailBadge(badge)}
             >
               <CardContent className="p-4 text-center flex flex-col items-center">
                 <div className="mb-3">
@@ -278,7 +301,7 @@ const BadgeShowcase = () => {
                     size="sm"
                     variant={badge.is_equipped ? 'default' : 'outline'}
                     className="w-full"
-                    onClick={() => equipBadge(badge.id)}
+                    onClick={(e) => { e.stopPropagation(); equipBadge(badge.id); }}
                   >
                     {badge.is_equipped ? '✓ Equipado' : 'Equipar'}
                   </Button>
@@ -320,6 +343,32 @@ const BadgeShowcase = () => {
             : null
         }
         onClose={() => setCelebrating(null)}
+      />
+
+      <BadgeDetailModal
+        badge={
+          detailBadge
+            ? ({
+                name: detailBadge.name,
+                description: detailBadge.description,
+                rarity: detailBadge.rarity,
+                rarityLabel: rarityLabelFor(detailBadge.rarity),
+                rarityColors: rarityColorsFor(detailBadge.rarity),
+                category: detailBadge.category,
+                icon: !detailBadge.image_url ? CUSTOM_ICONS[detailBadge.badge_key] : undefined,
+                imageUrl: detailBadge.image_url,
+                emoji: detailBadge.icon,
+                verseReference: detailBadge.verse_reference,
+                verseText: detailBadge.verse_text,
+                unlockStory: detailBadge.unlock_story,
+                unlockType: detailBadge.unlock_criteria?.type,
+                usersCount: usersCount[detailBadge.id] || 0,
+                createdAt: detailBadge.created_at,
+                unlocked: !!detailBadge.unlocked,
+              } as BadgeDetail)
+            : null
+        }
+        onClose={() => setDetailBadge(null)}
       />
     </div>
   );

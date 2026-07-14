@@ -22,12 +22,14 @@ interface Badge {
   badge_color: string;
 }
 
+// Classes Tailwind (o UserBadge aplica isso como className de gradiente)
 const RARITY_COLOR: Record<string, string> = {
-  common: "#94a3b8",
-  rare: "#38bdf8",
-  epic: "#a855f7",
-  legendary: "#f59e0b",
-  mythic: "#f43f5e",
+  common: "from-gray-400 to-gray-500",
+  uncommon: "from-emerald-400 to-emerald-600",
+  rare: "from-sky-400 to-blue-600",
+  epic: "from-purple-400 to-purple-600",
+  legendary: "from-amber-400 to-amber-600",
+  exclusive: "from-rose-400 to-rose-600",
 };
 
 const mapUserBadges = (rows: any[] | null | undefined): Badge[] =>
@@ -140,10 +142,11 @@ const Profile = () => {
       const badgesPromise = (async () => {
         console.log('🏅 Carregando badges em paralelo...');
         return await (supabase.from("user_badges" as any) as any)
-          .select("unlocked_at, badges(name, icon, rarity)")
+          .select("unlocked_at, is_equipped, badges(name, icon, rarity)")
           .eq("user_id", userId)
+          .order("is_equipped", { ascending: false })
           .order("unlocked_at", { ascending: false })
-          .limit(5);
+          .limit(3);
       })();
 
       const timeoutPromise10s = new Promise<never>((_, reject) =>

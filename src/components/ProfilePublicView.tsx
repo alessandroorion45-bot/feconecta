@@ -159,7 +159,15 @@ export const ProfilePublicView = ({
                   size="sm"
                 />
               ))}
-              
+              {badges.length > 0 && (
+                <Link
+                  to="/gamification"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+                >
+                  👑 Ver todos os selos
+                </Link>
+              )}
+
               {profile.is_private && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-200 text-xs font-medium">
                   <Lock className="h-3 w-3" />
