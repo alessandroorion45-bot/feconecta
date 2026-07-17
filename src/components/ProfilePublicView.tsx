@@ -2,7 +2,8 @@ import { memo, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { FRAME_STYLES, BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
+import { BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
+import AnimatedCosmeticFrame from "@/components/AnimatedCosmeticFrame";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AvatarPro } from "@/components/AvatarPro";
@@ -96,7 +97,6 @@ export const ProfilePublicView = ({
   const equippedFrame = cosmetics.find((c) => c.tipo === "moldura");
   const equippedBg = cosmetics.find((c) => c.tipo === "fundo");
   const equippedFx = cosmetics.find((c) => c.tipo === "efeito");
-  const frameStyle = equippedFrame ? FRAME_STYLES[equippedFrame.cosmetic_key] : null;
   const bgStyle = equippedBg ? BACKGROUND_STYLES[equippedBg.cosmetic_key] : null;
   const fxStyle = equippedFx ? EFFECT_STYLES[equippedFx.cosmetic_key] : null;
 
@@ -171,10 +171,7 @@ export const ProfilePublicView = ({
         <div className="flex flex-col items-center gap-3">
           {/* Avatar - 9:16 Portrait Format - Larger Size */}
           <div className="flex justify-center z-10">
-            <div
-              className={frameStyle ? "rounded-2xl p-[4px]" : undefined}
-              style={frameStyle ? { background: frameStyle.ring, boxShadow: frameStyle.glow ? `0 0 22px ${frameStyle.glow}` : undefined } : undefined}
-            >
+            <AnimatedCosmeticFrame cosmeticKey={equippedFrame?.cosmetic_key}>
               {isOwner ? (
                 <AvatarUpload
                   currentUrl={profile.avatar_url}
@@ -192,7 +189,7 @@ export const ProfilePublicView = ({
                   clickable={false}
                 />
               )}
-            </div>
+            </AnimatedCosmeticFrame>
           </div>
 
           {/* Badges + Quote - Centered Below Avatar */}

@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
-import { FRAME_STYLES, BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
+import { BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
+import AnimatedCosmeticFrame from "@/components/AnimatedCosmeticFrame";
 import { playUnlockChime } from "@/lib/badgeSound";
 import {
   ShoppingBag, Heart, Gift, Search, ArrowLeft, Clock, Copy, Check, PartyPopper, Sparkles, Loader2, CheckCircle2,
@@ -73,11 +74,13 @@ const CosmeticPreview = ({ product }: { product: StoreProduct }) => {
     return <img src={product.image_url} alt="" loading="lazy" className="h-24 w-24 rounded-full object-cover" />;
   }
   if (product.tipo === "moldura" && product.cosmetic_key) {
-    const frame = FRAME_STYLES[product.cosmetic_key];
     return (
-      <div className="h-24 w-24 rounded-full p-[5px]" style={{ background: frame?.ring, boxShadow: frame?.glow ? `0 0 18px ${frame.glow}` : undefined }}>
-        <div className="h-full w-full rounded-full bg-muted flex items-center justify-center text-2xl">🙂</div>
-      </div>
+      <AnimatedCosmeticFrame cosmeticKey={product.cosmetic_key}>
+        <div className="h-32 w-24 bg-gradient-to-b from-muted to-muted/60 flex flex-col items-center justify-center gap-1">
+          <span className="text-3xl">🙂</span>
+          <span className="text-[9px] text-muted-foreground">seu avatar</span>
+        </div>
+      </AnimatedCosmeticFrame>
     );
   }
   if (product.tipo === "fundo" && product.cosmetic_key) {
