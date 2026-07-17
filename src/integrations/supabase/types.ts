@@ -419,6 +419,7 @@ export type Database = {
           status: string
           unlock_criteria: Json
           unlock_story: string | null
+          updated_at: string
           verse_reference: string | null
           verse_text: string | null
           xp_reward: number | null
@@ -442,6 +443,7 @@ export type Database = {
           status?: string
           unlock_criteria: Json
           unlock_story?: string | null
+          updated_at?: string
           verse_reference?: string | null
           verse_text?: string | null
           xp_reward?: number | null
@@ -465,6 +467,7 @@ export type Database = {
           status?: string
           unlock_criteria?: Json
           unlock_story?: string | null
+          updated_at?: string
           verse_reference?: string | null
           verse_text?: string | null
           xp_reward?: number | null
@@ -6120,6 +6123,198 @@ export type Database = {
           },
         ]
       }
+      store_categories: {
+        Row: {
+          created_at: string
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
+      store_products: {
+        Row: {
+          aura: string | null
+          badge_id: string | null
+          categoria: string
+          cosmetic_key: string | null
+          created_at: string
+          descricao: string | null
+          estoque: number | null
+          giftable: boolean
+          id: string
+          image_url: string | null
+          limitado: boolean
+          mensagem: string | null
+          nome: string
+          ordem: number
+          preco: number
+          slug: string
+          status: string
+          tipo: string
+          updated_at: string
+          verse_reference: string | null
+          verse_text: string | null
+        }
+        Insert: {
+          aura?: string | null
+          badge_id?: string | null
+          categoria: string
+          cosmetic_key?: string | null
+          created_at?: string
+          descricao?: string | null
+          estoque?: number | null
+          giftable?: boolean
+          id?: string
+          image_url?: string | null
+          limitado?: boolean
+          mensagem?: string | null
+          nome: string
+          ordem?: number
+          preco: number
+          slug: string
+          status?: string
+          tipo: string
+          updated_at?: string
+          verse_reference?: string | null
+          verse_text?: string | null
+        }
+        Update: {
+          aura?: string | null
+          badge_id?: string | null
+          categoria?: string
+          cosmetic_key?: string | null
+          created_at?: string
+          descricao?: string | null
+          estoque?: number | null
+          giftable?: boolean
+          id?: string
+          image_url?: string | null
+          limitado?: boolean
+          mensagem?: string | null
+          nome?: string
+          ordem?: number
+          preco?: number
+          slug?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+          verse_reference?: string | null
+          verse_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_products_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_purchases: {
+        Row: {
+          amount: number
+          buyer_id: string | null
+          created_at: string
+          fulfilled: boolean
+          gift_message: string | null
+          gift_to: string | null
+          id: string
+          mp_order_id: string | null
+          mp_payment_id: string | null
+          product_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          buyer_id?: string | null
+          created_at?: string
+          fulfilled?: boolean
+          gift_message?: string | null
+          gift_to?: string | null
+          id?: string
+          mp_order_id?: string | null
+          mp_payment_id?: string | null
+          product_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string | null
+          created_at?: string
+          fulfilled?: boolean
+          gift_message?: string | null
+          gift_to?: string | null
+          id?: string
+          mp_order_id?: string | null
+          mp_payment_id?: string | null
+          product_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_purchases_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_purchases_gift_to_fkey"
+            columns: ["gift_to"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "store_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_settings: {
+        Row: {
+          id: number
+          meta_ativa: boolean
+          meta_mensal: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          meta_ativa?: boolean
+          meta_mensal?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          meta_ativa?: boolean
+          meta_mensal?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       testimonies: {
         Row: {
           audio_url: string | null
@@ -6610,6 +6805,64 @@ export type Database = {
             columns: ["challenge_id"]
             isOneToOne: false
             referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_cosmetics: {
+        Row: {
+          acquired_via: string
+          cosmetic_key: string
+          created_at: string
+          equipped: boolean
+          gifted_by: string | null
+          id: string
+          product_id: string | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          acquired_via?: string
+          cosmetic_key: string
+          created_at?: string
+          equipped?: boolean
+          gifted_by?: string | null
+          id?: string
+          product_id?: string | null
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          acquired_via?: string
+          cosmetic_key?: string
+          created_at?: string
+          equipped?: boolean
+          gifted_by?: string | null
+          id?: string
+          product_id?: string | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_cosmetics_gifted_by_fkey"
+            columns: ["gifted_by"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_cosmetics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "store_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_cosmetics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
             referencedColumns: ["id"]
           },
         ]

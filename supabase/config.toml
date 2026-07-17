@@ -24,5 +24,11 @@ verify_jwt = false
 [functions.check-donation-status]
 verify_jwt = false
 
+[functions.process-store-purchase]
+verify_jwt = false
+
+[functions.check-purchase-status]
+verify_jwt = false
+
 [functions.mercadopago-webhook]
 verify_jwt = false

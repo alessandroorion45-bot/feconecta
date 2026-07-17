@@ -1,5 +1,8 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { FRAME_STYLES, BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AvatarPro } from "@/components/AvatarPro";
@@ -77,6 +80,26 @@ export const ProfilePublicView = ({
   onAvatarUpdate,
   onCoverUpdate,
 }: ProfilePublicViewProps) => {
+  // Cosméticos da Kingdom Store equipados por esse usuário
+  const [cosmetics, setCosmetics] = useState<{ cosmetic_key: string; tipo: string }[]>([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from("user_cosmetics")
+      .select("cosmetic_key, tipo")
+      .eq("user_id", userId)
+      .eq("equipped", true)
+      .then(({ data }) => setCosmetics(data || []));
+  }, [userId]);
+
+  const equippedFrame = cosmetics.find((c) => c.tipo === "moldura");
+  const equippedBg = cosmetics.find((c) => c.tipo === "fundo");
+  const equippedFx = cosmetics.find((c) => c.tipo === "efeito");
+  const frameStyle = equippedFrame ? FRAME_STYLES[equippedFrame.cosmetic_key] : null;
+  const bgStyle = equippedBg ? BACKGROUND_STYLES[equippedBg.cosmetic_key] : null;
+  const fxStyle = equippedFx ? EFFECT_STYLES[equippedFx.cosmetic_key] : null;
+
   if (loading) {
     return (
       <Card className="shadow-sm overflow-hidden rounded-none sm:rounded-xl">
@@ -107,9 +130,30 @@ export const ProfilePublicView = ({
             style={{ objectPosition: "50% 40%" }}
             loading="lazy"
           />
+        ) : bgStyle ? (
+          <div className="absolute inset-0" style={{ background: bgStyle }} />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-accent/30 to-secondary/20" />
         )}
+
+        {/* Efeito visual equipado (Kingdom Store) — leve, some com prefers-reduced-motion */}
+        {fxStyle && (
+          <div className="absolute inset-0 pointer-events-none motion-reduce:hidden" aria-hidden>
+            {[...Array(fxStyle.count)].map((_, i) => (
+              <motion.span
+                key={i}
+                className="absolute text-lg opacity-70"
+                style={{ left: `${8 + ((i * 89) % 84)}%` }}
+                initial={{ y: "110%", opacity: 0 }}
+                animate={{ y: "-10%", opacity: [0, 0.7, 0] }}
+                transition={{ duration: 6 + (i % 4), repeat: Infinity, delay: i * 0.9, ease: "linear" }}
+              >
+                {fxStyle.emoji}
+              </motion.span>
+            ))}
+          </div>
+        )}
+
         {/* Bottom gradient for smooth transition */}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card via-card/80 to-transparent" />
       </div>
@@ -127,23 +171,28 @@ export const ProfilePublicView = ({
         <div className="flex flex-col items-center gap-3">
           {/* Avatar - 9:16 Portrait Format - Larger Size */}
           <div className="flex justify-center z-10">
-            {isOwner ? (
-              <AvatarUpload
-                currentUrl={profile.avatar_url}
-                userId={userId}
-                onUploadComplete={onAvatarUpdate}
-                variant="rectangular"
-                fallbackName={profile.full_name}
-              />
-            ) : (
-              <AvatarPro
-                src={profile.avatar_url}
-                name={profile.full_name}
-                userId={userId}
-                size="xl"
-                clickable={false}
-              />
-            )}
+            <div
+              className={frameStyle ? "rounded-2xl p-[4px]" : undefined}
+              style={frameStyle ? { background: frameStyle.ring, boxShadow: frameStyle.glow ? `0 0 22px ${frameStyle.glow}` : undefined } : undefined}
+            >
+              {isOwner ? (
+                <AvatarUpload
+                  currentUrl={profile.avatar_url}
+                  userId={userId}
+                  onUploadComplete={onAvatarUpdate}
+                  variant="rectangular"
+                  fallbackName={profile.full_name}
+                />
+              ) : (
+                <AvatarPro
+                  src={profile.avatar_url}
+                  name={profile.full_name}
+                  userId={userId}
+                  size="xl"
+                  clickable={false}
+                />
+              )}
+            </div>
           </div>
 
           {/* Badges + Quote - Centered Below Avatar */}
