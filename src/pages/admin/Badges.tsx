@@ -17,7 +17,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Crown, Search, Plus, Pencil, Copy, Eye, EyeOff, Archive, Gift, Upload, UserPlus, Loader2,
-  ArrowUp, ArrowDown, Download, FileUp,
+  ArrowUp, ArrowDown, Download, FileUp, GripVertical,
 } from "lucide-react";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
 import { ImageCropModal } from "@/components/ImageCropModal";
@@ -64,17 +64,44 @@ interface UserSearchResult {
   full_name: string;
 }
 
-const UNLOCK_TYPES = [
-  { value: "manual", label: "Manual (só admin concede)" },
-  { value: "donation", label: "Doação" },
-  { value: "first_donation", label: "Primeira doação" },
-  { value: "action_count", label: "Quantidade de ações" },
-  { value: "streak", label: "Sequência de dias" },
-  { value: "streak_action", label: "Sequência de uma ação" },
-  { value: "total_xp", label: "Quantidade de XP" },
-  { value: "event", label: "Evento" },
-  { value: "other", label: "Outra" },
+interface UnlockPreset {
+  value: string;
+  label: string;
+  criteriaType: string;
+  criteriaAction?: string;
+  needsValue: boolean;
+  /** Hoje o motor automático realmente avalia esse critério sozinho */
+  automated?: boolean;
+}
+
+const UNLOCK_TYPES: UnlockPreset[] = [
+  { value: "manual", label: "Manual (só admin concede)", criteriaType: "manual", needsValue: false },
+  { value: "donation", label: "Doação", criteriaType: "donation", needsValue: false, automated: true },
+  { value: "first_donation", label: "Primeira doação", criteriaType: "first_donation", needsValue: false },
+  { value: "participation", label: "Participação", criteriaType: "participation", needsValue: false },
+  { value: "mission", label: "Missão", criteriaType: "mission", needsValue: false },
+  { value: "event", label: "Evento", criteriaType: "event", needsValue: false },
+  { value: "time_used", label: "Tempo de uso", criteriaType: "time_used", needsValue: true },
+  { value: "study_count", label: "Quantidade de estudos", criteriaType: "action_count", criteriaAction: "bible_study", needsValue: true, automated: true },
+  { value: "prayer_count", label: "Quantidade de orações", criteriaType: "action_count", criteriaAction: "prayer_interceded", needsValue: true, automated: true },
+  { value: "comment_count", label: "Quantidade de comentários", criteriaType: "action_count", criteriaAction: "comment_posted", needsValue: true },
+  { value: "reading_count", label: "Quantidade de leituras", criteriaType: "action_count", criteriaAction: "daily_devotional", needsValue: true, automated: true },
+  { value: "cell_count", label: "Quantidade de células", criteriaType: "action_count", criteriaAction: "cell_participation", needsValue: true },
+  { value: "evangelism_count", label: "Quantidade de evangelizações", criteriaType: "action_count", criteriaAction: "evangelism", needsValue: true },
+  { value: "quiz", label: "Quiz", criteriaType: "action_count", criteriaAction: "quiz_completed", needsValue: true },
+  { value: "achievement", label: "Conquista", criteriaType: "achievement", needsValue: false },
+  { value: "streak", label: "Sequência de dias", criteriaType: "streak", needsValue: true, automated: true },
+  { value: "total_xp", label: "Quantidade de XP", criteriaType: "total_xp", needsValue: true, automated: true },
+  { value: "other", label: "Outra", criteriaType: "other", needsValue: false },
 ];
+
+const findUnlockPreset = (criteria?: { type: string; action?: string } | null): UnlockPreset => {
+  if (!criteria) return UNLOCK_TYPES[0];
+  const exact = UNLOCK_TYPES.find((t) => t.criteriaType === criteria.type && t.criteriaAction === criteria.action);
+  if (exact) return exact;
+  const byType = UNLOCK_TYPES.find((t) => t.criteriaType === criteria.type && !t.criteriaAction);
+  return byType || UNLOCK_TYPES.find((t) => t.value === "other")!;
+};
 
 const emptyForm = {
   name: "",
@@ -122,6 +149,11 @@ export default function AdminBadges() {
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newRarityName, setNewRarityName] = useState("");
+  const [newRarityCorInicio, setNewRarityCorInicio] = useState("#93c5fd");
+  const [newRarityCorFim, setNewRarityCorFim] = useState("#2563eb");
+  const [showNewRarity, setShowNewRarity] = useState(false);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
   const [grantBadge, setGrantBadge] = useState<BadgeRow | null>(null);
   const [userSearch, setUserSearch] = useState("");
@@ -175,8 +207,8 @@ export default function AdminBadges() {
       image_url: badge.image_url,
       rarity: badge.rarity,
       category: badge.category,
-      unlock_type: badge.unlock_criteria?.type || "manual",
-      unlock_action: badge.unlock_criteria?.action || "",
+      unlock_type: findUnlockPreset(badge.unlock_criteria).value,
+      unlock_action: findUnlockPreset(badge.unlock_criteria).value === "other" ? (badge.unlock_criteria?.action || "") : "",
       unlock_value: badge.unlock_criteria?.value != null ? String(badge.unlock_criteria.value) : "",
       automatico: badge.automatico,
       status: badge.status,
@@ -219,6 +251,24 @@ export default function AdminBadges() {
     setShowNewCategory(false);
   };
 
+  const createRarity = async () => {
+    if (!newRarityName.trim()) return;
+    const slug = slugify(newRarityName);
+    const { data, error } = await supabase
+      .from("badge_rarities")
+      .insert({ nome: newRarityName.trim(), slug, cor_inicio: newRarityCorInicio, cor_fim: newRarityCorFim, ordem: rarities.length + 1 })
+      .select()
+      .single();
+    if (error) {
+      toast({ title: "Erro ao criar raridade", description: error.message, variant: "destructive" });
+      return;
+    }
+    setRarities((prev) => [...prev, data]);
+    setForm((f) => ({ ...f, rarity: data.slug }));
+    setNewRarityName("");
+    setShowNewRarity(false);
+  };
+
   const handleSave = async () => {
     if (!form.name.trim() || !form.rarity || !form.category) {
       toast({ title: "Preencha nome, raridade e categoria", variant: "destructive" });
@@ -235,9 +285,11 @@ export default function AdminBadges() {
         image_url = supabase.storage.from("kingdom-badges").getPublicUrl(path).data.publicUrl;
       }
 
-      const unlock_criteria: Record<string, unknown> = { type: form.unlock_type };
-      if (form.unlock_action) unlock_criteria.action = form.unlock_action;
-      if (form.unlock_value) unlock_criteria.value = Number(form.unlock_value);
+      const preset = UNLOCK_TYPES.find((t) => t.value === form.unlock_type) || UNLOCK_TYPES[0];
+      const unlock_criteria: Record<string, unknown> = { type: preset.criteriaType };
+      const action = preset.value === "other" ? form.unlock_action : preset.criteriaAction;
+      if (action) unlock_criteria.action = action;
+      if (preset.needsValue && form.unlock_value) unlock_criteria.value = Number(form.unlock_value);
 
       const payload = {
         name: form.name.trim(),
@@ -313,6 +365,32 @@ export default function AdminBadges() {
       supabase.from("badges").update({ ordem: neighbor.ordem }).eq("id", badge.id),
       supabase.from("badges").update({ ordem: badge.ordem }).eq("id", neighbor.id),
     ]);
+    loadAll();
+  };
+
+  const handleDragStart = (id: string) => setDraggedId(id);
+
+  const handleDrop = async (targetId: string) => {
+    if (!draggedId || draggedId === targetId) {
+      setDraggedId(null);
+      return;
+    }
+    const sorted = [...badges].sort((a, b) => a.ordem - b.ordem);
+    const fromIndex = sorted.findIndex((b) => b.id === draggedId);
+    const toIndex = sorted.findIndex((b) => b.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) {
+      setDraggedId(null);
+      return;
+    }
+
+    const reordered = [...sorted];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    setDraggedId(null);
+    setBadges(reordered.map((b, i) => ({ ...b, ordem: i })));
+
+    await Promise.all(reordered.map((b, i) => supabase.from("badges").update({ ordem: i }).eq("id", b.id)));
     loadAll();
   };
 
@@ -498,6 +576,7 @@ export default function AdminBadges() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8" />
                   <TableHead>Imagem</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Categoria</TableHead>
@@ -511,7 +590,17 @@ export default function AdminBadges() {
               </TableHeader>
               <TableBody>
                 {filtered.map((badge) => (
-                  <TableRow key={badge.id} className={badge.status !== "active" ? "opacity-60" : ""}>
+                  <TableRow
+                    key={badge.id}
+                    className={`${badge.status !== "active" ? "opacity-60" : ""} ${draggedId === badge.id ? "opacity-30" : ""}`}
+                    draggable
+                    onDragStart={() => handleDragStart(badge.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => handleDrop(badge.id)}
+                  >
+                    <TableCell className="cursor-grab active:cursor-grabbing text-muted-foreground">
+                      <GripVertical className="h-4 w-4" />
+                    </TableCell>
                     <TableCell>
                       <KingdomBadge rarity={badge.rarity} imageUrl={badge.image_url} emoji={!badge.image_url ? badge.icon : undefined} size="sm" />
                     </TableCell>
@@ -521,7 +610,7 @@ export default function AdminBadges() {
                       <Badge variant="outline">{rarities.find((r) => r.slug === badge.rarity)?.nome || badge.rarity}</Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {UNLOCK_TYPES.find((t) => t.value === badge.unlock_criteria?.type)?.label || "Manual"}
+                      {findUnlockPreset(badge.unlock_criteria).label}
                     </TableCell>
                     <TableCell>
                       <Badge variant={badge.status === "active" ? "default" : "secondary"}>
@@ -658,6 +747,26 @@ export default function AdminBadges() {
                     {rarities.map((r) => <SelectItem key={r.id} value={r.slug}>{r.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {!showNewRarity ? (
+                  <button type="button" onClick={() => setShowNewRarity(true)} className="text-xs text-primary mt-1">
+                    + Nova raridade
+                  </button>
+                ) : (
+                  <div className="space-y-1 mt-1">
+                    <Input value={newRarityName} onChange={(e) => setNewRarityName(e.target.value)} placeholder="Nome da raridade" className="h-8 text-sm" />
+                    <div className="flex items-center gap-2">
+                      <label className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        Cor 1
+                        <input type="color" value={newRarityCorInicio} onChange={(e) => setNewRarityCorInicio(e.target.value)} className="h-6 w-8 rounded border cursor-pointer" />
+                      </label>
+                      <label className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        Cor 2
+                        <input type="color" value={newRarityCorFim} onChange={(e) => setNewRarityCorFim(e.target.value)} className="h-6 w-8 rounded border cursor-pointer" />
+                      </label>
+                      <Button size="sm" className="h-8 ml-auto" onClick={createRarity}>Criar</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -670,6 +779,11 @@ export default function AdminBadges() {
                     {UNLOCK_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {UNLOCK_TYPES.find((t) => t.value === form.unlock_type)?.automated
+                    ? "✓ O sistema concede este selo sozinho quando o critério bate."
+                    : "Precisa de concessão manual pelo admin (ainda não é avaliado automaticamente)."}
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">XP concedido</label>
@@ -677,16 +791,20 @@ export default function AdminBadges() {
               </div>
             </div>
 
-            {form.unlock_type !== "manual" && (
+            {(UNLOCK_TYPES.find((t) => t.value === form.unlock_type)?.needsValue || form.unlock_type === "other") && (
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Ação/critério (texto livre)</label>
-                  <Input value={form.unlock_action} onChange={(e) => setForm((f) => ({ ...f, unlock_action: e.target.value }))} placeholder="Ex: daily_devotional" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Valor necessário</label>
-                  <Input type="number" value={form.unlock_value} onChange={(e) => setForm((f) => ({ ...f, unlock_value: e.target.value }))} placeholder="Ex: 100" />
-                </div>
+                {form.unlock_type === "other" && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Ação/critério (texto livre)</label>
+                    <Input value={form.unlock_action} onChange={(e) => setForm((f) => ({ ...f, unlock_action: e.target.value }))} placeholder="Ex: daily_devotional" />
+                  </div>
+                )}
+                {UNLOCK_TYPES.find((t) => t.value === form.unlock_type)?.needsValue && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Valor necessário</label>
+                    <Input type="number" value={form.unlock_value} onChange={(e) => setForm((f) => ({ ...f, unlock_value: e.target.value }))} placeholder="Ex: 100" />
+                  </div>
+                )}
               </div>
             )}
 

@@ -291,9 +291,15 @@ const BadgeShowcase = () => {
                 </Badge>
 
                 {/* Descrição */}
-                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                  {badge.unlocked ? badge.description : 'Selo bloqueado'}
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
+                  {badge.unlocked ? badge.description : 'Continue participando para descobrir este selo.'}
                 </p>
+
+                {badge.unlocked && badge.unlocked_at && (
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Conquistado em {new Date(badge.unlocked_at).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
 
                 {/* Ações */}
                 {badge.unlocked && user && (
