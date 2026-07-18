@@ -11,6 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Church, MapPin, Trophy, Lock, Heart, Pencil, Medal, User, BookOpen, Quote, Users, Music, HeartHandshake, Baby, Megaphone, Monitor, HandHeart, Star } from "lucide-react";
 import { UserBadge } from "./UserBadge";
 import { AvatarUpload } from "./AvatarUpload";
+import ProfileStats from "@/components/profile/ProfileStats";
+import ProfileBadgesShowcase from "@/components/profile/ProfileBadgesShowcase";
+import ProfileGifts from "@/components/profile/ProfileGifts";
 
 interface Badge {
   badge_name: string;
@@ -158,38 +161,78 @@ export const ProfilePublicView = ({
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card via-card/80 to-transparent" />
       </div>
 
-      {/* Profile Header Section */}
+      {/* Profile Header Section — cartão de identidade */}
       <div className="relative px-4 sm:px-6 -mt-12 sm:-mt-16 md:-mt-20">
         {/* Name - Full Width Centered */}
         <div className="text-center mb-4 pt-2">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground leading-tight uppercase tracking-wide break-words">
+          <motion.h1
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground leading-tight uppercase tracking-wide break-words"
+          >
             {profile.full_name || "Seu Nome"}
-          </h1>
+          </motion.h1>
         </div>
 
         {/* Avatar + Badges + Quote - Centered Column Layout */}
         <div className="flex flex-col items-center gap-3">
           {/* Avatar - 9:16 Portrait Format - Larger Size */}
           <div className="flex justify-center z-10">
-            <AnimatedCosmeticFrame cosmeticKey={equippedFrame?.cosmetic_key}>
-              {isOwner ? (
-                <AvatarUpload
-                  currentUrl={profile.avatar_url}
-                  userId={userId}
-                  onUploadComplete={onAvatarUpdate}
-                  variant="rectangular"
-                  fallbackName={profile.full_name}
-                />
-              ) : (
-                <AvatarPro
-                  src={profile.avatar_url}
-                  name={profile.full_name}
-                  userId={userId}
-                  size="xl"
-                  clickable={false}
-                />
-              )}
-            </AnimatedCosmeticFrame>
+            {equippedFrame ? (
+              <AnimatedCosmeticFrame cosmeticKey={equippedFrame.cosmetic_key}>
+                {isOwner ? (
+                  <AvatarUpload
+                    currentUrl={profile.avatar_url}
+                    userId={userId}
+                    onUploadComplete={onAvatarUpdate}
+                    variant="rectangular"
+                    fallbackName={profile.full_name}
+                  />
+                ) : (
+                  <AvatarPro
+                    src={profile.avatar_url}
+                    name={profile.full_name}
+                    userId={userId}
+                    size="xl"
+                    clickable={false}
+                  />
+                )}
+              </AnimatedCosmeticFrame>
+            ) : (
+              <motion.div
+                className="rounded-2xl p-[3px]"
+                style={{ background: "linear-gradient(135deg, #fde68a, #d4930d 55%, #fde68a)" }}
+                animate={{
+                  boxShadow: [
+                    "0 0 14px rgba(212,147,13,0.25)",
+                    "0 0 26px rgba(212,147,13,0.45)",
+                    "0 0 14px rgba(212,147,13,0.25)",
+                  ],
+                }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <div className="rounded-xl overflow-hidden bg-card">
+                  {isOwner ? (
+                    <AvatarUpload
+                      currentUrl={profile.avatar_url}
+                      userId={userId}
+                      onUploadComplete={onAvatarUpdate}
+                      variant="rectangular"
+                      fallbackName={profile.full_name}
+                    />
+                  ) : (
+                    <AvatarPro
+                      src={profile.avatar_url}
+                      name={profile.full_name}
+                      userId={userId}
+                      size="xl"
+                      clickable={false}
+                    />
+                  )}
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Badges + Quote - Centered Below Avatar */}
@@ -205,14 +248,6 @@ export const ProfilePublicView = ({
                   size="sm"
                 />
               ))}
-              {badges.length > 0 && (
-                <Link
-                  to="/gamification"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
-                >
-                  👑 Ver todos os selos
-                </Link>
-              )}
 
               {profile.is_private && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-200 text-xs font-medium">
@@ -221,11 +256,12 @@ export const ProfilePublicView = ({
                 </span>
               )}
             </div>
-            
+
             {/* Profile Quote */}
             {profile.profile_quote && (
-              <p className="text-sm sm:text-base text-muted-foreground italic max-w-xs">
-                "{profile.profile_quote}"
+              <p className="text-sm sm:text-base text-muted-foreground italic max-w-sm flex items-start gap-1.5 justify-center">
+                <Quote className="h-3.5 w-3.5 mt-1 shrink-0 text-amber-500/70" />
+                <span>"{profile.profile_quote}"</span>
               </p>
             )}
           </div>
@@ -234,67 +270,76 @@ export const ProfilePublicView = ({
 
       {/* Content Sections */}
       <CardContent className="space-y-4 pt-6">
-        {/* Info Card */}
-        <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10 overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 bg-primary/10 border-b border-primary/10">
+        {/* Resumo do Perfil */}
+        <ProfileStats userId={userId} />
+
+        {/* 🏆 Meus Selos */}
+        <ProfileBadgesShowcase userId={userId} />
+
+        {/* 🎁 Presentes Recebidos (só o dono vê — RLS) */}
+        <ProfileGifts userId={userId} isOwner={isOwner} />
+
+        {/* Info Card — mini-cards em grade */}
+        <div className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-[250ms]">
+          <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-primary/10 to-transparent border-b border-border/50">
             <User className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold text-primary">Informações</span>
           </div>
-          <div className="p-4 space-y-3">
+          <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
             {profile.marital_status && (
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-rose-100 dark:bg-rose-900/30">
+              <div className="flex items-center gap-3 text-sm rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 hover:border-rose-300/50 transition-colors duration-[250ms]">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-rose-100 dark:bg-rose-900/30 shrink-0">
                   <Heart className="h-4 w-4 text-rose-500" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground text-xs">Relacionamento</span>
-                  <p className="font-medium">
+                  <p className="font-medium truncate">
                     {MARITAL_STATUS_LABELS[profile.marital_status] || profile.marital_status} 💍
                   </p>
                 </div>
               </div>
             )}
-            
+
             {profile.church_name && (
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10">
+              <div className="flex items-center gap-3 text-sm rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 hover:border-primary/40 transition-colors duration-[250ms]">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 shrink-0">
                   <Church className="h-4 w-4 text-primary" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground text-xs">Comunidade</span>
-                  <p className="font-medium">{profile.church_name} 🛐</p>
+                  <p className="font-medium truncate">{profile.church_name} 🛐</p>
                 </div>
               </div>
             )}
 
             {profile.church_role && CHURCH_ROLE_LABELS[profile.church_role] && (
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+              <div className="flex items-center gap-3 text-sm rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 hover:border-indigo-300/50 transition-colors duration-[250ms]">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 shrink-0">
                   <Star className="h-4 w-4 text-indigo-600" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground text-xs">Vínculo com a Igreja</span>
-                  <p className="font-medium">
+                  <p className="font-medium truncate">
                     {CHURCH_ROLE_LABELS[profile.church_role].label} {CHURCH_ROLE_LABELS[profile.church_role].icon}
                   </p>
                 </div>
               </div>
             )}
-            
+
             {profile.city && (
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30">
+              <div className="flex items-center gap-3 text-sm rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 hover:border-amber-300/50 transition-colors duration-[250ms]">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30 shrink-0">
                   <MapPin className="h-4 w-4 text-amber-600" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground text-xs">Localização</span>
-                  <p className="font-medium">{profile.city} 🌞</p>
+                  <p className="font-medium truncate">{profile.city} 🌞</p>
                 </div>
               </div>
             )}
 
             {!profile.marital_status && !profile.church_name && !profile.city && !profile.church_role && (
-              <p className="text-sm text-muted-foreground text-center py-2">
+              <p className="text-sm text-muted-foreground text-center py-2 sm:col-span-2">
                 Nenhuma informação adicionada ainda.
               </p>
             )}
@@ -314,7 +359,7 @@ export const ProfilePublicView = ({
                   return (
                     <span
                       key={ministry}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium hover:scale-[1.04] transition-transform duration-[250ms] ${config.color}`}
                     >
                       {config.label}
                     </span>
@@ -326,14 +371,14 @@ export const ProfilePublicView = ({
         </div>
 
         {/* Bio Card */}
-        <div className="rounded-xl bg-muted/50 border border-border/50 overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 bg-muted/80 border-b border-border/50">
+        <div className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-[250ms]">
+          <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-muted/80 to-transparent border-b border-border/50">
             <BookOpen className="h-4 w-4 text-foreground/70" />
             <span className="text-sm font-semibold text-foreground/80">Sobre mim</span>
           </div>
-          <div className="p-4">
+          <div className="p-4 sm:p-5">
             {profile.bio ? (
-              <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap italic">
+              <p className="text-[15px] text-foreground/90 leading-7 whitespace-pre-wrap">
                 {profile.bio}
               </p>
             ) : (
@@ -347,14 +392,14 @@ export const ProfilePublicView = ({
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3 pt-2">
           <Link to="/achievements">
-            <Button variant="outline" className="w-full gap-2 group rounded-xl h-12">
-              <Trophy className="h-4 w-4 group-hover:text-amber-500 transition-colors" />
+            <Button variant="outline" className="w-full gap-2 group rounded-xl h-12 hover:border-amber-400/50 hover:shadow-[0_0_16px_rgba(212,147,13,0.15)] transition-all duration-[250ms]">
+              <Trophy className="h-4 w-4 group-hover:text-amber-500 group-hover:scale-110 transition-all duration-[250ms]" />
               <span className="text-sm">Conquistas</span>
             </Button>
           </Link>
           <Link to="/ranking">
-            <Button variant="outline" className="w-full gap-2 group rounded-xl h-12">
-              <Medal className="h-4 w-4 group-hover:text-primary transition-colors" />
+            <Button variant="outline" className="w-full gap-2 group rounded-xl h-12 hover:border-primary/50 hover:shadow-[0_0_16px_rgba(59,130,246,0.15)] transition-all duration-[250ms]">
+              <Medal className="h-4 w-4 group-hover:text-primary group-hover:scale-110 transition-all duration-[250ms]" />
               <span className="text-sm">Ranking</span>
             </Button>
           </Link>
@@ -364,7 +409,7 @@ export const ProfilePublicView = ({
         {isOwner && (
           <Button
             onClick={onEditClick}
-            className="w-full gap-2 bg-gradient-primary text-primary-foreground rounded-xl h-12 mt-2"
+            className="w-full gap-2 bg-gradient-primary text-primary-foreground rounded-xl h-12 mt-2 hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] transition-all duration-[250ms]"
           >
             <Pencil className="h-4 w-4" />
             Editar Perfil
