@@ -37,9 +37,10 @@ interface StoreProduct {
   mensagem: string | null;
   verse_reference: string | null;
   verse_text: string | null;
-  tipo: "selo" | "moldura" | "fundo" | "efeito" | "outro";
+  tipo: "selo" | "moldura" | "fundo" | "efeito" | "presente" | "outro";
   badge_id: string | null;
   cosmetic_key: string | null;
+  icone: string | null;
   image_url: string | null;
   preco: number;
   aura: string | null;
@@ -70,6 +71,19 @@ const formatBRL = (v: number) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
 
 /** Pré-visualização de um cosmético (moldura/fundo/efeito) sem asset externo */
 const CosmeticPreview = ({ product }: { product: StoreProduct }) => {
+  if (product.tipo === "presente") {
+    return product.image_url ? (
+      <img src={product.image_url} alt="" loading="lazy" className="h-28 w-28 rounded-2xl object-cover" />
+    ) : (
+      <motion.span
+        className="text-7xl inline-block"
+        whileHover={{ scale: 1.15, rotate: [0, -6, 6, 0] }}
+        transition={{ duration: 0.4 }}
+      >
+        {product.icone || "🎁"}
+      </motion.span>
+    );
+  }
   if (product.image_url) {
     return <img src={product.image_url} alt="" loading="lazy" className="h-24 w-24 rounded-full object-cover" />;
   }
@@ -414,7 +428,16 @@ const KingdomStore = () => {
                     )}
 
                     <div className="mt-4 flex gap-2 w-full">
-                      {owned && product.cosmetic_key ? (
+                      {product.tipo === "presente" ? (
+                        <Button
+                          size="sm"
+                          disabled={soldOut}
+                          className="flex-1 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white hover:opacity-90"
+                          onClick={() => openBuy(product, true)}
+                        >
+                          <Gift className="h-4 w-4 mr-1.5" /> Presentear
+                        </Button>
+                      ) : owned && product.cosmetic_key ? (
                         equipped ? (
                           <Button variant="default" size="sm" className="flex-1" onClick={() => unequipCosmetic(product.cosmetic_key!)}>
                             <CheckCircle2 className="h-4 w-4 mr-1.5" /> Equipado
@@ -438,7 +461,7 @@ const KingdomStore = () => {
                           <Heart className="h-4 w-4 mr-1.5" /> Apoiar
                         </Button>
                       )}
-                      {product.giftable && !soldOut && (
+                      {product.tipo !== "presente" && product.giftable && !soldOut && (
                         <Button variant="outline" size="sm" onClick={() => openBuy(product, true)} title="Presentear alguém">
                           <Gift className="h-4 w-4" />
                         </Button>

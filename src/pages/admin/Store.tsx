@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingBag, Plus, Pencil, Eye, EyeOff, Archive, Loader2, Search, Target } from "lucide-react";
+import { ShoppingBag, Plus, Pencil, Eye, EyeOff, Archive, Loader2, Search, Target, Copy, Download, FileUp, Upload } from "lucide-react";
 
 interface StoreProductRow {
   id: string;
@@ -26,6 +26,7 @@ interface StoreProductRow {
   tipo: string;
   badge_id: string | null;
   cosmetic_key: string | null;
+  icone: string | null;
   image_url: string | null;
   preco: number;
   categoria: string;
@@ -45,6 +46,7 @@ interface BadgeOption {
 
 const TIPOS = [
   { value: "selo", label: "Selo (concede um Selo Kingdom)" },
+  { value: "presente", label: "Presente (enviado a outra pessoa)" },
   { value: "moldura", label: "Moldura de avatar" },
   { value: "fundo", label: "Fundo de perfil" },
   { value: "efeito", label: "Efeito visual" },
@@ -57,9 +59,11 @@ const emptyForm = {
   mensagem: "",
   verse_reference: "",
   verse_text: "",
-  tipo: "selo",
+  tipo: "presente",
   badge_id: "",
   cosmetic_key: "",
+  icone: "🎁",
+  image_url: "" as string | null,
   preco: "10",
   categoria: "",
   status: "active" as StoreProductRow["status"],
@@ -90,6 +94,10 @@ export default function AdminStore() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [showNewCategory, setShowNewCategory] = useState(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -141,6 +149,8 @@ export default function AdminStore() {
   const openCreate = () => {
     setEditingId(null);
     setForm({ ...emptyForm, categoria: categories[0]?.nome || "" });
+    setImageFile(null);
+    setImagePreview(null);
     setShowForm(true);
   };
 
@@ -155,6 +165,8 @@ export default function AdminStore() {
       tipo: p.tipo,
       badge_id: p.badge_id || "",
       cosmetic_key: p.cosmetic_key || "",
+      icone: p.icone || "🎁",
+      image_url: p.image_url,
       preco: String(p.preco),
       categoria: p.categoria,
       status: p.status,
@@ -162,7 +174,96 @@ export default function AdminStore() {
       limitado: p.limitado,
       estoque: p.estoque != null ? String(p.estoque) : "",
     });
+    setImageFile(null);
+    setImagePreview(p.image_url);
     setShowForm(true);
+  };
+
+  // Sem corte automático (regra da spec): a imagem sobe como veio,
+  // só ganha bordas arredondadas na exibição.
+  const handleImageChange = (file: File | null) => {
+    setImageFile(file);
+    if (file) setImagePreview(URL.createObjectURL(file));
+  };
+
+  const duplicateProduct = async (p: StoreProductRow) => {
+    const { id, slug, vendas, created_at, ...rest } = p;
+    const newName = `${p.nome} (cópia)`;
+    const { error } = await supabase.from("store_products").insert({
+      ...rest,
+      nome: newName,
+      slug: `${slugify(newName)}-${Date.now().toString(36)}`,
+      status: "hidden",
+    });
+    if (error) {
+      toast({ title: "Erro ao duplicar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Produto duplicado", description: "Criado como oculto — edite e ative quando quiser." });
+    loadAll();
+  };
+
+  const exportProducts = () => {
+    const exportable = products.map(({ id, vendas, created_at, ...rest }) => rest);
+    const blob = new Blob([JSON.stringify(exportable, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `kingdom-store-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importProducts = async (file: File) => {
+    try {
+      const items = JSON.parse(await file.text()) as Partial<StoreProductRow>[];
+      if (!Array.isArray(items)) throw new Error("Arquivo precisa ser uma lista de produtos.");
+      let created = 0;
+      for (const item of items) {
+        if (!item.nome || !item.preco) continue;
+        const { error } = await supabase.from("store_products").insert({
+          nome: item.nome,
+          slug: `${slugify(item.nome)}-${Date.now().toString(36)}-${created}`,
+          descricao: item.descricao || null,
+          mensagem: item.mensagem || null,
+          verse_reference: item.verse_reference || null,
+          verse_text: item.verse_text || null,
+          tipo: item.tipo || "presente",
+          badge_id: item.badge_id || null,
+          cosmetic_key: item.cosmetic_key || null,
+          icone: item.icone || "🎁",
+          image_url: item.image_url || null,
+          preco: Number(item.preco),
+          categoria: item.categoria || categories[0]?.nome || "Presentes",
+          status: item.status || "hidden",
+          giftable: item.giftable ?? true,
+          limitado: item.limitado ?? false,
+          estoque: item.estoque ?? null,
+        });
+        if (!error) created++;
+      }
+      toast({ title: `${created} produto(s) importado(s)` });
+      loadAll();
+    } catch (error) {
+      toast({ title: "Erro ao importar", description: (error as Error).message, variant: "destructive" });
+    }
+  };
+
+  const createCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    const { data, error } = await supabase
+      .from("store_categories")
+      .insert({ nome: newCategoryName.trim(), ordem: categories.length + 20 })
+      .select()
+      .single();
+    if (error) {
+      toast({ title: "Erro ao criar categoria", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCategories((prev) => [...prev, data]);
+    setForm((f) => ({ ...f, categoria: data.nome }));
+    setNewCategoryName("");
+    setShowNewCategory(false);
   };
 
   const handleSave = async () => {
@@ -176,6 +277,15 @@ export default function AdminStore() {
     }
     setSaving(true);
     try {
+      let image_url = form.image_url;
+      if (imageFile) {
+        const ext = imageFile.name.split(".").pop();
+        const path = `store/${slugify(form.nome)}-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("kingdom-badges").upload(path, imageFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        image_url = supabase.storage.from("kingdom-badges").getPublicUrl(path).data.publicUrl;
+      }
+
       const payload = {
         nome: form.nome.trim(),
         descricao: form.descricao || null,
@@ -184,7 +294,9 @@ export default function AdminStore() {
         verse_text: form.verse_text || null,
         tipo: form.tipo,
         badge_id: form.tipo === "selo" ? form.badge_id : null,
-        cosmetic_key: form.tipo !== "selo" && form.tipo !== "outro" ? (form.cosmetic_key || slugify(form.nome)) : null,
+        cosmetic_key: ["moldura", "fundo", "efeito"].includes(form.tipo) ? (form.cosmetic_key || slugify(form.nome)) : null,
+        icone: form.icone || "🎁",
+        image_url,
         preco: Number(form.preco),
         categoria: form.categoria,
         status: form.status,
@@ -244,9 +356,24 @@ export default function AdminStore() {
             </h1>
             <p className="text-sm text-muted-foreground">{products.length} produto{products.length !== 1 ? "s" : ""}</p>
           </div>
-          <Button onClick={openCreate} className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white">
-            <Plus className="h-4 w-4 mr-2" /> Novo Produto
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={exportProducts}>
+              <Download className="h-4 w-4 mr-2" /> Exportar
+            </Button>
+            <Button variant="outline" onClick={() => document.getElementById("import-store-input")?.click()}>
+              <FileUp className="h-4 w-4 mr-2" /> Importar
+            </Button>
+            <input
+              id="import-store-input"
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) importProducts(f); e.target.value = ""; }}
+            />
+            <Button onClick={openCreate} className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white">
+              <Plus className="h-4 w-4 mr-2" /> Novo Produto
+            </Button>
+          </div>
         </div>
 
         {/* Meta do mês */}
@@ -313,6 +440,9 @@ export default function AdminStore() {
                         <Button size="icon" variant="ghost" onClick={() => openEdit(p)} title="Editar">
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        <Button size="icon" variant="ghost" onClick={() => duplicateProduct(p)} title="Duplicar">
+                          <Copy className="h-4 w-4" />
+                        </Button>
                         {p.status === "active" ? (
                           <Button size="icon" variant="ghost" onClick={() => setStatus(p, "hidden")} title="Ocultar">
                             <EyeOff className="h-4 w-4" />
@@ -345,15 +475,38 @@ export default function AdminStore() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Nome</label>
-                <Input value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} />
+            <div>
+              <label className="text-sm font-medium mb-2 block">Imagem (opcional — sem corte, só bordas arredondadas)</label>
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 flex items-center justify-center rounded-2xl border border-dashed overflow-hidden shrink-0">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Preview" className="h-full w-full object-contain" />
+                  ) : (
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                <Input type="file" accept="image/png,image/svg+xml,image/webp,image/jpeg" onChange={(e) => handleImageChange(e.target.files?.[0] || null)} />
               </div>
+              <p className="text-xs text-muted-foreground mt-1">PNG, SVG ou WEBP — 1024x1024 recomendado. Sem imagem, usa o emoji abaixo.</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2">
+                <label className="text-sm font-medium mb-2 block">Nome</label>
+                <Input value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} placeholder="Ex: Rosa da Gratidão" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Emoji</label>
+                <Input value={form.icone} onChange={(e) => setForm((f) => ({ ...f, icone: e.target.value }))} placeholder="🌹" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Preço (R$)</label>
                 <Input type="number" value={form.preco} onChange={(e) => setForm((f) => ({ ...f, preco: e.target.value }))} />
               </div>
+              <div />
             </div>
 
             <div>
@@ -379,6 +532,16 @@ export default function AdminStore() {
                     {categories.map((c) => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {!showNewCategory ? (
+                  <button type="button" onClick={() => setShowNewCategory(true)} className="text-xs text-primary mt-1">
+                    + Nova categoria
+                  </button>
+                ) : (
+                  <div className="flex gap-1 mt-1">
+                    <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Nome da categoria" className="h-8 text-sm" />
+                    <Button size="sm" className="h-8" onClick={createCategory}>Criar</Button>
+                  </div>
+                )}
               </div>
             </div>
 

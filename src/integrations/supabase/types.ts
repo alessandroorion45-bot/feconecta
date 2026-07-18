@@ -6157,6 +6157,7 @@ export type Database = {
           descricao: string | null
           estoque: number | null
           giftable: boolean
+          icone: string | null
           id: string
           image_url: string | null
           limitado: boolean
@@ -6180,6 +6181,7 @@ export type Database = {
           descricao?: string | null
           estoque?: number | null
           giftable?: boolean
+          icone?: string | null
           id?: string
           image_url?: string | null
           limitado?: boolean
@@ -6203,6 +6205,7 @@ export type Database = {
           descricao?: string | null
           estoque?: number | null
           giftable?: boolean
+          icone?: string | null
           id?: string
           image_url?: string | null
           limitado?: boolean
@@ -6238,8 +6241,11 @@ export type Database = {
           id: string
           mp_order_id: string | null
           mp_payment_id: string | null
+          opened_at: string | null
           product_id: string
           status: string
+          thank_message: string | null
+          thanked_at: string | null
           updated_at: string
         }
         Insert: {
@@ -6252,8 +6258,11 @@ export type Database = {
           id?: string
           mp_order_id?: string | null
           mp_payment_id?: string | null
+          opened_at?: string | null
           product_id: string
           status?: string
+          thank_message?: string | null
+          thanked_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -6266,8 +6275,11 @@ export type Database = {
           id?: string
           mp_order_id?: string | null
           mp_payment_id?: string | null
+          opened_at?: string | null
           product_id?: string
           status?: string
+          thank_message?: string | null
+          thanked_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -8450,6 +8462,7 @@ export type Database = {
         Args: { p_content_id: string; p_content_type: string }
         Returns: Json
       }
+      get_store_monthly_progress: { Args: never; Returns: number }
       get_testimonies_fast: {
         Args: never
         Returns: {
