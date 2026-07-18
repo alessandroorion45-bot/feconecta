@@ -76,7 +76,7 @@ const CosmeticPreview = ({ product }: { product: StoreProduct }) => {
   if (product.tipo === "moldura" && product.cosmetic_key) {
     return (
       <AnimatedCosmeticFrame cosmeticKey={product.cosmetic_key}>
-        <div className="h-32 w-24 bg-gradient-to-b from-muted to-muted/60 flex flex-col items-center justify-center gap-1">
+        <div className="h-32 w-24 bg-muted flex flex-col items-center justify-center gap-1">
           <span className="text-3xl">🙂</span>
           <span className="text-[9px] text-muted-foreground">seu avatar</span>
         </div>

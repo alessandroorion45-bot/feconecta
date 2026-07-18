@@ -35,7 +35,8 @@ export const AnimatedCosmeticFrame = ({ cosmeticKey, children, className, rounde
         animate={{ rotate: 360 }}
         transition={{ duration: 3.2, repeat: Infinity, ease: "linear" }}
       />
-      <div className={cn("relative overflow-hidden", rounded === "rounded-2xl" ? "rounded-xl" : "rounded-full")}>
+      {/* fundo sólido: garante que a luz giratória apareça SÓ na borda, nunca no centro */}
+      <div className={cn("relative overflow-hidden bg-card", rounded === "rounded-2xl" ? "rounded-xl" : "rounded-full")}>
         {children}
       </div>
     </div>
