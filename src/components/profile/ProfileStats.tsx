@@ -2,6 +2,13 @@ import { memo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  calculateLevel,
+  getTitleFromLevel,
+  getXPForNextLevel,
+  getProgressToNextLevel,
+  formatLargeNumber,
+} from "@/lib/gamification";
 
 const sb = supabase as any;
 
@@ -9,18 +16,24 @@ interface StatTile {
   emoji: string;
   label: string;
   value: number;
+  /** identidade visual do card (borda/fundo no hover) */
+  accent: string;
+  iconBg: string;
 }
 
 interface ProfileStatsProps {
   userId: string;
+  /** Sobe o Título do Reino pro cabeçalho — só exibição, sem lógica nova */
+  onTitleLoaded?: (title: string, level: number) => void;
 }
 
 /**
- * Faixa de resumo do perfil — só leitura, dados que já existem no app
- * (user_stats, selos, presentes recebidos, amizades). Nenhum cálculo novo.
+ * Faixa de resumo do perfil + barra de evolução de nível — só leitura,
+ * reusando os helpers puros já existentes em lib/gamification.
  */
-const ProfileStats = memo(({ userId }: ProfileStatsProps) => {
+const ProfileStats = memo(({ userId, onTitleLoaded }: ProfileStatsProps) => {
   const [tiles, setTiles] = useState<StatTile[] | null>(null);
+  const [levelInfo, setLevelInfo] = useState<{ level: number; title: string; progress: number; xp: number; nextXP: number } | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -36,50 +49,100 @@ const ProfileStats = memo(({ userId }: ProfileStatsProps) => {
       if (cancelled) return;
 
       const stats = statsRes.data;
+      const xp = stats?.total_points ?? 0;
+      const level = calculateLevel(xp);
+      const title = getTitleFromLevel(level);
+      setLevelInfo({
+        level,
+        title,
+        progress: getProgressToNextLevel(xp, level),
+        xp,
+        nextXP: getXPForNextLevel(level),
+      });
+      onTitleLoaded?.(title, level);
+
       setTiles([
-        { emoji: "⭐", label: "XP", value: stats?.total_points ?? 0 },
-        { emoji: "🔥", label: "Sequência", value: stats?.current_streak ?? 0 },
-        { emoji: "🏆", label: "Selos", value: badgesRes.count ?? 0 },
-        { emoji: "🎁", label: "Presentes", value: giftsRes.count ?? 0 },
-        { emoji: "📖", label: "Estudos", value: stats?.bible_chapters_read ?? 0 },
-        { emoji: "🙏", label: "Orações", value: (stats?.prayers_created ?? 0) + (stats?.prayers_interceded ?? 0) },
-        { emoji: "👥", label: "Amigos", value: friendsRes.count ?? 0 },
+        { emoji: "⭐", label: "XP", value: xp, accent: "hover:border-amber-400/50", iconBg: "bg-amber-100 dark:bg-amber-900/30" },
+        { emoji: "🏆", label: "Selos", value: badgesRes.count ?? 0, accent: "hover:border-purple-400/50", iconBg: "bg-purple-100 dark:bg-purple-900/30" },
+        { emoji: "🎁", label: "Presentes", value: giftsRes.count ?? 0, accent: "hover:border-emerald-400/50", iconBg: "bg-emerald-100 dark:bg-emerald-900/30" },
+        { emoji: "🙏", label: "Orações", value: (stats?.prayers_created ?? 0) + (stats?.prayers_interceded ?? 0), accent: "hover:border-blue-400/50", iconBg: "bg-blue-100 dark:bg-blue-900/30" },
+        { emoji: "📖", label: "Estudos", value: stats?.bible_chapters_read ?? 0, accent: "hover:border-sky-400/50", iconBg: "bg-sky-100 dark:bg-sky-900/30" },
+        { emoji: "🔥", label: "Sequência", value: stats?.current_streak ?? 0, accent: "hover:border-orange-400/50", iconBg: "bg-orange-100 dark:bg-orange-900/30" },
+        { emoji: "👥", label: "Amigos", value: friendsRes.count ?? 0, accent: "hover:border-slate-400/50", iconBg: "bg-slate-100 dark:bg-slate-800/50" },
       ]);
     })();
 
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   if (!tiles) {
     return (
-      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-        {[...Array(7)].map((_, i) => (
-          <Skeleton key={i} className="h-16 rounded-xl" />
-        ))}
+      <div className="space-y-3">
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+          {[...Array(7)].map((_, i) => (
+            <Skeleton key={i} className="h-[72px] rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-16 rounded-xl" />
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-      {tiles.map((tile, i) => (
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+        {tiles.map((tile, i) => (
+          <motion.div
+            key={tile.label}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, duration: 0.25 }}
+            whileTap={{ scale: 0.97 }}
+            className={`rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm px-2 py-2.5 text-center shadow-sm hover:shadow-md hover:-translate-y-[3px] hover:scale-[1.03] transition-all duration-[250ms] ${tile.accent}`}
+            title={tile.label}
+          >
+            <div className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-sm leading-none ${tile.iconBg}`}>
+              {tile.emoji}
+            </div>
+            <div className="text-sm font-bold text-foreground mt-1 leading-none">
+              {formatLargeNumber(tile.value)}
+            </div>
+            <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{tile.label}</div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Barra de evolução de nível */}
+      {levelInfo && (
         <motion.div
-          key={tile.label}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05, duration: 0.25 }}
-          className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm px-2 py-2.5 text-center shadow-sm hover:shadow-md hover:border-amber-400/40 hover:-translate-y-0.5 transition-all duration-[250ms]"
-          title={tile.label}
+          transition={{ delay: 0.35, duration: 0.25 }}
+          className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm px-4 py-3 shadow-sm"
         >
-          <div className="text-base leading-none">{tile.emoji}</div>
-          <div className="text-sm font-bold text-foreground mt-1 leading-none">
-            {tile.value >= 1000 ? `${(tile.value / 1000).toFixed(1).replace(".", ",")}k` : tile.value}
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-semibold text-foreground flex items-center gap-1.5">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 text-[11px]">👑</span>
+              Nível {levelInfo.level} · {levelInfo.title}
+            </span>
+            <span className="font-bold text-amber-600 dark:text-amber-400">{Math.round(levelInfo.progress)}%</span>
           </div>
-          <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{tile.label}</div>
+          <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, levelInfo.progress)}%` }}
+              transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1.5">
+            {formatLargeNumber(levelInfo.xp)} / {formatLargeNumber(levelInfo.nextXP)} XP — faltam {formatLargeNumber(Math.max(0, levelInfo.nextXP - levelInfo.xp))} XP para o próximo nível
+          </p>
         </motion.div>
-      ))}
+      )}
     </div>
   );
 });

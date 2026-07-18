@@ -86,6 +86,8 @@ export const ProfilePublicView = ({
 }: ProfilePublicViewProps) => {
   // Cosméticos da Kingdom Store equipados por esse usuário
   const [cosmetics, setCosmetics] = useState<{ cosmetic_key: string; tipo: string }[]>([]);
+  // Título do Reino (vem do ProfileStats — mesmo fetch, sem consulta extra)
+  const [kingdomTitle, setKingdomTitle] = useState<{ title: string; level: number } | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -173,6 +175,18 @@ export const ProfilePublicView = ({
           >
             {profile.full_name || "Seu Nome"}
           </motion.h1>
+
+          {/* Título do Reino (baseado no nível — helper puro da lib de gamificação) */}
+          {kingdomTitle && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 px-3 py-1 text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300"
+            >
+              👑 {kingdomTitle.title} · Nível {kingdomTitle.level}
+            </motion.p>
+          )}
         </div>
 
         {/* Avatar + Badges + Quote - Centered Column Layout */}
@@ -201,7 +215,7 @@ export const ProfilePublicView = ({
               </AnimatedCosmeticFrame>
             ) : (
               <motion.div
-                className="rounded-2xl p-[3px]"
+                className="relative rounded-2xl p-[3px] overflow-hidden"
                 style={{ background: "linear-gradient(135deg, #fde68a, #d4930d 55%, #fde68a)" }}
                 animate={{
                   boxShadow: [
@@ -212,7 +226,18 @@ export const ProfilePublicView = ({
                 }}
                 transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
               >
-                <div className="rounded-xl overflow-hidden bg-card">
+                {/* pequeno brilho girando lentamente na borda */}
+                <motion.div
+                  aria-hidden
+                  className="absolute -inset-[150%] pointer-events-none motion-reduce:hidden"
+                  style={{
+                    background:
+                      "conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.7) 5%, transparent 12%, transparent 100%)",
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
+                />
+                <div className="relative rounded-xl overflow-hidden bg-card">
                   {isOwner ? (
                     <AvatarUpload
                       currentUrl={profile.avatar_url}
@@ -257,12 +282,14 @@ export const ProfilePublicView = ({
               )}
             </div>
 
-            {/* Profile Quote */}
+            {/* Profile Quote — versículo/frase favorita em cartão */}
             {profile.profile_quote && (
-              <p className="text-sm sm:text-base text-muted-foreground italic max-w-sm flex items-start gap-1.5 justify-center">
-                <Quote className="h-3.5 w-3.5 mt-1 shrink-0 text-amber-500/70" />
-                <span>"{profile.profile_quote}"</span>
-              </p>
+              <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.07] to-transparent px-4 py-2.5 max-w-sm">
+                <p className="text-sm sm:text-base text-foreground/85 italic text-center flex items-start gap-1.5 justify-center">
+                  <span className="text-base leading-none mt-0.5">📖</span>
+                  <span>"{profile.profile_quote}"</span>
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -270,8 +297,8 @@ export const ProfilePublicView = ({
 
       {/* Content Sections */}
       <CardContent className="space-y-4 pt-6">
-        {/* Resumo do Perfil */}
-        <ProfileStats userId={userId} />
+        {/* Resumo do Perfil + barra de evolução */}
+        <ProfileStats userId={userId} onTitleLoaded={(title, level) => setKingdomTitle({ title, level })} />
 
         {/* 🏆 Meus Selos */}
         <ProfileBadgesShowcase userId={userId} />

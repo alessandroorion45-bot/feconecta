@@ -41,7 +41,21 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
     };
   }, [userId, isOwner]);
 
-  if (!isOwner || !items || items.length === 0) return null;
+  if (!isOwner || !items) return null;
+
+  // Estado vazio elegante (só o dono vê)
+  if (items.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border/70 bg-card/40 px-4 py-6 text-center">
+        <div className="text-4xl mb-2 opacity-70">🎁</div>
+        <p className="text-sm font-medium text-foreground/80">Nenhum presente ainda</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Quando alguém te presentear na{" "}
+          <Link to="/loja" className="text-rose-500 hover:underline">Kingdom Store</Link>, ele aparece aqui.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-[250ms]">

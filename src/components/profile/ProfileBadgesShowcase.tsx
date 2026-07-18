@@ -33,7 +33,7 @@ const ProfileBadgesShowcase = memo(({ userId }: ProfileBadgesShowcaseProps) => {
       .eq("user_id", userId)
       .order("is_equipped", { ascending: false })
       .order("unlocked_at", { ascending: false })
-      .limit(6)
+      .limit(3)
       .then(({ data }: { data: ShowcaseBadge[] | null }) => {
         if (!cancelled) setItems(data || []);
       });
@@ -58,17 +58,21 @@ const ProfileBadgesShowcase = memo(({ userId }: ProfileBadgesShowcaseProps) => {
           Ver coleção completa <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
-      <div className="flex gap-4 p-4 overflow-x-auto snap-x sm:justify-center">
+      <div className="flex gap-6 p-4 overflow-x-auto snap-x justify-center">
         {items.map((item) => (
-          <div key={item.id} className="flex flex-col items-center gap-1.5 shrink-0 snap-start" title={item.badges?.name}>
+          <div
+            key={item.id}
+            className="group flex flex-col items-center gap-2 shrink-0 snap-start transition-transform duration-[250ms] hover:-translate-y-[3px] hover:rotate-2"
+            title={item.badges?.name}
+          >
             <KingdomBadge
               rarity={item.badges?.rarity || "common"}
               imageUrl={item.badges?.image_url}
               emoji={item.badges?.icon}
               equipped={item.is_equipped}
-              size="sm"
+              size="md"
             />
-            <span className="text-[10px] text-muted-foreground max-w-[72px] truncate text-center">
+            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground max-w-[96px] truncate text-center transition-colors duration-[250ms]">
               {item.badges?.name}
             </span>
           </div>
