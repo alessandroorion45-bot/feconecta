@@ -94,7 +94,7 @@ const Header = () => {
               <SheetContent side="left" className="w-80 overflow-y-auto">
                 <SheetHeader className="text-left mb-4 pb-2">
                   <SheetTitle className="text-2xl font-bold bg-gradient-divine bg-clip-text text-transparent leading-normal pb-1">
-                    Aliança
+                    Aliança Kingdom
                   </SheetTitle>
                   <SheetDescription className="text-sm text-muted-foreground leading-normal">
                     Uma comunidade cristã moderna
@@ -162,14 +162,14 @@ const Header = () => {
             <div className="relative">
               <img
                 src="/alianca-logo.png"
-                alt="Aliança"
+                alt="Aliança Kingdom"
                 className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 object-contain drop-shadow-2xl transform transition-all duration-500 group-hover:scale-110 filter brightness-110 mix-blend-multiply"
               />
               {/* Glow effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-amber-500/20 to-orange-500/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 -z-10" />
             </div>
             <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent whitespace-nowrap leading-normal drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300 tracking-tight">
-              Aliança
+              Aliança<span className="hidden sm:inline"> Kingdom</span>
             </span>
           </Link>
         </div>

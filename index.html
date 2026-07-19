@@ -62,7 +62,26 @@
 </head>
 
   <body>
-    <div id="root"></div>
+    <!-- Conteúdo estático de fallback: visível para robôs/verificadores sem JavaScript;
+         o React substitui tudo isso ao montar o app -->
+    <div id="root">
+      <main style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:Inter,system-ui,sans-serif;text-align:center">
+        <img src="/alianca-logo.png" alt="Aliança Kingdom" width="120" height="120" style="margin:0 auto" />
+        <h1>Aliança Kingdom</h1>
+        <p>
+          O <strong>Aliança Kingdom</strong> é uma comunidade cristã online gratuita: uma plataforma para
+          ler e estudar a Bíblia, compartilhar testemunhos, publicar pedidos de oração, participar de
+          comunidades de igreja, acompanhar devocionais diários e crescer na fé junto com outros irmãos.
+        </p>
+        <p>
+          Ao entrar com sua conta (e-mail ou Google), você cria um perfil para interagir com a
+          comunidade. Usamos seus dados apenas para o funcionamento da plataforma — veja a
+          <a href="/privacidade">Política de Privacidade</a> e os
+          <a href="/termos">Termos de Serviço</a>.
+        </p>
+        <p><a href="https://aliancakingdom.com.br/">aliancakingdom.com.br</a></p>
+      </main>
+    </div>
     <!-- Mercado Pago: gera o device session id usado na prevenção de fraude dos pagamentos -->
     <script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
     <script type="module" src="/src/main.tsx"></script>

@@ -78,7 +78,7 @@ const Index = () => {
             <div className="relative">
               <img
                 src="/alianca-logo.png"
-                alt="Aliança"
+                alt="Aliança Kingdom"
                 className="h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48 lg:h-56 lg:w-56 object-contain drop-shadow-2xl filter brightness-110 mix-blend-multiply animate-float"
                 style={{
                   animation: 'float 3s ease-in-out infinite'
@@ -88,7 +88,7 @@ const Index = () => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 bg-gradient-to-r from-amber-600 via-yellow-600 to-orange-600 bg-clip-text text-transparent leading-tight pt-1 pb-1 drop-shadow-lg">
-            Aliança
+            Aliança Kingdom
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-amber-900 dark:text-amber-100 font-medium mb-3 px-2 leading-relaxed">
             Uma comunidade cristã moderna para compartilhar fé, testemunhos e comunhão
@@ -186,7 +186,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t py-6 sm:py-8 mt-auto">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm sm:text-base text-muted-foreground space-y-2">
-          <p>© 2024 Aliança. Compartilhando fé e amor em Cristo.</p>
+          <p>© 2026 Aliança Kingdom. Compartilhando fé e amor em Cristo.</p>
           <p className="text-xs sm:text-sm">
             <Link to="/privacidade" className="hover:text-foreground hover:underline transition-colors">Política de Privacidade</Link>
             <span className="mx-2">·</span>
