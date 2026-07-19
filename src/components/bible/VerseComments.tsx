@@ -212,8 +212,10 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
     setLoading(true);
 
     try {
+      // supabase-js NÃO lança em erro — precisa conferir o retorno,
+      // senão o toast de sucesso aparece mesmo com INSERT falhando
       // @ts-ignore - Schema types not updated
-      await supabase.from('verse_comments').insert({
+      const { error: insertError } = await supabase.from('verse_comments').insert({
         user_id: user.id,
         book,
         chapter,
@@ -221,6 +223,7 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
         comment_text: text,
         parent_comment_id: parentId || null,
       });
+      if (insertError) throw insertError;
 
       if (parentId) {
         setReplyText('');
@@ -247,11 +250,11 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
       // Aguardar um pouco antes de recarregar para garantir que o banco salvou
       await new Promise(resolve => setTimeout(resolve, 500));
       await loadComments();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error posting comment:', error);
       toast({
         title: '❌ Erro ao publicar',
-        description: 'Tente novamente em alguns segundos',
+        description: error?.message || 'Tente novamente em alguns segundos',
         variant: 'destructive',
       });
     } finally {
@@ -284,17 +287,19 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
     try {
       if (wasLiked) {
         // @ts-ignore - Table exists in database but not in generated types
-        await supabase
+        const { error } = await supabase
           .from('verse_comment_likes')
           .delete()
           .eq('user_id', user.id)
           .eq('comment_id', commentId);
+        if (error) throw error;
       } else {
         // @ts-ignore - Table exists in database but not in generated types
-        await supabase.from('verse_comment_likes').insert({
+        const { error } = await supabase.from('verse_comment_likes').insert({
           user_id: user.id,
           comment_id: commentId,
         });
+        if (error) throw error;
       }
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -311,7 +316,8 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
   const handleDelete = async (commentId: string) => {
     try {
       // @ts-ignore - Schema types not updated
-      await supabase.from('verse_comments').delete().eq('id', commentId);
+      const { error } = await supabase.from('verse_comments').delete().eq('id', commentId);
+      if (error) throw error;
       toast({
         title: '✅ Comentário excluído',
         description: 'Seu comentário foi removido',
