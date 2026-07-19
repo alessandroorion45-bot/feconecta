@@ -9,6 +9,7 @@ import { Lock, Trophy } from "lucide-react";
 import KingdomBadge, { BadgeRarity, RARITY_STYLES } from "@/components/kingdom-badges/KingdomBadge";
 import UnlockCelebrationModal from "@/components/kingdom-badges/UnlockCelebrationModal";
 import BadgeDetailModal, { BadgeDetail } from "@/components/kingdom-badges/BadgeDetailModal";
+import SeloRevelacaoModal from "@/components/kingdom-badges/SeloRevelacaoModal";
 import CollectorsRanking from "@/components/kingdom-badges/CollectorsRanking";
 import { CrownIcon, OpenBookIcon, GenerousHeartIcon } from "@/components/kingdom-badges/badgeIcons";
 import { playUnlockChime } from "@/lib/badgeSound";
@@ -63,6 +64,7 @@ const BadgeShowcase = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [celebrating, setCelebrating] = useState<BadgeData | null>(null);
   const [detailBadge, setDetailBadge] = useState<BadgeData | null>(null);
+  const [revealBadge, setRevealBadge] = useState<BadgeData | null>(null);
   const [usersCount, setUsersCount] = useState<Record<string, number>>({});
 
   const rarityColorsFor = (slug: string) => {
@@ -264,7 +266,7 @@ const BadgeShowcase = () => {
               className={`relative overflow-hidden transition-all hover:scale-[1.03] cursor-pointer ${
                 badge.unlocked ? 'shadow-lg' : 'opacity-70'
               }`}
-              onClick={() => setDetailBadge(badge)}
+              onClick={() => (badge.unlocked ? setRevealBadge(badge) : setDetailBadge(badge))}
             >
               <CardContent className="p-4 text-center flex flex-col items-center">
                 <div className="mb-3">
@@ -349,6 +351,28 @@ const BadgeShowcase = () => {
             : null
         }
         onClose={() => setCelebrating(null)}
+      />
+
+      <SeloRevelacaoModal
+        badge={
+          revealBadge
+            ? {
+                badgeId: revealBadge.id,
+                name: revealBadge.name,
+                category: revealBadge.category,
+                rarity: revealBadge.rarity,
+                rarityColors: rarityColorsFor(revealBadge.rarity),
+                imageUrl: revealBadge.image_url,
+                icon: !revealBadge.image_url ? CUSTOM_ICONS[revealBadge.badge_key] : undefined,
+                emoji: revealBadge.icon,
+              }
+            : null
+        }
+        onClose={() => setRevealBadge(null)}
+        onShowDetails={() => {
+          setDetailBadge(revealBadge);
+          setRevealBadge(null);
+        }}
       />
 
       <BadgeDetailModal

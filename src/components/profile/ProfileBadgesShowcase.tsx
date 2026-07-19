@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
 import BadgeDetailModal, { BadgeDetail } from "@/components/kingdom-badges/BadgeDetailModal";
+import SeloRevelacaoModal, { RevealBadgeData } from "@/components/kingdom-badges/SeloRevelacaoModal";
 import { Crown, ChevronRight } from "lucide-react";
 
 const sb = supabase as any;
@@ -45,6 +46,7 @@ const ProfileBadgesShowcase = memo(({ userId }: ProfileBadgesShowcaseProps) => {
   const [total, setTotal] = useState(0);
   const [rarities, setRarities] = useState<RarityRow[]>([]);
   const [detail, setDetail] = useState<BadgeDetail | null>(null);
+  const [reveal, setReveal] = useState<{ data: RevealBadgeData; item: ShowcaseBadge } | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -71,6 +73,24 @@ const ProfileBadgesShowcase = memo(({ userId }: ProfileBadgesShowcaseProps) => {
       cancelled = true;
     };
   }, [userId]);
+
+  const openReveal = (item: ShowcaseBadge) => {
+    const b = item.badges;
+    if (!b) return;
+    const rar = rarities.find((r) => r.slug === b.rarity);
+    setReveal({
+      item,
+      data: {
+        badgeId: b.id,
+        name: b.name,
+        category: b.category,
+        rarity: b.rarity,
+        rarityColors: rar ? { corInicio: rar.cor_inicio, corFim: rar.cor_fim } : null,
+        imageUrl: b.image_url,
+        emoji: b.icon,
+      },
+    });
+  };
 
   const openDetail = async (item: ShowcaseBadge) => {
     const b = item.badges;
@@ -143,7 +163,7 @@ const ProfileBadgesShowcase = memo(({ userId }: ProfileBadgesShowcaseProps) => {
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.06, duration: 0.25 }}
-            onClick={() => openDetail(item)}
+            onClick={() => openReveal(item)}
             className="group flex flex-col items-center gap-2 shrink-0 snap-start transition-transform duration-[250ms] hover:-translate-y-[3px] hover:rotate-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded-xl p-1"
             title={`${item.badges?.name}${item.badges?.category ? ` · ${item.badges.category}` : ""}`}
           >
@@ -170,6 +190,16 @@ const ProfileBadgesShowcase = memo(({ userId }: ProfileBadgesShowcaseProps) => {
         )}
       </div>
 
+      <SeloRevelacaoModal
+        badge={reveal?.data || null}
+        onClose={() => setReveal(null)}
+        onShowDetails={() => {
+          if (reveal) {
+            openDetail(reveal.item);
+            setReveal(null);
+          }
+        }}
+      />
       <BadgeDetailModal badge={detail} onClose={() => setDetail(null)} />
     </div>
   );
