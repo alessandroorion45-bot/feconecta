@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { BookOpen, HeartHandshake, ShieldAlert, Gift, UserX, Scale, Mail } from "lucide-react";
 
 const LAST_UPDATE = "19 de julho de 2026";
-const CONTACT_EMAIL = "alessandroibama40@gmail.com";
+const CONTACT_EMAIL = "alessandro.r.business@gmail.com";
 
 const Section = ({
   icon,
