@@ -478,7 +478,7 @@ export const ProfilePublicView = ({
         {isOwner && (
           <Button
             onClick={onEditClick}
-            className="w-full gap-2 bg-gradient-primary text-primary-foreground rounded-xl h-12 mt-2 border border-transparent hover:bg-none hover:bg-gradient-to-r hover:from-amber-400 hover:to-amber-500 hover:text-amber-950 hover:border-amber-300/60 hover:shadow-lg hover:shadow-amber-500/30 hover:scale-[1.01] transition-all duration-[250ms]"
+            className="w-full gap-2 bg-gradient-primary text-primary-foreground rounded-xl h-12 mt-2 border border-transparent hover:!bg-gradient-to-r hover:!from-amber-400 hover:!to-amber-500 hover:!text-amber-950 hover:border-amber-300/60 hover:shadow-lg hover:shadow-amber-500/30 hover:scale-[1.01] transition-all duration-[250ms]"
           >
             <Pencil className="h-4 w-4" />
             Editar Perfil

@@ -7381,6 +7381,48 @@ export type Database = {
           },
         ]
       }
+      user_verse_reveals: {
+        Row: {
+          badge_id: string | null
+          id: string
+          revealed_at: string
+          user_id: string
+          verse_reference: string
+          verse_text: string
+        }
+        Insert: {
+          badge_id?: string | null
+          id?: string
+          revealed_at?: string
+          user_id: string
+          verse_reference: string
+          verse_text: string
+        }
+        Update: {
+          badge_id?: string | null
+          id?: string
+          revealed_at?: string
+          user_id?: string
+          verse_reference?: string
+          verse_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_verse_reveals_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_verse_reveals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_videos: {
         Row: {
           created_at: string | null

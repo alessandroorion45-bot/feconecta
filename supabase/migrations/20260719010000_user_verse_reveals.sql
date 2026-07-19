@@ -37,8 +37,10 @@ CREATE POLICY "verse_reveals_delete_own"
   ON public.user_verse_reveals FOR DELETE
   USING (auth.uid() = user_id);
 
--- Acesso restrito: nada para anon, CRUD próprio para authenticated
+-- Acesso restrito: nada para anon, só SELECT/INSERT/DELETE para authenticated
+-- (o REVOKE de authenticated remove o TRUNCATE do grant padrão, que ignoraria RLS)
 REVOKE ALL ON public.user_verse_reveals FROM anon;
+REVOKE ALL ON public.user_verse_reveals FROM authenticated;
 GRANT SELECT, INSERT, DELETE ON public.user_verse_reveals TO authenticated;
 
 SELECT 'ok' AS status;

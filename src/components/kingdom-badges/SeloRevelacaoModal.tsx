@@ -48,6 +48,8 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
   const [saved, setSaved] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  // prévia local instantânea (o storage remoto pode demorar a propagar)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const runId = useRef(0);
 
   useEffect(() => {
@@ -58,6 +60,7 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
     setWeeklyCount(null);
     setSaved(false);
     setImageUrl(null);
+    setPreviewUrl(null);
 
     (async () => {
       // Quem está revelando (a palavra é pra quem clica, não pro dono do perfil)
@@ -234,6 +237,7 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
         .upload(fileName, blob, { contentType: "image/png" });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from("verse-images").getPublicUrl(fileName);
+      setPreviewUrl(dataUrl);
       setImageUrl(publicUrl);
       setPhase("image");
     } catch (e: any) {
@@ -438,7 +442,7 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
                       <Button
                         onClick={generateImage}
                         disabled={generating}
-                        className="w-full max-w-[260px] gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 hover:from-amber-300 hover:to-amber-400 rounded-xl font-semibold"
+                        className="w-full max-w-[260px] gap-2 !bg-gradient-to-r !from-amber-400 !to-amber-500 !text-amber-950 hover:!from-amber-300 hover:!to-amber-400 rounded-xl font-semibold"
                       >
                         {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
                         {generating ? "Criando arte…" : "Compartilhar esta palavra"}
@@ -467,7 +471,7 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
                   transition={{ duration: 0.4 }}
                 >
                   <img
-                    src={imageUrl}
+                    src={previewUrl || imageUrl}
                     alt={`Arte do versículo ${verse?.reference}`}
                     className="w-full max-w-[240px] rounded-xl border border-amber-500/30 shadow-lg"
                   />
@@ -475,7 +479,7 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
                     <Button variant="outline" onClick={downloadImage} className="flex-1 gap-1.5 rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/15 hover:text-white">
                       <Download className="h-4 w-4" /> Baixar
                     </Button>
-                    <Button onClick={shareImage} className="flex-1 gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 hover:from-amber-300 hover:to-amber-400 font-semibold">
+                    <Button onClick={shareImage} className="flex-1 gap-1.5 rounded-xl !bg-gradient-to-r !from-amber-400 !to-amber-500 !text-amber-950 hover:!from-amber-300 hover:!to-amber-400 font-semibold">
                       <Share2 className="h-4 w-4" /> Compartilhar
                     </Button>
                   </div>
