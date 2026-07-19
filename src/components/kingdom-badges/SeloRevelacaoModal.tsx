@@ -373,6 +373,7 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
                     initial={reduced ? false : { scale: 1.4, y: 30 }}
                     animate={{ scale: 1, y: 0 }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
+                    style={{ filter: "drop-shadow(0 0 22px rgba(251,191,36,0.5))" }}
                   >
                     <KingdomBadge
                       rarity={badge.rarity}
@@ -380,7 +381,7 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
                       imageUrl={badge.imageUrl}
                       icon={badge.icon}
                       emoji={badge.emoji}
-                      size="sm"
+                      size="md"
                     />
                   </motion.div>
 
