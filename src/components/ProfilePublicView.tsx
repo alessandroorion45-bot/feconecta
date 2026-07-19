@@ -88,6 +88,9 @@ export const ProfilePublicView = ({
   const [cosmetics, setCosmetics] = useState<{ cosmetic_key: string; tipo: string }[]>([]);
   // Título do Reino (vem do ProfileStats — mesmo fetch, sem consulta extra)
   const [kingdomTitle, setKingdomTitle] = useState<{ title: string; level: number } | null>(null);
+  // Contadores só-leitura: conquistas e posição no ranking
+  const [achievementsCount, setAchievementsCount] = useState<number | null>(null);
+  const [rankPosition, setRankPosition] = useState<number | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -97,6 +100,27 @@ export const ProfilePublicView = ({
       .eq("user_id", userId)
       .eq("equipped", true)
       .then(({ data }) => setCosmetics(data || []));
+
+    (async () => {
+      const { count } = await supabase
+        .from("user_achievements")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId);
+      setAchievementsCount(count ?? 0);
+
+      // posição = quantos têm mais pontos + 1 (mesmo critério da página de Ranking)
+      const { data: myStats } = await supabase
+        .from("user_stats")
+        .select("total_points")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const myPoints = myStats?.total_points ?? 0;
+      const { count: ahead } = await supabase
+        .from("user_stats")
+        .select("user_id", { count: "exact", head: true })
+        .gt("total_points", myPoints);
+      setRankPosition((ahead ?? 0) + 1);
+    })();
   }, [userId]);
 
   const equippedFrame = cosmetics.find((c) => c.tipo === "moldura");
@@ -182,9 +206,16 @@ export const ProfilePublicView = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.15 }}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 px-3 py-1 text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300"
+              className="mt-1 inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/25 pl-1.5 pr-3 py-1 text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300"
             >
-              👑 {kingdomTitle.title} · Nível {kingdomTitle.level}
+              {/* Medalha do nível */}
+              <span
+                className="inline-flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[10px] sm:text-[11px] font-bold text-amber-950 shadow-[inset_0_1px_2px_rgba(255,255,255,0.6),0_1px_3px_rgba(180,120,10,0.45)] ring-1 ring-amber-600/40"
+                style={{ background: "radial-gradient(circle at 32% 28%, #fef3c7, #fbbf24 55%, #d4930d)" }}
+              >
+                {kingdomTitle.level}
+              </span>
+              👑 {kingdomTitle.title}
             </motion.p>
           )}
         </div>
@@ -404,13 +435,14 @@ export const ProfilePublicView = ({
             <span className="text-sm font-semibold text-foreground/80">Sobre mim</span>
           </div>
           <div className="p-4 sm:p-5">
+            <div className="mx-auto mb-3 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
             {profile.bio ? (
               <p className="text-[15px] text-foreground/90 leading-7 whitespace-pre-wrap">
                 {profile.bio}
               </p>
             ) : (
               <p className="text-sm text-muted-foreground italic text-center">
-                Nenhuma descrição adicionada ainda.
+                ✨ Este membro ainda não escreveu sobre sua caminhada.
               </p>
             )}
           </div>
@@ -421,13 +453,23 @@ export const ProfilePublicView = ({
           <Link to="/achievements">
             <Button variant="outline" className="w-full gap-2 group rounded-xl h-12 hover:border-amber-400/50 hover:shadow-[0_0_16px_rgba(212,147,13,0.15)] transition-all duration-[250ms]">
               <Trophy className="h-4 w-4 group-hover:text-amber-500 group-hover:scale-110 transition-all duration-[250ms]" />
-              <span className="text-sm">Conquistas</span>
+              <span className="text-sm">
+                {achievementsCount !== null && achievementsCount > 0 ? `${achievementsCount} Conquistas` : "Conquistas"}
+              </span>
             </Button>
           </Link>
           <Link to="/ranking">
             <Button variant="outline" className="w-full gap-2 group rounded-xl h-12 hover:border-primary/50 hover:shadow-[0_0_16px_rgba(59,130,246,0.15)] transition-all duration-[250ms]">
               <Medal className="h-4 w-4 group-hover:text-primary group-hover:scale-110 transition-all duration-[250ms]" />
-              <span className="text-sm">Ranking</span>
+              <span className="text-sm">
+                {rankPosition !== null ? (
+                  <>
+                    {rankPosition === 1 ? "🥇" : rankPosition === 2 ? "🥈" : rankPosition === 3 ? "🥉" : "🏅"} #{rankPosition} no Ranking
+                  </>
+                ) : (
+                  "Ranking"
+                )}
+              </span>
             </Button>
           </Link>
         </div>
@@ -436,7 +478,7 @@ export const ProfilePublicView = ({
         {isOwner && (
           <Button
             onClick={onEditClick}
-            className="w-full gap-2 bg-gradient-primary text-primary-foreground rounded-xl h-12 mt-2 hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] transition-all duration-[250ms]"
+            className="w-full gap-2 bg-gradient-primary text-primary-foreground rounded-xl h-12 mt-2 border border-transparent hover:bg-none hover:bg-gradient-to-r hover:from-amber-400 hover:to-amber-500 hover:text-amber-950 hover:border-amber-300/60 hover:shadow-lg hover:shadow-amber-500/30 hover:scale-[1.01] transition-all duration-[250ms]"
           >
             <Pencil className="h-4 w-4" />
             Editar Perfil

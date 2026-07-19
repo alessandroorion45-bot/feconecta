@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, animate, useReducedMotion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -11,6 +11,30 @@ import {
 } from "@/lib/gamification";
 
 const sb = supabase as any;
+
+/** Contador animado (count-up) — só exibição, respeita prefers-reduced-motion */
+const CountUpNumber = memo(({ value, delay = 0 }: { value: number; delay?: number }) => {
+  const reduced = useReducedMotion();
+  const [display, setDisplay] = useState(reduced ? value : 0);
+
+  useEffect(() => {
+    if (reduced) {
+      setDisplay(value);
+      return;
+    }
+    const controls = animate(0, value, {
+      duration: Math.min(1.4, 0.6 + value / 5000),
+      delay,
+      ease: "easeOut",
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, reduced]);
+
+  return <span>{formatLargeNumber(display)}</span>;
+});
+CountUpNumber.displayName = "CountUpNumber";
 
 interface StatTile {
   emoji: string;
@@ -104,11 +128,11 @@ const ProfileStats = memo(({ userId, onTitleLoaded }: ProfileStatsProps) => {
             className={`rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm px-2 py-2.5 text-center shadow-sm hover:shadow-md hover:-translate-y-[3px] hover:scale-[1.03] transition-all duration-[250ms] ${tile.accent}`}
             title={tile.label}
           >
-            <div className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-sm leading-none ${tile.iconBg}`}>
+            <div className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full text-base leading-none ${tile.iconBg}`}>
               {tile.emoji}
             </div>
             <div className="text-sm font-bold text-foreground mt-1 leading-none">
-              {formatLargeNumber(tile.value)}
+              <CountUpNumber value={tile.value} delay={0.2 + i * 0.05} />
             </div>
             <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{tile.label}</div>
           </motion.div>
@@ -132,11 +156,23 @@ const ProfileStats = memo(({ userId, onTitleLoaded }: ProfileStatsProps) => {
           </div>
           <div className="h-2.5 bg-muted rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 rounded-full"
+              className="relative h-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 rounded-full overflow-hidden"
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, levelInfo.progress)}%` }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-            />
+            >
+              {/* Brilho varrendo a barra em loop */}
+              <motion.div
+                className="absolute inset-y-0 w-1/2 motion-reduce:hidden"
+                style={{
+                  background:
+                    "linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
+                }}
+                initial={{ x: "-120%" }}
+                animate={{ x: "320%" }}
+                transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut", delay: 1.4 }}
+              />
+            </motion.div>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5">
             {formatLargeNumber(levelInfo.xp)} / {formatLargeNumber(levelInfo.nextXP)} XP — faltam {formatLargeNumber(Math.max(0, levelInfo.nextXP - levelInfo.xp))} XP para o próximo nível
