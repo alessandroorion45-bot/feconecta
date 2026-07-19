@@ -185,8 +185,15 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="border-t py-6 sm:py-8 mt-auto">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm sm:text-base text-muted-foreground">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm sm:text-base text-muted-foreground space-y-2">
           <p>© 2024 Aliança. Compartilhando fé e amor em Cristo.</p>
+          <p className="text-xs sm:text-sm">
+            <Link to="/privacidade" className="hover:text-foreground hover:underline transition-colors">Política de Privacidade</Link>
+            <span className="mx-2">·</span>
+            <Link to="/termos" className="hover:text-foreground hover:underline transition-colors">Termos de Serviço</Link>
+            <span className="mx-2">·</span>
+            <Link to="/sobre-o-projeto" className="hover:text-foreground hover:underline transition-colors">Sobre o Projeto</Link>
+          </p>
         </div>
       </footer>
     </div>

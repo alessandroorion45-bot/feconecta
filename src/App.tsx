@@ -52,6 +52,8 @@ const Gamification = lazy(() => import("./pages/Gamification"));
 const AboutProject = lazy(() => import("./pages/AboutProject"));
 const KingdomStore = lazy(() => import("./pages/KingdomStore"));
 const GiftsKingdom = lazy(() => import("./pages/GiftsKingdom"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -117,6 +119,8 @@ const routes: RouteObject[] = [
   { path: "/favorite-verses", element: <ProtectedRoute><FavoriteVerses /></ProtectedRoute> },
   { path: "/gamification", element: <Gamification /> },
   { path: "/sobre-o-projeto", element: <AboutProject /> },
+  { path: "/privacidade", element: <PrivacyPolicy /> },
+  { path: "/termos", element: <TermsOfService /> },
   { path: "/loja", element: <KingdomStore /> },
   { path: "/presentes", element: <ProtectedRoute><GiftsKingdom /></ProtectedRoute> },
 
