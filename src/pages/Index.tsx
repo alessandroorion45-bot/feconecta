@@ -91,10 +91,11 @@ const Index = () => {
             Aliança Kingdom
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-amber-900 dark:text-amber-100 font-medium mb-3 px-2 leading-relaxed">
-            Uma comunidade cristã moderna para compartilhar fé, testemunhos e comunhão
+            O Aliança Kingdom é uma comunidade cristã online e gratuita para ler a Bíblia,
+            compartilhar testemunhos, orar em comunidade e crescer na fé
           </p>
           <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 px-2 leading-relaxed">
-            ✨ Junte-se a milhares de irmãos conectados em Cristo
+            ✨ Crie sua conta e junte-se a milhares de irmãos conectados em Cristo
           </p>
           {user ? (
             <div className="flex flex-col items-center gap-4 sm:gap-6">
