@@ -103,6 +103,16 @@ serve(async (req) => {
               // duplicado (já possui) não é erro fatal
               if (error && !error.message.includes("duplicate")) console.error("Erro ao conceder selo:", error);
             });
+          } else if (product.tipo === "tema" && product.cosmetic_key) {
+            // Compra de tema: desbloqueia na coleção do destinatário
+            await serviceClient.from("user_themes").upsert({
+              user_id: recipient,
+              theme_key: product.cosmetic_key,
+              is_unlocked: true,
+              granted_by: purchase.gift_to ? purchase.buyer_id : null,
+            }, { onConflict: "user_id,theme_key" }).then(({ error }) => {
+              if (error) console.error("Erro ao desbloquear tema:", error);
+            });
           } else if (product.cosmetic_key) {
             await serviceClient.from("user_cosmetics").insert({
               user_id: recipient,

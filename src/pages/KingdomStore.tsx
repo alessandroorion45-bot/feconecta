@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
 import { BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
 import AnimatedCosmeticFrame from "@/components/AnimatedCosmeticFrame";
+import { getTheme } from "@/lib/themes";
+import { useTheme } from "@/contexts/ThemeContext";
 import { playUnlockChime } from "@/lib/badgeSound";
 import {
   ShoppingBag, Heart, Gift, Search, ArrowLeft, Clock, Copy, Check, PartyPopper, Sparkles, Loader2, CheckCircle2,
@@ -37,7 +39,7 @@ interface StoreProduct {
   mensagem: string | null;
   verse_reference: string | null;
   verse_text: string | null;
-  tipo: "selo" | "moldura" | "fundo" | "efeito" | "presente" | "outro";
+  tipo: "selo" | "moldura" | "fundo" | "efeito" | "presente" | "tema" | "outro";
   badge_id: string | null;
   cosmetic_key: string | null;
   icone: string | null;
@@ -97,6 +99,28 @@ const CosmeticPreview = ({ product }: { product: StoreProduct }) => {
       </AnimatedCosmeticFrame>
     );
   }
+  if (product.tipo === "tema" && product.cosmetic_key) {
+    // Mini-janela do app com as cores reais do tema
+    const t = getTheme(product.cosmetic_key);
+    return (
+      <div
+        className="h-28 w-40 rounded-xl border overflow-hidden shadow-sm text-left"
+        style={{ background: t.colors.background }}
+      >
+        <div className="h-6 w-full flex items-center px-2 gap-1" style={{ background: `linear-gradient(135deg, ${t.colors.gradient.join(", ")})` }}>
+          <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
+          <span className="h-1.5 w-8 rounded-full bg-white/50" />
+        </div>
+        <div className="p-2 space-y-1.5">
+          <div className="h-2 w-3/4 rounded-full" style={{ background: t.colors.primary, opacity: 0.85 }} />
+          <div className="h-8 rounded-md border" style={{ background: t.designTokens.cardBackground, borderColor: t.designTokens.border }}>
+            <div className="h-1.5 w-1/2 rounded-full m-2" style={{ background: t.colors.secondary, opacity: 0.7 }} />
+          </div>
+          <div className="h-2 w-1/3 rounded-full" style={{ background: t.colors.accent, opacity: 0.7 }} />
+        </div>
+      </div>
+    );
+  }
   if (product.tipo === "fundo" && product.cosmetic_key) {
     return <div className="h-24 w-24 rounded-xl border" style={{ background: BACKGROUND_STYLES[product.cosmetic_key] }} />;
   }
@@ -125,6 +149,8 @@ const CosmeticPreview = ({ product }: { product: StoreProduct }) => {
 const KingdomStore = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { setTheme, activeThemeKey } = useTheme();
+  const [ownedThemeKeys, setOwnedThemeKeys] = useState<Set<string>>(new Set());
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [categories, setCategories] = useState<StoreCategory[]>([]);
   const [ownedCosmetics, setOwnedCosmetics] = useState<{ cosmetic_key: string; tipo: string; equipped: boolean }[]>([]);
@@ -164,12 +190,14 @@ const KingdomStore = () => {
     if (settings) setMeta({ mensal: Number(settings.meta_mensal), ativa: settings.meta_ativa, progresso: Number(progresso || 0) });
 
     if (user) {
-      const [{ data: cosmetics }, { data: userBadges }] = await Promise.all([
+      const [{ data: cosmetics }, { data: userBadges }, { data: userThemes }] = await Promise.all([
         supabase.from("user_cosmetics").select("cosmetic_key, tipo, equipped").eq("user_id", user.id),
         supabase.from("user_badges").select("badge_id").eq("user_id", user.id),
+        supabase.from("user_themes").select("theme_key").eq("user_id", user.id).eq("is_unlocked", true),
       ]);
       setOwnedCosmetics(cosmetics || []);
       setOwnedBadgeIds(new Set((userBadges || []).map((b: { badge_id: string }) => b.badge_id)));
+      setOwnedThemeKeys(new Set((userThemes || []).map((t: { theme_key: string }) => t.theme_key)));
     }
     setLoading(false);
   }, [user]);
@@ -311,8 +339,16 @@ const KingdomStore = () => {
 
   const ownsProduct = (product: StoreProduct): boolean => {
     if (product.tipo === "selo" && product.badge_id) return ownedBadgeIds.has(product.badge_id);
+    if (product.tipo === "tema" && product.cosmetic_key) return ownedThemeKeys.has(product.cosmetic_key);
     if (product.cosmetic_key) return ownedCosmetics.some((c) => c.cosmetic_key === product.cosmetic_key);
     return false;
+  };
+
+  const activateTheme = async (themeKey: string) => {
+    const ok = await setTheme(themeKey);
+    toast(ok
+      ? { title: "🎨 Tema ativado!", description: "Todo o app ganhou uma nova atmosfera." }
+      : { title: "Erro ao ativar o tema", description: "Tente novamente.", variant: "destructive" });
   };
 
   const isEquipped = (product: StoreProduct): boolean =>
@@ -437,6 +473,16 @@ const KingdomStore = () => {
                         >
                           <Gift className="h-4 w-4 mr-1.5" /> Presentear
                         </Button>
+                      ) : owned && product.tipo === "tema" && product.cosmetic_key ? (
+                        activeThemeKey === product.cosmetic_key ? (
+                          <Button variant="default" size="sm" className="flex-1" disabled>
+                            <CheckCircle2 className="h-4 w-4 mr-1.5" /> Tema ativo
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => activateTheme(product.cosmetic_key!)}>
+                            <Sparkles className="h-4 w-4 mr-1.5" /> Ativar tema
+                          </Button>
+                        )
                       ) : owned && product.cosmetic_key ? (
                         equipped ? (
                           <Button variant="default" size="sm" className="flex-1" onClick={() => unequipCosmetic(product.cosmetic_key!)}>
