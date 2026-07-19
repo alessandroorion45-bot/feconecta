@@ -156,7 +156,7 @@ const ProfileStats = memo(({ userId, onTitleLoaded }: ProfileStatsProps) => {
           </div>
           <div className="h-2.5 bg-muted rounded-full overflow-hidden">
             <motion.div
-              className="relative h-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 rounded-full overflow-hidden"
+              className="theme-xp-fill relative h-full rounded-full overflow-hidden"
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, levelInfo.progress)}%` }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}

@@ -73,11 +73,18 @@ const fmt = (hsl: HSL) => `${hsl.h} ${hsl.s}% ${hsl.l}%`;
 const withLightness = (hsl: HSL, l: number): HSL => ({ ...hsl, l: Math.max(0, Math.min(100, l)) });
 const isDark = (hsl: HSL) => hsl.l < 45;
 
+/** Temas "limpos" que ficam fora da camada premium (scrollbar rica, glow, ripple) */
+const CLEAN_THEMES = new Set(['Padrão', 'Clássico']);
+
 /** Aplica os design tokens completos no documento — CSS vars do tema E do shadcn. */
-export function applyThemeTokens(tokens: ThemeDesignTokens, themeName: string) {
+export function applyThemeTokens(tokens: ThemeDesignTokens, themeName: string, themeKey?: string) {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
+
+  // Escopo da camada premium (theme-premium.css) — só dados, sem estrutura
+  if (themeKey) root.dataset.themeKey = themeKey;
+  root.dataset.themeLuxe = CLEAN_THEMES.has(themeName) ? 'false' : 'true';
 
   root.classList.add('theme-transitioning');
   document.body.classList.add('theme-transitioning');

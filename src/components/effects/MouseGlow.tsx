@@ -45,7 +45,7 @@ export const MouseGlow = () => {
     };
   }, []);
 
-  const config = GLOW_CONFIGS[currentTheme as keyof typeof GLOW_CONFIGS] || GLOW_CONFIGS.default;
+  const config = GLOW_CONFIGS[currentTheme?.key as keyof typeof GLOW_CONFIGS] || GLOW_CONFIGS.default;
 
   return (
     <div

@@ -3,6 +3,7 @@ import App from "./App.tsx";
 import "./index.css";
 import "./styles/theme-transitions.css";
 import "./styles/theme-animations.css";
+import "./styles/theme-premium.css";
 
 // Após um deploy, chunks antigos deixam de existir no servidor e a
 // navegação para uma rota lazy falha ("Failed to fetch dynamically

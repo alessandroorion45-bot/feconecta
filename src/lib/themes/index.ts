@@ -542,7 +542,7 @@ export function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;
 
   // Usar o novo sistema de design tokens completo
-  applyThemeTokens(theme.designTokens, theme.name);
+  applyThemeTokens(theme.designTokens, theme.name, theme.key);
 }
 
 export function getAllThemes(): Theme[] {

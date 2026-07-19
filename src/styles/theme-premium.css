@@ -1,0 +1,153 @@
+/* =====================================================
+   CAMADA PREMIUM DE TEMAS — Aliança Kingdom
+   =====================================================
+   Polimento imersivo dirigido 100% por CSS variables já
+   aplicadas pelo theme-applier. Nenhuma mudança estrutural:
+   seletores :where() (especificidade zero) que qualquer
+   estilo de componente pode sobrescrever.
+
+   Escopo: html[data-theme-luxe="true"] — temas "limpos"
+   (default, clássico) ficam de fora de propósito.
+   Performance: só transform / opacity / filter / box-shadow.
+   ===================================================== */
+
+/* ===== Keyframes da Atmosfera Viva ===== */
+@keyframes atmosphere-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+  50% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+}
+.atmosphere-breathe {
+  animation: atmosphere-breathe 10s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes atmosphere-aurora {
+  0% { transform: translateX(-18%); }
+  50% { transform: translateX(18%); }
+  100% { transform: translateX(-18%); }
+}
+.atmosphere-aurora {
+  animation: atmosphere-aurora 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes atmosphere-mist {
+  0%, 100% { opacity: 0.7; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-6px); }
+}
+.atmosphere-mist {
+  animation: atmosphere-mist 14s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes atmosphere-bloom {
+  0% { opacity: 0; }
+  35% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.atmosphere-bloom {
+  animation: atmosphere-bloom 0.85s ease-out forwards;
+}
+
+/* ===== Scrollbar rica por tema ===== */
+html[data-theme-luxe="true"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html[data-theme-luxe="true"] ::-webkit-scrollbar-track {
+  background: var(--theme-background-secondary);
+}
+html[data-theme-luxe="true"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--theme-primary, #6366f1), var(--theme-accent, #a78bfa));
+  border-radius: 8px;
+  border: 2px solid var(--theme-background-secondary);
+}
+html[data-theme-luxe="true"] ::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 0 8px var(--theme-glow);
+}
+html[data-theme-luxe="true"] {
+  scrollbar-color: var(--theme-primary, #6366f1) var(--theme-background-secondary);
+}
+
+/* ===== Seleção de texto com a cor do tema ===== */
+html[data-theme-luxe="true"] ::selection {
+  background: color-mix(in srgb, var(--theme-primary, #6366f1) 28%, transparent);
+}
+
+/* ===== Inputs: foco iluminado e elegante ===== */
+html[data-theme-luxe="true"] :where(input, textarea, select):focus-visible {
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.06),
+    0 0 0 3px color-mix(in srgb, var(--theme-glow, #6366f1) 22%, transparent),
+    0 0 14px color-mix(in srgb, var(--theme-glow, #6366f1) 18%, transparent);
+  transition: box-shadow 0.25s ease;
+}
+
+/* ===== Cards: profundidade e glow discreto no hover =====
+   (só box-shadow/borda — nunca transform, pra não mexer no layout) */
+html[data-theme-luxe="true"] :where(.bg-card, [class*="bg-card/"]) {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+html[data-theme-luxe="true"] :where(.bg-card, [class*="bg-card/"]):hover {
+  box-shadow:
+    0 6px 22px color-mix(in srgb, var(--theme-shadow, rgba(0, 0, 0, 0.12)) 80%, transparent),
+    0 0 18px color-mix(in srgb, var(--theme-glow, #6366f1) 10%, transparent);
+}
+
+/* ===== Botão primário: ripple suave + respiração de glow ===== */
+html[data-theme-luxe="true"] .theme-button-primary {
+  position: relative;
+  overflow: hidden;
+}
+html[data-theme-luxe="true"] .theme-button-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.45) 0%, transparent 60%);
+  opacity: 0;
+  transform: scale(0);
+  pointer-events: none;
+}
+html[data-theme-luxe="true"] .theme-button-primary:active::after {
+  animation: theme-ripple 0.5s ease-out;
+}
+@keyframes theme-ripple {
+  0% { opacity: 0.6; transform: scale(0); }
+  100% { opacity: 0; transform: scale(2.4); }
+}
+
+/* ===== Diálogos e dropdowns: borda com brilho do tema ===== */
+html[data-theme-luxe="true"] :where([role="dialog"], [role="menu"], [role="listbox"]) {
+  box-shadow:
+    0 18px 50px color-mix(in srgb, var(--theme-shadow, rgba(0, 0, 0, 0.2)) 85%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--theme-glow, #6366f1) 14%, transparent),
+    0 0 26px color-mix(in srgb, var(--theme-glow, #6366f1) 10%, transparent);
+}
+
+/* ===== Barra de XP temática =====
+   O preenchimento usa var com fallback pro dourado padrão —
+   cada tema pode ter sua própria "energia". */
+.theme-xp-fill {
+  background: var(--theme-xp-gradient, linear-gradient(90deg, #fbbf24, #facc15, #f59e0b));
+}
+html[data-theme-key="monte-siao"] { --theme-xp-gradient: linear-gradient(90deg, #60a5fa, #93c5fd, #3b82f6); }
+html[data-theme-key="jardim-eden"] { --theme-xp-gradient: linear-gradient(90deg, #10b981, #6ee7b7, #059669); }
+html[data-theme-key="pentecostes"] { --theme-xp-gradient: linear-gradient(90deg, #dc2626, #f97316, #fbbf24); }
+html[data-theme-key="noite-oracao"] { --theme-xp-gradient: linear-gradient(90deg, #7c3aed, #a78bfa, #c4b5fd); }
+html[data-theme-key="diamante-promessa"] { --theme-xp-gradient: linear-gradient(90deg, #0ea5e9, #7dd3fc, #38bdf8); }
+html[data-theme-key="dark-royal"] { --theme-xp-gradient: linear-gradient(90deg, #a855f7, #c084fc, #fbbf24); }
+html[data-theme-key="guerreiro-fe"] { --theme-xp-gradient: linear-gradient(90deg, #dc2626, #fbbf24, #dc2626); }
+
+/* ===== Acessibilidade: movimento reduzido desliga tudo ===== */
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere-breathe,
+  .atmosphere-aurora,
+  .atmosphere-mist,
+  .atmosphere-bloom {
+    animation: none !important;
+  }
+  html[data-theme-luxe="true"] .theme-button-primary:active::after {
+    animation: none !important;
+  }
+}

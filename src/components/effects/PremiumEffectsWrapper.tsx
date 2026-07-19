@@ -1,30 +1,35 @@
 // =====================================================
 // PREMIUM EFFECTS WRAPPER
 // =====================================================
-// Adiciona efeitos premium baseado no tier do tema
+// Adiciona efeitos premium baseado no tier do tema.
+// Camadas independentes (partículas, atmosfera, glow) —
+// nunca tocam no layout, só decoram por cima/por baixo.
 // =====================================================
 
 import { ReactNode } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemeParticles } from './ThemeParticles';
+import { ThemeAtmosphere } from './ThemeAtmosphere';
 import { MouseGlow } from './MouseGlow';
-import { themes } from '@/lib/themes';
 
 interface PremiumEffectsWrapperProps {
   children: ReactNode;
 }
 
 export const PremiumEffectsWrapper = ({ children }: PremiumEffectsWrapperProps) => {
+  // currentTheme é o objeto Theme — o tier vem direto dele
+  // (antes fazia themes[objeto], que dava undefined e desligava tudo)
   const { currentTheme } = useTheme();
-  const theme = themes[currentTheme];
 
-  // Habilitar efeitos premium para temas GOLD e PLATINUM
-  const isPremium = theme?.tier === 'gold' || theme?.tier === 'platinum';
-  const isPlatinum = theme?.tier === 'platinum';
+  const isPremium = currentTheme?.tier === 'gold' || currentTheme?.tier === 'platinum';
+  const isPlatinum = currentTheme?.tier === 'platinum';
 
   return (
     <>
       {children}
+
+      {/* Atmosfera viva (todos os temas com identidade própria) */}
+      <ThemeAtmosphere themeKey={currentTheme?.key || 'default'} />
 
       {/* Partículas (GOLD e PLATINUM) */}
       {isPremium && <ThemeParticles />}
