@@ -117,9 +117,12 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
             title={item.store_products?.nome}
           >
             {item.store_products?.image_url ? (
-              <div className="h-12 w-12 rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/10 flex items-center justify-center overflow-hidden p-1">
-                <img src={item.store_products.image_url} alt="" loading="lazy" className="max-h-full max-w-full object-contain rounded" />
-              </div>
+              <img
+                src={item.store_products.image_url}
+                alt=""
+                loading="lazy"
+                className="h-14 w-14 object-contain rounded-lg transition-transform duration-300 drop-shadow-[0_0_8px_rgba(217,180,80,0.35)]"
+              />
             ) : (
               <span className="text-3xl leading-none">{item.store_products?.icone || "🎁"}</span>
             )}
@@ -140,9 +143,11 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
             <>
               <div className="flex justify-center my-2">
                 {detail.store_products?.image_url ? (
-                  <div className="h-32 w-32 rounded-2xl border border-border/50 bg-gradient-to-br from-muted/50 to-muted/10 flex items-center justify-center overflow-hidden p-1.5 shadow-md">
-                    <img src={detail.store_products.image_url} alt="" className="max-h-full max-w-full object-contain rounded-lg" />
-                  </div>
+                  <img
+                    src={detail.store_products.image_url}
+                    alt=""
+                    className="h-36 w-36 object-contain rounded-2xl drop-shadow-[0_0_18px_rgba(217,180,80,0.5)]"
+                  />
                 ) : (
                   <span className="text-7xl leading-none">{detail.store_products?.icone || "🎁"}</span>
                 )}

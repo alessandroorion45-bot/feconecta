@@ -75,9 +75,12 @@ const formatBRL = (v: number) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
 const CosmeticPreview = ({ product }: { product: StoreProduct }) => {
   if (product.tipo === "presente") {
     return product.image_url ? (
-      <div className="h-32 w-32 rounded-2xl border border-border/50 bg-gradient-to-br from-muted/50 to-muted/10 flex items-center justify-center overflow-hidden p-1.5">
-        <img src={product.image_url} alt="" loading="lazy" className="max-h-full max-w-full object-contain rounded-lg" />
-      </div>
+      <img
+        src={product.image_url}
+        alt=""
+        loading="lazy"
+        className="h-40 w-40 object-contain rounded-2xl transition-all duration-300 ease-out drop-shadow-[0_0_14px_rgba(217,180,80,0.4)] hover:scale-[1.08] hover:drop-shadow-[0_0_30px_rgba(217,180,80,0.75)]"
+      />
     ) : (
       <motion.span
         className="text-7xl inline-block"

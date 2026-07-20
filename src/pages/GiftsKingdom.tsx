@@ -49,9 +49,12 @@ const GiftArt = ({ gift, size = "text-6xl" }: { gift: GiftRecord; size?: string 
   const p = gift.store_products;
   if (p?.image_url) {
     return (
-      <div className="h-24 w-24 rounded-2xl border border-border/50 bg-gradient-to-br from-muted/50 to-muted/10 flex items-center justify-center overflow-hidden p-1.5">
-        <img src={p.image_url} alt={p.nome} loading="lazy" className="max-h-full max-w-full object-contain rounded-lg" />
-      </div>
+      <img
+        src={p.image_url}
+        alt={p.nome}
+        loading="lazy"
+        className="h-28 w-28 object-contain rounded-2xl transition-transform duration-300 drop-shadow-[0_0_16px_rgba(217,180,80,0.45)] hover:scale-105"
+      />
     );
   }
   return <span className={size}>{p?.icone || "🎁"}</span>;
