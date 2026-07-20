@@ -35,6 +35,7 @@ interface StoreProductRow {
   limitado: boolean;
   estoque: number | null;
   ordem: number;
+  raridade: string;
   created_at: string;
   vendas?: number;
 }
@@ -70,7 +71,17 @@ const emptyForm = {
   giftable: true,
   limitado: false,
   estoque: "",
+  raridade: "comum",
 };
+
+const RARIDADES = [
+  { value: "comum", label: "Comum — glow branco" },
+  { value: "incomum", label: "Incomum — glow verde" },
+  { value: "raro", label: "Raro — glow azul" },
+  { value: "epico", label: "Épico — glow roxo" },
+  { value: "lendario", label: "Lendário — glow dourado" },
+  { value: "exclusivo", label: "Exclusivo — dourado holográfico" },
+];
 
 const slugify = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -173,6 +184,7 @@ export default function AdminStore() {
       giftable: p.giftable,
       limitado: p.limitado,
       estoque: p.estoque != null ? String(p.estoque) : "",
+      raridade: p.raridade || "comum",
     });
     setImageFile(null);
     setImagePreview(p.image_url);
@@ -303,6 +315,7 @@ export default function AdminStore() {
         giftable: form.giftable,
         limitado: form.limitado,
         estoque: form.limitado && form.estoque ? Number(form.estoque) : null,
+        raridade: form.tipo === "presente" ? form.raridade : "comum",
       };
 
       if (editingId) {
@@ -560,14 +573,28 @@ export default function AdminStore() {
               </div>
             )}
 
+            {form.tipo === "presente" && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Raridade (define o glow e a moldura na experiência premium)</label>
+                <Select value={form.raridade} onValueChange={(v) => setForm((f) => ({ ...f, raridade: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {RARIDADES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Versículo (opcional)</label>
                 <Input value={form.verse_reference} onChange={(e) => setForm((f) => ({ ...f, verse_reference: e.target.value }))} placeholder="Ex: Provérbios 11:25" />
+                <p className="text-xs text-muted-foreground mt-1">O texto é buscado automaticamente na Bíblia do app.</p>
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Texto do versículo (opcional)</label>
+                <label className="text-sm font-medium mb-2 block">Texto do versículo (reserva)</label>
                 <Input value={form.verse_text} onChange={(e) => setForm((f) => ({ ...f, verse_text: e.target.value }))} />
+                <p className="text-xs text-muted-foreground mt-1">Só usado se a busca automática falhar (ex: referências em intervalo).</p>
               </div>
             </div>
 

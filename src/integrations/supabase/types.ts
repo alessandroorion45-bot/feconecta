@@ -3916,6 +3916,81 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          purchase_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          purchase_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          purchase_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_favorites_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "store_purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_favorites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          purchase_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          purchase_id: string
+          reaction: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          purchase_id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_reactions_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "store_purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leader_evaluations: {
         Row: {
           audio_url: string | null
@@ -6165,6 +6240,7 @@ export type Database = {
           nome: string
           ordem: number
           preco: number
+          raridade: string
           slug: string
           status: string
           tipo: string
@@ -6189,6 +6265,7 @@ export type Database = {
           nome: string
           ordem?: number
           preco: number
+          raridade?: string
           slug: string
           status?: string
           tipo: string
@@ -6213,6 +6290,7 @@ export type Database = {
           nome?: string
           ordem?: number
           preco?: number
+          raridade?: string
           slug?: string
           status?: string
           tipo?: string
@@ -7645,6 +7723,7 @@ export type Database = {
           id: string
           is_hidden: boolean | null
           likes_count: number | null
+          parent_comment_id: string | null
           updated_at: string | null
           user_id: string
           verse: number
@@ -7657,6 +7736,7 @@ export type Database = {
           id?: string
           is_hidden?: boolean | null
           likes_count?: number | null
+          parent_comment_id?: string | null
           updated_at?: string | null
           user_id: string
           verse: number
@@ -7669,11 +7749,19 @@ export type Database = {
           id?: string
           is_hidden?: boolean | null
           likes_count?: number | null
+          parent_comment_id?: string | null
           updated_at?: string | null
           user_id?: string
           verse?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "verse_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "verse_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "verse_comments_user_id_fkey"
             columns: ["user_id"]

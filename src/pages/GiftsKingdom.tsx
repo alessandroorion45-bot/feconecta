@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { playUnlockChime } from "@/lib/badgeSound";
+import GiftPremiumExperience from "@/components/gifts/GiftPremiumExperience";
 import { Gift, Inbox, Send, ShoppingBag, HandHeart, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -33,6 +34,7 @@ interface GiftRecord {
     descricao: string | null;
     verse_reference: string | null;
     verse_text: string | null;
+    raridade: string | null;
   } | null;
   sender_name?: string;
   receiver_name?: string;
@@ -70,6 +72,7 @@ const GiftsKingdom = () => {
   // fluxo de abertura
   const [opening, setOpening] = useState<GiftRecord | null>(null);
   const [boxOpened, setBoxOpened] = useState(false);
+  const [wasAlreadyOpen, setWasAlreadyOpen] = useState(false);
   const [thanking, setThanking] = useState(false);
   const [customThanks, setCustomThanks] = useState("");
 
@@ -82,12 +85,12 @@ const GiftsKingdom = () => {
 
     const [{ data: rec }, { data: env }] = await Promise.all([
       sb.from("store_purchases")
-        .select("id, gift_message, opened_at, thanked_at, created_at, buyer_id, gift_to, store_products(nome, icone, image_url, descricao, verse_reference, verse_text)")
+        .select("id, gift_message, opened_at, thanked_at, created_at, buyer_id, gift_to, store_products(nome, icone, image_url, descricao, verse_reference, verse_text, raridade)")
         .eq("gift_to", user.id)
         .eq("status", "approved")
         .order("created_at", { ascending: false }),
       sb.from("store_purchases")
-        .select("id, gift_message, opened_at, thanked_at, created_at, buyer_id, gift_to, store_products(nome, icone, image_url, descricao, verse_reference, verse_text)")
+        .select("id, gift_message, opened_at, thanked_at, created_at, buyer_id, gift_to, store_products(nome, icone, image_url, descricao, verse_reference, verse_text, raridade)")
         .eq("buyer_id", user.id)
         .not("gift_to", "is", null)
         .eq("status", "approved")
@@ -115,7 +118,17 @@ const GiftsKingdom = () => {
 
   const startOpen = (gift: GiftRecord) => {
     setOpening(gift);
+    setWasAlreadyOpen(!!gift.opened_at);
     setBoxOpened(false);
+    setThanking(false);
+    setCustomThanks("");
+  };
+
+  /** Revisitar um presente já aberto — mesma experiência premium, sem repetir o ritual da caixa */
+  const viewAgain = (gift: GiftRecord) => {
+    setOpening(gift);
+    setWasAlreadyOpen(true);
+    setBoxOpened(true);
     setThanking(false);
     setCustomThanks("");
   };
@@ -204,7 +217,7 @@ const GiftsKingdom = () => {
                     <Card key={gift.id} className="overflow-hidden hover:shadow-lg transition-all">
                       <CardContent className="p-5 text-center flex flex-col items-center">
                         {gift.opened_at ? (
-                          <>
+                          <button type="button" className="w-full flex flex-col items-center text-center focus:outline-none" onClick={() => viewAgain(gift)}>
                             <GiftArt gift={gift} />
                             <h3 className="font-bold mt-2">{gift.store_products?.nome}</h3>
                             <p className="text-xs text-muted-foreground mt-0.5">de {gift.sender_name}</p>
@@ -214,12 +227,10 @@ const GiftsKingdom = () => {
                             <p className="text-[10px] text-muted-foreground mt-2">
                               {formatDistanceToNow(new Date(gift.created_at), { addSuffix: true, locale: ptBR })}
                             </p>
-                            {!gift.thanked_at && (
-                              <Button variant="outline" size="sm" className="mt-2" onClick={() => { startOpen(gift); setBoxOpened(true); }}>
-                                🙏 Agradecer
-                              </Button>
-                            )}
-                          </>
+                            <span className="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+                              {gift.thanked_at ? "Ver presente" : "🙏 Ver e agradecer"}
+                            </span>
+                          </button>
                         ) : (
                           <>
                             <motion.div
@@ -278,7 +289,13 @@ const GiftsKingdom = () => {
 
       {/* Abertura do presente */}
       <Dialog open={!!opening} onOpenChange={(open) => !open && setOpening(null)}>
-        <DialogContent className="sm:max-w-md text-center overflow-hidden">
+        <DialogContent
+          className={
+            boxOpened
+              ? "sm:max-w-md text-center overflow-hidden p-0 border-none bg-transparent [&>button]:text-white/80 [&>button:hover]:text-white"
+              : "sm:max-w-md text-center overflow-hidden"
+          }
+        >
           {opening && !boxOpened && (
             <div className="py-8">
               <motion.div
@@ -302,79 +319,76 @@ const GiftsKingdom = () => {
           )}
 
           {opening && boxOpened && (
-            <div className="relative py-4">
-              {/* explosão de luz dourada */}
-              <AnimatePresence>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center">
-                  {[...Array(24)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute text-2xl"
-                      initial={{ x: 0, y: 0, scale: 0 }}
-                      animate={{
-                        x: (Math.random() - 0.5) * 440,
-                        y: (Math.random() - 0.5) * 440,
-                        scale: [0, 1, 0],
-                        rotate: Math.random() * 360,
-                      }}
-                      transition={{ duration: 1.6, delay: i * 0.03, ease: "easeOut" }}
-                    >
-                      {["✨", "🎉", "💛", "🌟"][i % 4]}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
+            <div className="relative">
+              {/* explosão de luz dourada — só numa abertura de verdade, não ao revisitar */}
+              {!wasAlreadyOpen && (
+                <AnimatePresence>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center">
+                    {[...Array(24)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute text-2xl"
+                        initial={{ x: 0, y: 0, scale: 0 }}
+                        animate={{
+                          x: (Math.random() - 0.5) * 440,
+                          y: (Math.random() - 0.5) * 440,
+                          scale: [0, 1, 0],
+                          rotate: Math.random() * 360,
+                        }}
+                        transition={{ duration: 1.6, delay: i * 0.03, ease: "easeOut" }}
+                      >
+                        {["✨", "🎉", "💛", "🌟"][i % 4]}
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+              )}
 
-              <motion.div initial={{ scale: 0.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 160, damping: 14 }}>
-                <div
-                  className="mx-auto mb-3 inline-flex items-center justify-center rounded-full p-6"
-                  style={{ background: "radial-gradient(circle, rgba(252,211,77,0.35), transparent 70%)" }}
-                >
-                  <GiftArt gift={opening} size="text-7xl" />
-                </div>
-                <h2 className="text-xl font-bold">{opening.store_products?.nome}</h2>
-                <p className="text-sm text-muted-foreground mt-1">enviado por {opening.sender_name}</p>
-
-                {opening.gift_message && (
-                  <p className="mt-3 text-sm italic text-foreground">"{opening.gift_message}"</p>
-                )}
-
-                {opening.store_products?.verse_reference && (
-                  <div className="mt-3 rounded-lg bg-muted/50 p-3 text-sm">
-                    {opening.store_products.verse_text && (
-                      <p className="italic text-muted-foreground">"{opening.store_products.verse_text}"</p>
-                    )}
-                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mt-1">
-                      📖 {opening.store_products.verse_reference}
-                    </p>
-                  </div>
-                )}
-
-                {!opening.thanked_at && (
-                  <div className="mt-5 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">🙏 Agradecer:</p>
-                    <div className="flex flex-wrap gap-1.5 justify-center">
-                      {THANK_PRESETS.map((preset) => (
-                        <Button key={preset} variant="outline" size="sm" className="text-xs" disabled={thanking} onClick={() => sendThanks(preset)}>
-                          {preset}
+              <GiftPremiumExperience
+                purchaseId={opening.id}
+                productName={opening.store_products?.nome || "Presente"}
+                imageUrl={opening.store_products?.image_url || null}
+                icone={opening.store_products?.icone || null}
+                giftMessage={opening.gift_message}
+                verseReference={opening.store_products?.verse_reference}
+                verseTextFallback={opening.store_products?.verse_text}
+                raridade={opening.store_products?.raridade}
+                senderName={opening.sender_name}
+                isNewlyOpened={!wasAlreadyOpen}
+                thankSlot={
+                  !opening.thanked_at ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-white/70">🙏 Agradecer:</p>
+                      <div className="flex flex-wrap gap-1.5 justify-center">
+                        {THANK_PRESETS.map((preset) => (
+                          <Button
+                            key={preset}
+                            variant="outline"
+                            size="sm"
+                            className="text-xs bg-white/5 border-white/15 text-white hover:bg-white/15 hover:text-white"
+                            disabled={thanking}
+                            onClick={() => sendThanks(preset)}
+                          >
+                            {preset}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <Input
+                          placeholder="Ou escreva sua mensagem..."
+                          value={customThanks}
+                          onChange={(e) => setCustomThanks(e.target.value)}
+                          maxLength={200}
+                          className="text-sm bg-white/5 border-white/15 text-white placeholder:text-white/40"
+                        />
+                        <Button size="sm" disabled={!customThanks.trim() || thanking} onClick={() => sendThanks(customThanks.trim())}>
+                          {thanking ? <Loader2 className="h-4 w-4 animate-spin" /> : <HandHeart className="h-4 w-4" />}
                         </Button>
-                      ))}
+                      </div>
                     </div>
-                    <div className="flex gap-2 pt-1">
-                      <Input
-                        placeholder="Ou escreva sua mensagem..."
-                        value={customThanks}
-                        onChange={(e) => setCustomThanks(e.target.value)}
-                        maxLength={200}
-                        className="text-sm"
-                      />
-                      <Button size="sm" disabled={!customThanks.trim() || thanking} onClick={() => sendThanks(customThanks.trim())}>
-                        {thanking ? <Loader2 className="h-4 w-4 animate-spin" /> : <HandHeart className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
+                  ) : undefined
+                }
+              />
             </div>
           )}
         </DialogContent>

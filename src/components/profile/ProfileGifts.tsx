@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Gift, ChevronRight, Calendar, User } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import GiftPremiumExperience from "@/components/gifts/GiftPremiumExperience";
+import { Gift, ChevronRight } from "lucide-react";
 
 const sb = supabase as any;
 
@@ -20,6 +21,7 @@ interface ReceivedGift {
     descricao: string | null;
     verse_reference: string | null;
     verse_text: string | null;
+    raridade: string | null;
   } | null;
   sender_name?: string;
 }
@@ -45,7 +47,7 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
     (async () => {
       const { data } = await sb
         .from("store_purchases")
-        .select("id, created_at, buyer_id, gift_message, store_products(nome, icone, image_url, descricao, verse_reference, verse_text)")
+        .select("id, created_at, buyer_id, gift_message, store_products(nome, icone, image_url, descricao, verse_reference, verse_text, raridade)")
         .eq("gift_to", userId)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
@@ -138,53 +140,20 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
       </div>
 
       <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
-        <DialogContent className="max-w-sm text-center">
+        <DialogContent className="sm:max-w-md text-center overflow-hidden p-0 border-none bg-transparent [&>button]:text-white/80 [&>button:hover]:text-white">
+          <DialogTitle className="sr-only">{detail?.store_products?.nome}</DialogTitle>
           {detail && (
-            <>
-              <div className="flex justify-center my-2">
-                {detail.store_products?.image_url ? (
-                  <img
-                    src={detail.store_products.image_url}
-                    alt=""
-                    className="h-36 w-36 object-contain rounded-2xl drop-shadow-[0_0_18px_rgba(217,180,80,0.5)]"
-                  />
-                ) : (
-                  <span className="text-7xl leading-none">{detail.store_products?.icone || "🎁"}</span>
-                )}
-              </div>
-              <DialogHeader>
-                <DialogTitle className="text-center">{detail.store_products?.nome}</DialogTitle>
-                {detail.store_products?.descricao && (
-                  <DialogDescription className="text-center">{detail.store_products.descricao}</DialogDescription>
-                )}
-              </DialogHeader>
-
-              {detail.gift_message && (
-                <p className="rounded-lg bg-rose-500/10 p-3 text-sm italic text-foreground/90">
-                  "{detail.gift_message}"
-                </p>
-              )}
-
-              {detail.store_products?.verse_reference && (
-                <div className="rounded-lg bg-muted/50 p-3 text-sm">
-                  {detail.store_products.verse_text && (
-                    <p className="italic text-muted-foreground mb-1">"{detail.store_products.verse_text}"</p>
-                  )}
-                  <p className="text-xs font-medium text-rose-500">— {detail.store_products.verse_reference}</p>
-                </div>
-              )}
-
-              <div className="mt-2 flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <User className="h-3.5 w-3.5" />
-                  {detail.sender_name}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {new Date(detail.created_at).toLocaleDateString("pt-BR")}
-                </span>
-              </div>
-            </>
+            <GiftPremiumExperience
+              purchaseId={detail.id}
+              productName={detail.store_products?.nome || "Presente"}
+              imageUrl={detail.store_products?.image_url || null}
+              icone={detail.store_products?.icone || null}
+              giftMessage={detail.gift_message}
+              verseReference={detail.store_products?.verse_reference}
+              verseTextFallback={detail.store_products?.verse_text}
+              raridade={detail.store_products?.raridade}
+              senderName={detail.sender_name}
+            />
           )}
         </DialogContent>
       </Dialog>
