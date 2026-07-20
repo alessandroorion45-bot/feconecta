@@ -36,10 +36,9 @@ serve(async (req) => {
     let buyerId: string | null = null;
     const authHeader = req.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
-      const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data } = await authClient.auth.getUser();
+      const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data, error } = await authClient.auth.getUser(authHeader.replace("Bearer ", ""));
+      if (error) console.error("Erro ao validar usuário:", error.message);
       buyerId = data.user?.id ?? null;
     }
     if (!buyerId) {

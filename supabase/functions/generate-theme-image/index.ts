@@ -60,8 +60,7 @@ serve(async (req) => {
 
     const authClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
     const token = authHeader.replace('Bearer ', '');
     const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);

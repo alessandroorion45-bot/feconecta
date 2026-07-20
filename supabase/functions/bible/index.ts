@@ -166,9 +166,7 @@ serve(async (req) => {
       )
     }
 
-    const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-    })
+    const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
     const token = authHeader.replace('Bearer ', '')
     const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token)
     if (claimsError || !claimsData?.claims) {
