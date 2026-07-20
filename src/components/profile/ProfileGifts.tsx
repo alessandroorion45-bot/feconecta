@@ -117,7 +117,9 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
             title={item.store_products?.nome}
           >
             {item.store_products?.image_url ? (
-              <img src={item.store_products.image_url} alt="" loading="lazy" className="h-10 w-10 rounded-lg object-cover" />
+              <div className="h-12 w-12 rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/10 flex items-center justify-center overflow-hidden p-1">
+                <img src={item.store_products.image_url} alt="" loading="lazy" className="max-h-full max-w-full object-contain rounded" />
+              </div>
             ) : (
               <span className="text-3xl leading-none">{item.store_products?.icone || "🎁"}</span>
             )}
@@ -138,7 +140,9 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
             <>
               <div className="flex justify-center my-2">
                 {detail.store_products?.image_url ? (
-                  <img src={detail.store_products.image_url} alt="" className="h-24 w-24 rounded-2xl object-cover shadow-md" />
+                  <div className="h-32 w-32 rounded-2xl border border-border/50 bg-gradient-to-br from-muted/50 to-muted/10 flex items-center justify-center overflow-hidden p-1.5 shadow-md">
+                    <img src={detail.store_products.image_url} alt="" className="max-h-full max-w-full object-contain rounded-lg" />
+                  </div>
                 ) : (
                   <span className="text-7xl leading-none">{detail.store_products?.icone || "🎁"}</span>
                 )}

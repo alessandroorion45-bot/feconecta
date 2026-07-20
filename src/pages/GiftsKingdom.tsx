@@ -48,7 +48,11 @@ const THANK_PRESETS = [
 const GiftArt = ({ gift, size = "text-6xl" }: { gift: GiftRecord; size?: string }) => {
   const p = gift.store_products;
   if (p?.image_url) {
-    return <img src={p.image_url} alt={p.nome} loading="lazy" className="h-24 w-24 rounded-2xl object-cover" />;
+    return (
+      <div className="h-24 w-24 rounded-2xl border border-border/50 bg-gradient-to-br from-muted/50 to-muted/10 flex items-center justify-center overflow-hidden p-1.5">
+        <img src={p.image_url} alt={p.nome} loading="lazy" className="max-h-full max-w-full object-contain rounded-lg" />
+      </div>
+    );
   }
   return <span className={size}>{p?.icone || "🎁"}</span>;
 };

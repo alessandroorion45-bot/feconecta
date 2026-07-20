@@ -476,18 +476,21 @@ export default function AdminStore() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Imagem (opcional — sem corte, só bordas arredondadas)</label>
+              <label className="text-sm font-medium mb-2 block">Imagem (opcional)</label>
               <div className="flex items-center gap-4">
-                <div className="h-20 w-20 flex items-center justify-center rounded-2xl border border-dashed overflow-hidden shrink-0">
+                <div className="h-20 w-20 flex items-center justify-center rounded-2xl border border-dashed border-border bg-gradient-to-br from-muted/50 to-muted/10 overflow-hidden shrink-0 p-1">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="h-full w-full object-contain" />
+                    <img src={imagePreview} alt="Preview" className="max-h-full max-w-full object-contain rounded-lg" />
                   ) : (
                     <Upload className="h-6 w-6 text-muted-foreground" />
                   )}
                 </div>
                 <Input type="file" accept="image/png,image/svg+xml,image/webp,image/jpeg" onChange={(e) => handleImageChange(e.target.files?.[0] || null)} />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">PNG, SVG ou WEBP — 1024x1024 recomendado. Sem imagem, usa o emoji abaixo.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PNG, SVG ou WEBP. A imagem aparece completa (sem cortes) em toda a Kingdom Store — exatamente como
+                nesta prévia. Envie a arte já enquadrada como você quer que ela apareça. Sem imagem, usa o emoji abaixo.
+              </p>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
