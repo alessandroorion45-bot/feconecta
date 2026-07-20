@@ -99,7 +99,7 @@ serve(async (req) => {
     const orderBody = {
       type: "online",
       processing_mode: "automatic",
-      external_reference: `store:${purchase.id}`,
+      external_reference: purchase.id,
       total_amount: amountStr,
       payer: { email: formData.payer.email },
       transactions: {
@@ -127,9 +127,12 @@ serve(async (req) => {
     if (!mpResponse.ok) {
       console.error("Erro do Mercado Pago:", mpResponse.status, JSON.stringify(order));
       await serviceClient.from("store_purchases").update({ status: "rejected" }).eq("id", purchase.id);
+      const causeDetail = Array.isArray(order?.cause)
+        ? order.cause.map((c: { description?: string; code?: string }) => c.description || c.code).filter(Boolean).join("; ")
+        : null;
       return new Response(
         JSON.stringify({
-          error: order?.message || order?.errors?.[0]?.message || "Não foi possível processar o pagamento.",
+          error: causeDetail || order?.message || order?.errors?.[0]?.message || "Não foi possível processar o pagamento.",
           purchaseId: purchase.id,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
