@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageCropModal } from "@/components/ImageCropModal";
 import { ShoppingBag, Plus, Pencil, Eye, EyeOff, Archive, Loader2, Search, Target, Copy, Download, FileUp, Upload } from "lucide-react";
 
 interface StoreProductRow {
@@ -107,6 +108,8 @@ export default function AdminStore() {
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [showCrop, setShowCrop] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showNewCategory, setShowNewCategory] = useState(false);
 
@@ -191,11 +194,24 @@ export default function AdminStore() {
     setShowForm(true);
   };
 
-  // Sem corte automático (regra da spec): a imagem sobe como veio,
-  // só ganha bordas arredondadas na exibição.
+  // Selo: recorte manual redondo (mesma ferramenta do /admin/badges) —
+  // o admin ajusta zoom/posição antes de salvar. Demais tipos: sem corte
+  // automático (regra da spec), a imagem sobe como veio.
   const handleImageChange = (file: File | null) => {
+    if (!file) return;
+    if (form.tipo === "selo") {
+      setCropSrc(URL.createObjectURL(file));
+      setShowCrop(true);
+      return;
+    }
     setImageFile(file);
-    if (file) setImagePreview(URL.createObjectURL(file));
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleCropComplete = (blob: Blob) => {
+    const file = new File([blob], "selo.jpg", { type: "image/jpeg" });
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(blob));
   };
 
   const duplicateProduct = async (p: StoreProductRow) => {
@@ -491,9 +507,17 @@ export default function AdminStore() {
             <div>
               <label className="text-sm font-medium mb-2 block">Imagem (opcional)</label>
               <div className="flex items-center gap-4">
-                <div className="h-20 w-20 flex items-center justify-center rounded-2xl border border-dashed border-border bg-gradient-to-br from-muted/50 to-muted/10 overflow-hidden shrink-0 p-1">
+                <div
+                  className={`h-20 w-20 flex items-center justify-center border border-dashed border-border bg-gradient-to-br from-muted/50 to-muted/10 overflow-hidden shrink-0 p-1 ${
+                    form.tipo === "selo" ? "rounded-full" : "rounded-2xl"
+                  }`}
+                >
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="max-h-full max-w-full object-contain rounded-lg" />
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className={form.tipo === "selo" ? "h-full w-full object-cover" : "max-h-full max-w-full object-contain rounded-lg"}
+                    />
                   ) : (
                     <Upload className="h-6 w-6 text-muted-foreground" />
                   )}
@@ -501,8 +525,9 @@ export default function AdminStore() {
                 <Input type="file" accept="image/png,image/svg+xml,image/webp,image/jpeg" onChange={(e) => handleImageChange(e.target.files?.[0] || null)} />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                PNG, SVG ou WEBP. A imagem aparece completa (sem cortes) em toda a Kingdom Store — exatamente como
-                nesta prévia. Envie a arte já enquadrada como você quer que ela apareça. Sem imagem, usa o emoji abaixo.
+                {form.tipo === "selo"
+                  ? "PNG, SVG ou WEBP. Ao enviar, você ajusta zoom e posição pra recortar a medalha redonda manualmente."
+                  : "PNG, SVG ou WEBP. A imagem aparece completa (sem cortes) em toda a Kingdom Store — exatamente como nesta prévia. Envie a arte já enquadrada como você quer que ela apareça. Sem imagem, usa o emoji abaixo."}
               </p>
             </div>
 
@@ -645,6 +670,18 @@ export default function AdminStore() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {cropSrc && (
+        <ImageCropModal
+          open={showCrop}
+          onOpenChange={setShowCrop}
+          imageSrc={cropSrc}
+          aspectRatio={1}
+          round
+          title="Recortar imagem do selo"
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </AdminLayout>
   );
 }
