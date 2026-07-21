@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
+import SeloPremiumModal, { SeloPremiumBadge } from "@/components/kingdom-badges/SeloPremiumModal";
 import { BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
 import AnimatedCosmeticFrame from "@/components/AnimatedCosmeticFrame";
 import { getTheme } from "@/lib/themes";
@@ -50,7 +51,17 @@ interface StoreProduct {
   giftable: boolean;
   limitado: boolean;
   estoque: number | null;
-  badges?: { image_url: string | null; icon: string; rarity: string } | null;
+  badges?: {
+    id: string;
+    image_url: string | null;
+    icon: string;
+    rarity: string;
+    name: string;
+    description: string;
+    category: string;
+    verse_reference: string | null;
+    verse_text: string | null;
+  } | null;
 }
 
 interface StoreCategory {
@@ -160,6 +171,8 @@ const KingdomStore = () => {
   const [categories, setCategories] = useState<StoreCategory[]>([]);
   const [ownedCosmetics, setOwnedCosmetics] = useState<{ cosmetic_key: string; tipo: string; equipped: boolean }[]>([]);
   const [ownedBadgeIds, setOwnedBadgeIds] = useState<Set<string>>(new Set());
+  const [badgeUnlockedAt, setBadgeUnlockedAt] = useState<Record<string, string>>({});
+  const [premiumBadge, setPremiumBadge] = useState<SeloPremiumBadge | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<{ mensal: number; ativa: boolean; progresso: number } | null>(null);
@@ -185,7 +198,7 @@ const KingdomStore = () => {
   const loadAll = useCallback(async () => {
     setLoading(true);
     const [{ data: prods }, { data: cats }, { data: settings }, { data: progresso }] = await Promise.all([
-      supabase.from("store_products").select("*, badges(image_url, icon, rarity)").eq("status", "active").order("ordem", { ascending: true }),
+      supabase.from("store_products").select("*, badges(id, image_url, icon, rarity, name, description, category, verse_reference, verse_text)").eq("status", "active").order("ordem", { ascending: true }),
       supabase.from("store_categories").select("nome, icone").order("ordem", { ascending: true }),
       supabase.from("store_settings").select("meta_mensal, meta_ativa").eq("id", 1).maybeSingle(),
       supabase.rpc("get_store_monthly_progress"),
@@ -197,11 +210,14 @@ const KingdomStore = () => {
     if (user) {
       const [{ data: cosmetics }, { data: userBadges }, { data: userThemes }] = await Promise.all([
         supabase.from("user_cosmetics").select("cosmetic_key, tipo, equipped").eq("user_id", user.id),
-        supabase.from("user_badges").select("badge_id").eq("user_id", user.id),
+        supabase.from("user_badges").select("badge_id, unlocked_at").eq("user_id", user.id),
         supabase.from("user_themes").select("theme_key").eq("user_id", user.id).eq("is_unlocked", true),
       ]);
       setOwnedCosmetics(cosmetics || []);
       setOwnedBadgeIds(new Set((userBadges || []).map((b: { badge_id: string }) => b.badge_id)));
+      setBadgeUnlockedAt(
+        Object.fromEntries((userBadges || []).map((b: { badge_id: string; unlocked_at: string }) => [b.badge_id, b.unlocked_at]))
+      );
       setOwnedThemeKeys(new Set((userThemes || []).map((t: { theme_key: string }) => t.theme_key)));
     }
     setLoading(false);
@@ -349,6 +365,25 @@ const KingdomStore = () => {
     return false;
   };
 
+  const openPremiumSelo = async (product: StoreProduct) => {
+    const b = product.badges;
+    if (!b) return;
+    const { count } = await supabase.from("user_badges").select("id", { count: "exact", head: true }).eq("badge_id", b.id);
+    setPremiumBadge({
+      id: b.id,
+      name: b.name,
+      description: b.description,
+      category: b.category,
+      rarity: b.rarity,
+      imageUrl: product.image_url || b.image_url,
+      emoji: b.icon,
+      verseReference: b.verse_reference,
+      verseText: b.verse_text,
+      usersCount: count ?? 0,
+      unlockedAt: badgeUnlockedAt[b.id] || null,
+    });
+  };
+
   const activateTheme = async (themeKey: string) => {
     const ok = await setTheme(themeKey);
     toast(ok
@@ -442,18 +477,30 @@ const KingdomStore = () => {
                   <CardContent className="p-5 flex flex-col items-center text-center">
                     <div className="mb-4 mt-1">
                       {product.tipo === "selo" ? (
-                        <KingdomBadge
-                          rarity={product.badges?.rarity || "epic"}
-                          imageUrl={product.image_url || product.badges?.image_url}
-                          emoji={product.badges?.icon}
-                          size="lg"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => openPremiumSelo(product)}
+                          className="rounded-full transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                          title="Ver experiência completa do selo"
+                        >
+                          <KingdomBadge
+                            rarity={product.badges?.rarity || "epic"}
+                            imageUrl={product.image_url || product.badges?.image_url}
+                            emoji={product.badges?.icon}
+                            size="lg"
+                          />
+                        </button>
                       ) : (
                         <CosmeticPreview product={product} />
                       )}
                     </div>
 
-                    <h3 className="font-bold">{product.nome}</h3>
+                    <h3
+                      className={product.tipo === "selo" ? "font-bold cursor-pointer hover:text-amber-600 dark:hover:text-amber-400 transition-colors" : "font-bold"}
+                      onClick={product.tipo === "selo" ? () => openPremiumSelo(product) : undefined}
+                    >
+                      {product.nome}
+                    </h3>
                     {product.descricao && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.descricao}</p>
                     )}
@@ -696,6 +743,8 @@ const KingdomStore = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <SeloPremiumModal badge={premiumBadge} onClose={() => setPremiumBadge(null)} />
     </div>
   );
 };

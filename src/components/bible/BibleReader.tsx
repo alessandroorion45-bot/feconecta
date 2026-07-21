@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useBiblia } from '@/hooks/useBiblia'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,13 +17,21 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 
-export function BibleReader() {
+interface BibleReaderProps {
+  /** Deep-link opcional (ex: vindo do selo premium "Ler capítulo completo") — nome do livro como aparece em bible_books.name */
+  initialBook?: string
+  initialChapter?: number
+}
+
+export function BibleReader({ initialBook, initialChapter }: BibleReaderProps = {}) {
   const { toast } = useToast()
   const { user } = useAuth()
   const { awardXP } = useGamification(user?.id)
   const { livros, loading, error } = useBiblia()
   const [livroIndex, setLivroIndex] = useState(0)
   const [capituloIndex, setCapituloIndex] = useState(0)
+  const pendingChapterRef = useRef<number | null>(null)
+  const deepLinkAppliedRef = useRef(false)
   const [completedChapters, setCompletedChapters] = useState<Set<string>>(new Set())
   const [readingMode, setReadingMode] = useState<ReadingModeConfig>({
     fontSize: 18,
@@ -48,9 +56,25 @@ export function BibleReader() {
     }
   }, [livros, livroIndex, capituloIndex, livroAtual, totalCapitulos])
 
-  // Reset chapter when book changes
+  // Deep-link: aplica o livro/capítulo pedido assim que a Bíblia carrega
   useEffect(() => {
-    setCapituloIndex(0)
+    if (deepLinkAppliedRef.current || !initialBook || livros.length === 0) return
+    deepLinkAppliedRef.current = true
+    const idx = livros.findIndex((l) => l.book.toLowerCase() === initialBook.toLowerCase())
+    if (idx >= 0) {
+      pendingChapterRef.current = initialChapter ?? null
+      setLivroIndex(idx)
+    }
+  }, [livros, initialBook, initialChapter])
+
+  // Reset chapter when book changes — mas respeita um capítulo pendente do deep-link acima
+  useEffect(() => {
+    if (pendingChapterRef.current != null) {
+      setCapituloIndex(Math.max(0, pendingChapterRef.current - 1))
+      pendingChapterRef.current = null
+    } else {
+      setCapituloIndex(0)
+    }
   }, [livroIndex])
 
   // Clamp indices when data changes to avoid invalid book/chapter state

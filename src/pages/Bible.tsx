@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { BibleReader } from "@/components/bible/BibleReader";
@@ -6,6 +7,10 @@ import { DailyVerse } from "@/components/bible/DailyVerse";
 import SEO from "@/components/SEO";
 
 const Bible = () => {
+  const [searchParams] = useSearchParams();
+  const livroParam = searchParams.get("livro") || undefined;
+  const capParam = searchParams.get("cap");
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--theme-background)' }}>
       <SEO
@@ -33,7 +38,7 @@ const Bible = () => {
           <DailyVerse />
         </div>
 
-        <BibleReader />
+        <BibleReader initialBook={livroParam} initialChapter={capParam ? Number(capParam) : undefined} />
 
         <div className="mt-8">
           <TrendingVerses />
