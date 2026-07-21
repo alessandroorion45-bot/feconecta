@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import UserAvatar from "@/components/UserAvatar";
 import {
@@ -75,7 +76,12 @@ const ADMIN_NOTICE_STYLES: Record<string, { icon: JSX.Element; accent: string; b
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const NotificationPanel = () => {
+interface NotificationPanelProps {
+  /** Sobrescreve as classes do botão-gatilho (usado pra encaixar num grupo visual) */
+  triggerClassName?: string;
+}
+
+const NotificationPanel = ({ triggerClassName }: NotificationPanelProps = {}) => {
   const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
@@ -207,7 +213,7 @@ const NotificationPanel = () => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 relative">
+        <Button variant="ghost" size="sm" className={cn("gap-2 relative", triggerClassName)}>
           <Bell className="h-4 w-4" />
           <span className="hidden md:inline">Notificações</span>
           {unreadCount > 0 && (

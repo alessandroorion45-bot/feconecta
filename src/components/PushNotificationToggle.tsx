@@ -1,6 +1,7 @@
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -8,7 +9,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const PushNotificationToggle = () => {
+interface PushNotificationToggleProps {
+  /** Sobrescreve as classes do botão (usado pra encaixar num grupo visual) */
+  className?: string;
+}
+
+const PushNotificationToggle = ({ className }: PushNotificationToggleProps = {}) => {
   const { isSupported, isSubscribed, isLoading, subscribe, unsubscribe, permission } = usePushNotifications();
 
   if (!isSupported) {
@@ -42,7 +48,7 @@ const PushNotificationToggle = () => {
             size="sm"
             onClick={handleClick}
             disabled={isLoading || permission === 'denied'}
-            className="gap-2 h-10 px-3"
+            className={cn("gap-2 h-10 px-3", className)}
             aria-label={getTooltipText()}
           >
             {isLoading ? (

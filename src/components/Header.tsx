@@ -207,24 +207,29 @@ const Header = () => {
         )}
 
         {/* Right: Notifications (outside overflow!) + Profile + Menu */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {user ? (
             <>
-              {/* Notifications live HERE - outside the scrollable nav, no clipping */}
-              <div className="hidden md:block">
-                <NotificationPanel />
-              </div>
-              <div className="hidden md:block">
-                <PushNotificationToggle />
+              {/* Notificações + Push + Perfil agrupados no mesmo estilo "pill" da navegação central */}
+              <div className="hidden md:flex items-center gap-0.5 px-1 py-1 rounded-full bg-muted/50 border border-border/50 shadow-inner">
+                <NotificationPanel triggerClassName="h-9 px-3 rounded-full gap-1.5 hover:bg-background/80" />
+                <PushNotificationToggle className="h-9 px-3 rounded-full gap-1.5 hover:bg-background/80" />
+                <Link to="/profile">
+                  <Button variant="ghost" size="sm" className="h-9 px-3 rounded-full gap-1.5 hover:bg-background/80 hover:scale-105 transition-transform" aria-label="Ir para Perfil">
+                    <UserIcon className="h-4 w-4 shrink-0" />
+                    <span className="leading-normal text-sm">Perfil</span>
+                  </Button>
+                </Link>
               </div>
 
-              <Link to="/profile">
-                <Button variant="ghost" size="sm" className="gap-2 px-2 sm:px-3 h-10 hover:scale-105 transition-transform" aria-label="Ir para Perfil">
+              {/* Mobile: Perfil isolado (Notificações/Push ficam no menu lateral) */}
+              <Link to="/profile" className="md:hidden">
+                <Button variant="ghost" size="sm" className="gap-2 px-2 h-10 hover:scale-105 transition-transform" aria-label="Ir para Perfil">
                   <UserIcon className="h-4 w-4 shrink-0" />
-                  <span className="hidden sm:inline leading-normal text-sm">Perfil</span>
                 </Button>
               </Link>
-              <Button onClick={handleLogout} variant="ghost" size="sm" className="gap-2 px-2 sm:px-3 h-10 hover:scale-105 transition-transform" aria-label="Sair da conta">
+
+              <Button onClick={handleLogout} variant="ghost" size="sm" className="gap-2 px-2 sm:px-3 h-10 rounded-full hover:scale-105 hover:bg-destructive/10 hover:text-destructive transition-all" aria-label="Sair da conta">
                 <LogOut className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline leading-normal text-sm">Sair</span>
               </Button>
@@ -232,7 +237,7 @@ const Header = () => {
               {/* Desktop secondary hamburger menu */}
               <Sheet open={isDesktopMenuOpen} onOpenChange={setIsDesktopMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="sm" className="hidden md:inline-flex gap-2 px-2 sm:px-3 h-10 hover:scale-105 transition-transform" aria-label="Abrir menu secundário">
+                  <Button variant="ghost" size="sm" className="hidden md:inline-flex gap-2 px-2 sm:px-3 h-10 rounded-full hover:scale-105 transition-transform" aria-label="Abrir menu secundário">
                     <Menu className="h-5 w-5 shrink-0" />
                   </Button>
                 </SheetTrigger>
