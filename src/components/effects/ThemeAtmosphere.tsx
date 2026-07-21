@@ -178,7 +178,11 @@ export const ThemeAtmosphere = memo(({ themeKey }: ThemeAtmosphereProps) => {
 
       {/* Aurora atravessando bem devagar — banda estreita, não a tela
           inteira: era 200% de largura × 100% de altura, o maior custo de
-          fill-rate da atmosfera (medido, mesma lição das galáxias). */}
+          fill-rate da atmosfera (medido, mesma lição das galáxias).
+          A máscara vertical é essencial aqui: sem ela, a banda de altura
+          fixa corta em linha reta no meio da página (o degradê do
+          background só desvanece na horizontal, não na vertical) — foi
+          reportado como uma "linha" quebrando a imersão ao rolar a tela. */}
       {config.aurora && (
         <div
           className="absolute atmosphere-aurora"
@@ -188,6 +192,8 @@ export const ThemeAtmosphere = memo(({ themeKey }: ThemeAtmosphereProps) => {
             top: '8%',
             height: '38vh',
             background: `linear-gradient(100deg, transparent 20%, ${config.aurora.colors[0]} 40%, ${config.aurora.colors[1]} 55%, transparent 75%)`,
+            maskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)',
             animationDuration: `${config.aurora.duration}s`,
           }}
         />
