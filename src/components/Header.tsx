@@ -176,23 +176,26 @@ const Header = () => {
 
         {/* Center: Desktop nav links ONLY (no notifications here) */}
         {user && (
-          <nav className="hidden md:flex items-center gap-1 flex-nowrap overflow-x-auto scrollbar-hide px-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <nav
+            className="hidden md:flex items-center gap-0.5 flex-nowrap overflow-x-auto scrollbar-hide px-1 py-1 rounded-full bg-muted/50 border border-border/50 shadow-inner"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {[
-              { path: "/bible", icon: <Book className="h-4 w-4 shrink-0" />, label: "Bíblia" },
-              { path: "/testimonies", icon: <Heart className="h-4 w-4 shrink-0" />, label: "Depoimentos" },
-              { path: "/prayers", icon: <Church className="h-4 w-4 shrink-0" />, label: "Orações" },
-              { path: "/feed", icon: <Share2 className="h-4 w-4 shrink-0" />, label: "Feed" },
-              { path: "/chat", icon: <MessageSquare className="h-4 w-4 shrink-0" />, label: "Chat" },
-              { path: "/friends", icon: <Users className="h-4 w-4 shrink-0" />, label: "Amigos" },
+              { path: "/bible", icon: <Book className="h-[18px] w-[18px] shrink-0" />, label: "Bíblia" },
+              { path: "/testimonies", icon: <Heart className="h-[18px] w-[18px] shrink-0" />, label: "Depoimentos" },
+              { path: "/prayers", icon: <Church className="h-[18px] w-[18px] shrink-0" />, label: "Orações" },
+              { path: "/feed", icon: <Share2 className="h-[18px] w-[18px] shrink-0" />, label: "Feed" },
+              { path: "/chat", icon: <MessageSquare className="h-[18px] w-[18px] shrink-0" />, label: "Chat" },
+              { path: "/friends", icon: <Users className="h-[18px] w-[18px] shrink-0" />, label: "Amigos" },
             ].map(item => (
               <Link key={item.path} to={item.path} className="shrink-0" title={item.label}>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-10 w-10 transition-all duration-300 ease-out ${
+                  className={`h-9 w-9 rounded-full transition-all duration-300 ease-out ${
                     currentPath === item.path
-                      ? "bg-primary/10 text-primary shadow-sm scale-105"
-                      : "hover:scale-110 hover:shadow-md hover:bg-muted/60"
+                      ? "bg-background text-primary shadow-sm scale-105"
+                      : "text-muted-foreground hover:scale-110 hover:text-foreground hover:bg-background/80"
                   }`}
                   aria-label={`Ir para ${item.label}`}
                 >
