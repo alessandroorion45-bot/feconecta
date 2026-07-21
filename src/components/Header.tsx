@@ -185,19 +185,18 @@ const Header = () => {
               { path: "/chat", icon: <MessageSquare className="h-4 w-4 shrink-0" />, label: "Chat" },
               { path: "/friends", icon: <Users className="h-4 w-4 shrink-0" />, label: "Amigos" },
             ].map(item => (
-              <Link key={item.path} to={item.path} className="shrink-0">
+              <Link key={item.path} to={item.path} className="shrink-0" title={item.label}>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className={`inline-flex items-center gap-2 px-3 h-10 transition-all duration-300 ease-out ${
+                  size="icon"
+                  className={`h-10 w-10 transition-all duration-300 ease-out ${
                     currentPath === item.path
-                      ? "bg-primary/10 text-primary font-semibold shadow-sm scale-105"
+                      ? "bg-primary/10 text-primary shadow-sm scale-105"
                       : "hover:scale-110 hover:shadow-md hover:bg-muted/60"
                   }`}
                   aria-label={`Ir para ${item.label}`}
                 >
                   {item.icon}
-                  <span className="leading-normal text-sm whitespace-nowrap">{item.label}</span>
                 </Button>
               </Link>
             ))}
@@ -241,6 +240,8 @@ const Header = () => {
                   </SheetHeader>
 
                   <nav className="flex flex-col gap-0.5">
+                    <MenuItem path="/chat" icon={<MessageSquare className="h-5 w-5" />} label="Chat" currentPath={currentPath} onClick={handleNavClick} iconColor="text-blue-500" />
+                    <MenuItem path="/friends" icon={<Users className="h-5 w-5" />} label="Amigos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-blue-500" />
                     <MenuItem path="/videos" icon={<Video className="h-5 w-5" />} label="Vídeos" currentPath={currentPath} onClick={handleNavClick} iconColor="text-red-500" />
                     <MenuItem path="/shared-reading" icon={<BookOpen className="h-5 w-5" />} label="Leitura em Grupo" currentPath={currentPath} onClick={handleNavClick} iconColor="text-violet-500" />
                     <MenuItem path="/church-community" icon={<Church className="h-5 w-5" />} label="Comunidade da Igreja" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />

@@ -23,13 +23,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ReportUserModal } from '@/components/ReportUserModal';
+import { ChatStatusValue, chatStatusConfig } from '@/lib/chatStatus';
 
 interface ChatHeaderProps {
   friendId: string;
   currentUserId: string;
   name: string;
   avatarUrl?: string | null;
+  /** @deprecated use `status` */
   isOnline?: boolean;
+  status?: ChatStatusValue;
   lastSeen?: string;
   isMuted?: boolean;
   onBack?: () => void;
@@ -45,6 +48,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   name,
   avatarUrl,
   isOnline = false,
+  status,
   lastSeen,
   isMuted = false,
   onBack,
@@ -87,11 +91,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         >
           <div className="relative shrink-0">
             <UserAvatar src={avatarUrl} fallback={name[0]} size="md" />
-            {isOnline && (
+            {(status ? status !== 'offline' : isOnline) && (
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-card"
+                className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card ${status ? chatStatusConfig(status).dotClass : 'bg-green-500'}`}
               />
             )}
           </div>
@@ -99,7 +103,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           <div className="flex flex-col min-w-0">
             <span className="font-semibold text-foreground truncate">{name}</span>
             <span className="text-xs text-muted-foreground">
-              {isOnline ? (
+              {status ? (
+                <span className={chatStatusConfig(status).textClass}>
+                  {chatStatusConfig(status).emoji} {chatStatusConfig(status).label}
+                </span>
+              ) : isOnline ? (
                 <span className="text-green-500">Online</span>
               ) : lastSeen ? (
                 `Visto por último: ${lastSeen}`

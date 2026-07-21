@@ -16,6 +16,8 @@ import { FriendRequestAnimation } from "@/components/FriendRequestAnimation";
 import { motion, AnimatePresence } from "framer-motion";
 import { LoadingFallback } from "@/components/LoadingFallback";
 import { ErrorState } from "@/components/ErrorState";
+import { usePresence } from "@/contexts/PresenceContext";
+import { chatStatusConfig } from "@/lib/chatStatus";
 
 const MAX_FRIENDS = 10000;
 const QUERY_TIMEOUT_MS = 20000;
@@ -78,7 +80,7 @@ const Friends = () => {
   const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const { getStatus, subscribeToUsers } = usePresence();
   const [activeTab, setActiveTab] = useState("friends");
   const [followersLoaded, setFollowersLoaded] = useState(false);
   const [followingLoaded, setFollowingLoaded] = useState(false);
@@ -86,35 +88,13 @@ const Friends = () => {
 
   const currentUserId = user?.id || "";
 
-  // Presence subscription
+  // Status de presença: heartbeat persistido (PresenceContext), não um
+  // canal Realtime próprio — evita a divergência de "aparece offline mas
+  // as mensagens chegam" causada por dois canais de presença concorrentes.
   useEffect(() => {
-    if (!user) return;
-
-    // ✅ Flag para controlar se subscription completou
-    let isSubscribed = false;
-
-    const presenceChannel = supabase.channel('online-presence', {
-      config: { presence: { key: user.id } }
-    });
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        setOnlineUsers(new Set(Object.keys(presenceChannel.presenceState())));
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          isSubscribed = true;
-          await presenceChannel.track({ user_id: user.id, online_at: new Date().toISOString() });
-        }
-      });
-
-    // ✅ Cleanup só remove canal se subscription completou
-    return () => {
-      if (isSubscribed) {
-        supabase.removeChannel(presenceChannel);
-      }
-    };
-  }, [user]);
+    const ids = [...friends, ...usersFromCountry, ...usersFromOtherCountries].map((u) => u.id);
+    if (ids.length > 0) subscribeToUsers(ids);
+  }, [friends, usersFromCountry, usersFromOtherCountries, subscribeToUsers]);
 
   // Lazy load followers/following when tab changes
   useEffect(() => {
@@ -515,15 +495,17 @@ const Friends = () => {
                             <div className="relative">
                               <UserAvatar src={friend.avatar_url} fallback={friend.full_name} size="sm"
                                 className="ring-2 ring-transparent group-hover:ring-primary/30 transition-all" />
-                              {onlineUsers.has(friend.id) && (
-                                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full" />
+                              {getStatus(friend.id) !== 'offline' && (
+                                <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-background rounded-full ${chatStatusConfig(getStatus(friend.id)).dotClass}`} />
                               )}
                             </div>
                             <div className="flex-1">
                               <p className="font-semibold group-hover:text-primary transition-colors">
                                 {friend.full_name}
-                                {onlineUsers.has(friend.id) && (
-                                  <span className="ml-2 text-xs font-normal text-green-500">online</span>
+                                {getStatus(friend.id) !== 'offline' && (
+                                  <span className={`ml-2 text-xs font-normal ${chatStatusConfig(getStatus(friend.id)).textClass}`}>
+                                    {chatStatusConfig(getStatus(friend.id)).emoji} {chatStatusConfig(getStatus(friend.id)).label}
+                                  </span>
                                 )}
                               </p>
                             </div>
@@ -606,7 +588,7 @@ const Friends = () => {
                           <Flag className="h-4 w-4" /> {t('friends.fromYourCountry')} ({filteredUsersFromCountry.length})
                         </h3>
                         {filteredUsersFromCountry.map((u) => (
-                          <UserCard key={u.id} user={u} navigate={navigate} sendFriendRequest={sendFriendRequest} language={language} friends={friends} MAX_FRIENDS={MAX_FRIENDS} isOnline={onlineUsers.has(u.id)} />
+                          <UserCard key={u.id} user={u} navigate={navigate} sendFriendRequest={sendFriendRequest} language={language} friends={friends} MAX_FRIENDS={MAX_FRIENDS} isOnline={getStatus(u.id) !== 'offline'} />
                         ))}
                       </div>
                     )}
@@ -624,7 +606,7 @@ const Friends = () => {
                           )}
                         </div>
                         {(showOtherCountries || !currentUserCountry) && filteredUsersFromOther.map((u) => (
-                          <UserCard key={u.id} user={u} navigate={navigate} sendFriendRequest={sendFriendRequest} language={language} friends={friends} MAX_FRIENDS={MAX_FRIENDS} showCountry getCountryName={getCountryName} isOnline={onlineUsers.has(u.id)} />
+                          <UserCard key={u.id} user={u} navigate={navigate} sendFriendRequest={sendFriendRequest} language={language} friends={friends} MAX_FRIENDS={MAX_FRIENDS} showCountry getCountryName={getCountryName} isOnline={getStatus(u.id) !== 'offline'} />
                         ))}
                       </div>
                     )}

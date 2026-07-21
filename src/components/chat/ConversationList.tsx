@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { ChatStatusValue, chatStatusConfig } from '@/lib/chatStatus';
 
 interface Conversation {
   id: string;
@@ -23,7 +24,9 @@ interface Conversation {
   lastMessage?: string;
   lastMessageTime?: string;
   unreadCount: number;
+  /** @deprecated use `status` */
   isOnline?: boolean;
+  status?: ChatStatusValue;
   isPinned?: boolean;
   isMuted?: boolean;
 }
@@ -108,8 +111,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 fallback={conversation.friendName[0]}
                 size="md"
               />
-              {conversation.isOnline && (
-                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+              {(conversation.status ? conversation.status !== 'offline' : conversation.isOnline) && (
+                <span
+                  className={cn(
+                    'absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background',
+                    conversation.status ? chatStatusConfig(conversation.status).dotClass : 'bg-green-500'
+                  )}
+                  title={conversation.status ? chatStatusConfig(conversation.status).label : undefined}
+                />
               )}
             </div>
 

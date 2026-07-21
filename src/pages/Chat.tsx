@@ -15,6 +15,8 @@ import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useChatWebSocket } from '@/hooks/useChatWebSocket';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePresence } from '@/contexts/PresenceContext';
+import { ChatStatusPicker } from '@/components/chat/ChatStatusPicker';
+import { ChatStatusValue } from '@/lib/chatStatus';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Search, Sparkles, Pin, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -44,7 +46,7 @@ interface Conversation {
   lastMessage?: string;
   lastMessageTime?: string;
   unreadCount: number;
-  isOnline?: boolean;
+  status?: ChatStatusValue;
   isPinned?: boolean;
   isMuted?: boolean;
 }
@@ -83,8 +85,7 @@ const Chat = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [friendIsTyping, setFriendIsTyping] = useState(false);
-  const { connectedUserIds } = usePresence();
-  const onlineUsers = useMemo(() => new Set(connectedUserIds), [connectedUserIds]);
+  const { connectedUserIds, getStatus, subscribeToUsers } = usePresence();
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -309,7 +310,7 @@ const Chat = () => {
           lastMessage: latest?.content,
           lastMessageTime: latest?.created_at,
           unreadCount: unreadByFriend.get(profile.id) || 0,
-          isOnline: onlineUsers.has(profile.id),
+          status: getStatus(profile.id),
           isPinned: settings?.is_pinned || false,
           isMuted: settings?.is_muted || false,
         };
@@ -324,19 +325,20 @@ const Chat = () => {
 
       setConversations(conversationData);
       setConversationsLoaded(true);
+      subscribeToUsers(friendIds);
     } catch (error) {
       console.error('Error loading conversations:', error);
       setConversationsLoaded(true);
     }
-  }, [user, loadConvSettings]);
+  }, [user, loadConvSettings, getStatus, subscribeToUsers]);
 
-  // Re-map online status when onlineUsers changes
+  // Re-mapeia o status quando o cache de presença atualiza (heartbeat/poll)
   useEffect(() => {
     setConversations(prev => prev.map(c => ({
       ...c,
-      isOnline: onlineUsers.has(c.friendId)
+      status: getStatus(c.friendId)
     })));
-  }, [onlineUsers]);
+  }, [connectedUserIds, getStatus]);
 
   const loadReactionsFor = useCallback(async (messageIds: string[]) => {
     if (!user || messageIds.length === 0) return;
@@ -632,6 +634,10 @@ const Chat = () => {
                   </h1>
                 </div>
 
+                <div className="mb-3">
+                  <ChatStatusPicker />
+                </div>
+
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -686,7 +692,7 @@ const Chat = () => {
                       currentUserId={user?.id || ''}
                       name={selectedConversation.friendName}
                       avatarUrl={selectedConversation.friendAvatar}
-                      isOnline={onlineUsers.has(selectedConversation.friendId)}
+                      status={getStatus(selectedConversation.friendId)}
                       isMuted={convSettings[selectedConversation.friendId]?.is_muted}
                       onBack={() => setSelectedConversation(null)}
                       onSettingsClick={() => setSettingsOpen(true)}

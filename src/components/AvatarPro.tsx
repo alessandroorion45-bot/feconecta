@@ -1,6 +1,7 @@
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { cn } from "@/lib/utils";
 import { usePresence } from "@/contexts/PresenceContext";
+import { chatStatusConfig } from "@/lib/chatStatus";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AvatarMiniProfile } from "@/components/AvatarMiniProfile";
 
@@ -83,11 +84,16 @@ export const AvatarPro = memo(({
 }: AvatarProProps) => {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  const { getStatus } = usePresence();
+  const { getStatus, subscribeToUsers } = usePresence();
 
   const { w, h } = SIZE_DIM[size];
   const showOnline = showOnlineStatus ?? Boolean(userId);
   const status = userId ? getStatus(userId) : "offline";
+  const statusCfg = chatStatusConfig(status);
+
+  useEffect(() => {
+    if (userId && showOnline) subscribeToUsers([userId]);
+  }, [userId, showOnline, subscribeToUsers]);
   const isClickable = clickable ?? Boolean(userId);
   const showHalo = halo ?? (size === "lg" || size === "xl" || size === "xxl");
   const colorClass = FALLBACK_PALETTE[hashString(name || userId || "?") % FALLBACK_PALETTE.length];
@@ -189,12 +195,11 @@ export const AvatarPro = memo(({
           className={cn(
             "absolute bottom-1 right-1 z-20 rounded-full ring-2 ring-background transition-transform duration-300",
             isClickable && "group-hover/avatar:scale-110",
-            status === "online" && "bg-emerald-500",
-            status === "away" && "bg-amber-400",
-            status === "offline" && "bg-muted-foreground/40"
+            statusCfg.dotClass
           )}
           style={{ width: dotSize, height: dotSize }}
-          aria-label={status}
+          aria-label={statusCfg.label}
+          title={statusCfg.label}
         />
       )}
     </div>
