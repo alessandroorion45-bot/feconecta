@@ -159,14 +159,32 @@ const Header = () => {
           )}
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
-            <div className="relative">
+            <div className="relative kingdom-logo-wrap">
+              {/* Halo dourado pulsante — só no Dark Royal (Kingdom Cosmos) */}
+              <div className="kingdom-logo-halo" aria-hidden />
               <img
                 src="/alianca-logo.png"
                 alt="Aliança Kingdom"
-                className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 object-contain drop-shadow-2xl transform transition-all duration-500 group-hover:scale-110 filter brightness-110 mix-blend-multiply"
+                className="relative h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 object-contain drop-shadow-2xl transform transition-all duration-500 group-hover:scale-110 filter brightness-110 mix-blend-multiply"
               />
               {/* Glow effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-amber-500/20 to-orange-500/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 -z-10" />
+              {/* Reflexo de ouro atravessando a cada 15s + partículas — Dark Royal */}
+              <div className="kingdom-logo-sweep" aria-hidden />
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="kingdom-logo-spark"
+                  aria-hidden
+                  style={{
+                    top: `${30 + i * 20}%`,
+                    left: `${20 + i * 25}%`,
+                    animationDelay: `${i * 0.9}s`,
+                    ['--kx' as string]: `${8 + i * 6}px`,
+                    ['--ky' as string]: `${-14 - i * 4}px`,
+                  }}
+                />
+              ))}
             </div>
             <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent whitespace-nowrap leading-normal drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300 tracking-tight">
               Aliança<span className="hidden sm:inline"> Kingdom</span>

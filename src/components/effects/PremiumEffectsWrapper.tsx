@@ -10,6 +10,8 @@ import { ReactNode } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemeParticles } from './ThemeParticles';
 import { ThemeAtmosphere } from './ThemeAtmosphere';
+import { KingdomSkyEngine } from './KingdomSkyEngine';
+import { KingdomGalaxies } from './KingdomGalaxies';
 import { MouseGlow } from './MouseGlow';
 
 interface PremiumEffectsWrapperProps {
@@ -23,16 +25,26 @@ export const PremiumEffectsWrapper = ({ children }: PremiumEffectsWrapperProps) 
 
   const isPremium = currentTheme?.tier === 'gold' || currentTheme?.tier === 'platinum';
   const isPlatinum = currentTheme?.tier === 'platinum';
+  // "Kingdom Cosmos Royal": o Dark Royal ganha seu próprio motor de
+  // céu (estrelas/cadentes/galáxias) em vez das partículas genéricas.
+  const isKingdomCosmos = currentTheme?.key === 'dark-royal';
 
   return (
     <>
       {children}
 
-      {/* Atmosfera viva (todos os temas com identidade própria) */}
-      <ThemeAtmosphere themeKey={currentTheme?.key || 'default'} />
+      {isKingdomCosmos ? (
+        <>
+          <KingdomGalaxies />
+          <KingdomSkyEngine />
+        </>
+      ) : (
+        // Atmosfera viva genérica (demais temas com identidade própria)
+        <ThemeAtmosphere themeKey={currentTheme?.key || 'default'} />
+      )}
 
-      {/* Partículas (GOLD e PLATINUM) */}
-      {isPremium && <ThemeParticles />}
+      {/* Partículas (GOLD e PLATINUM) — Dark Royal já tem o Sky Engine */}
+      {isPremium && !isKingdomCosmos && <ThemeParticles />}
 
       {/* Mouse Glow (apenas PLATINUM) */}
       {isPlatinum && <MouseGlow />}

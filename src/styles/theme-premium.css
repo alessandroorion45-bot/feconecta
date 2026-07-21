@@ -139,15 +139,129 @@ html[data-theme-key="diamante-promessa"] { --theme-xp-gradient: linear-gradient(
 html[data-theme-key="dark-royal"] { --theme-xp-gradient: linear-gradient(90deg, #a855f7, #c084fc, #fbbf24); }
 html[data-theme-key="guerreiro-fe"] { --theme-xp-gradient: linear-gradient(90deg, #dc2626, #fbbf24, #dc2626); }
 
+/* =====================================================
+   KINGDOM COSMOS ROYAL — reforço exclusivo do tema Dark Royal
+   =====================================================
+   O Kingdom Sky Engine (canvas) + KingdomGalaxies (CSS) cuidam
+   do céu; aqui só o polimento do resto da interface: cards,
+   scrollbar e a logo viva. Tudo escopado a data-theme-key, os
+   outros 13 temas ficam exatamente como estavam.
+   ===================================================== */
+
+@keyframes kingdom-galaxy-drift {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-52%, -48%) scale(1.06); }
+}
+.kingdom-galaxy-drift { animation: kingdom-galaxy-drift linear infinite; will-change: transform; }
+
+@keyframes kingdom-nebula-drift {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-48%, -53%) scale(1.15); opacity: 1; }
+}
+.kingdom-nebula-drift { animation: kingdom-nebula-drift ease-in-out infinite; will-change: transform, opacity; }
+
+/* Cards ganham um vidro mais profundo e glow roxo/dourado no hover */
+html[data-theme-key="dark-royal"] :where(.bg-card, [class*="bg-card/"]) {
+  backdrop-filter: blur(14px);
+  border-color: rgba(168, 85, 247, 0.18);
+}
+html[data-theme-key="dark-royal"] :where(.bg-card, [class*="bg-card/"]):hover {
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(251, 191, 36, 0.12),
+    0 0 26px rgba(168, 85, 247, 0.22);
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+/* Scrollbar cristal roxo/dourado */
+html[data-theme-key="dark-royal"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #a855f7, #fbbf24);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+/* ===== Logo viva — halo, reflexo de ouro, flutuação e partículas ===== */
+@keyframes kingdom-logo-float {
+  0%, 100% { transform: translateY(-2px); }
+  50% { transform: translateY(2px); }
+}
+@keyframes kingdom-logo-halo {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.12); }
+}
+@keyframes kingdom-logo-sweep {
+  0%, 92%, 100% { transform: translateX(-140%) skewX(-20deg); opacity: 0; }
+  94% { opacity: 0.9; }
+  100% { transform: translateX(140%) skewX(-20deg); opacity: 0; }
+}
+@keyframes kingdom-logo-spark {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(var(--kx, 12px), var(--ky, -18px)) scale(1); opacity: 0; }
+}
+
+html[data-theme-key="dark-royal"] .kingdom-logo-wrap {
+  position: relative;
+  animation: kingdom-logo-float 6s ease-in-out infinite;
+}
+html[data-theme-key="dark-royal"] .kingdom-logo-halo {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.35) 0%, rgba(168, 85, 247, 0.12) 55%, transparent 75%);
+  filter: blur(6px);
+  animation: kingdom-logo-halo 4.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+html[data-theme-key="dark-royal"] .kingdom-logo-sweep {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+html[data-theme-key="dark-royal"] .kingdom-logo-sweep::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 0;
+  width: 30%;
+  height: 140%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.85), rgba(251, 191, 36, 0.6), transparent);
+  animation: kingdom-logo-sweep 15s ease-in-out infinite;
+}
+html[data-theme-key="dark-royal"] .kingdom-logo-spark {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #fbbf24;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.9);
+  animation: kingdom-logo-spark 2.6s ease-out infinite;
+  pointer-events: none;
+}
+
 /* ===== Acessibilidade: movimento reduzido desliga tudo ===== */
 @media (prefers-reduced-motion: reduce) {
   .atmosphere-breathe,
   .atmosphere-aurora,
   .atmosphere-mist,
-  .atmosphere-bloom {
+  .atmosphere-bloom,
+  .kingdom-galaxy-drift,
+  .kingdom-nebula-drift {
     animation: none !important;
   }
   html[data-theme-luxe="true"] .theme-button-primary:active::after {
+    animation: none !important;
+  }
+  html[data-theme-key="dark-royal"] .kingdom-logo-wrap,
+  html[data-theme-key="dark-royal"] .kingdom-logo-halo,
+  html[data-theme-key="dark-royal"] .kingdom-logo-sweep::after,
+  html[data-theme-key="dark-royal"] .kingdom-logo-spark {
     animation: none !important;
   }
 }
