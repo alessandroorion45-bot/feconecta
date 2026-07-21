@@ -23,11 +23,14 @@ export const PremiumEffectsWrapper = ({ children }: PremiumEffectsWrapperProps) 
   // (antes fazia themes[objeto], que dava undefined e desligava tudo)
   const { currentTheme } = useTheme();
 
-  const isPremium = currentTheme?.tier === 'gold' || currentTheme?.tier === 'platinum';
   const isPlatinum = currentTheme?.tier === 'platinum';
   // "Kingdom Cosmos Royal": o Dark Royal ganha seu próprio motor de
   // céu (estrelas/cadentes/galáxias) em vez das partículas genéricas.
   const isKingdomCosmos = currentTheme?.key === 'dark-royal';
+  // Cada tema pago tem sua própria "partícula viva" (assinatura de
+  // movimento em PARTICLE_CONFIGS) — só o tema Padrão (gratuito) fica
+  // sem partículas, pra manter uma diferença clara entre grátis e pago.
+  const hasLivingParticles = currentTheme?.key !== 'default' && !isKingdomCosmos;
 
   return (
     <>
@@ -43,8 +46,8 @@ export const PremiumEffectsWrapper = ({ children }: PremiumEffectsWrapperProps) 
         <ThemeAtmosphere themeKey={currentTheme?.key || 'default'} />
       )}
 
-      {/* Partículas (GOLD e PLATINUM) — Dark Royal já tem o Sky Engine */}
-      {isPremium && !isKingdomCosmos && <ThemeParticles />}
+      {/* Partículas vivas — todo tema pago, cada um com sua assinatura própria */}
+      {hasLivingParticles && <ThemeParticles />}
 
       {/* Mouse Glow (apenas PLATINUM) */}
       {isPlatinum && <MouseGlow />}

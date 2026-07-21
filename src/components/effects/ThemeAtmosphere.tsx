@@ -35,87 +35,91 @@ const ATMOSPHERES: Record<string, AtmosphereConfig | null> = {
   'default': null,
   'classico': null,
 
+  // Tamanhos de orbe recalibrados por medição real de FPS (mesmo achado do
+  // Kingdom Cosmos Royal): o custo é dominado pela ÁREA total pintada de
+  // gradiente semi-transparente animado, não pela quantidade de camadas —
+  // por isso os orbes/aurora ficam bem menores que a primeira versão.
   'reino-celestial': {
     opacity: 0.5,
     orbs: [
-      { x: 15, y: 12, size: 42, color: 'rgba(255, 215, 0, 0.16)', breathe: 9 },
-      { x: 82, y: 70, size: 36, color: 'rgba(255, 249, 230, 0.35)', breathe: 12 },
+      { x: 15, y: 12, size: 24, color: 'rgba(255, 215, 0, 0.20)', breathe: 9 },
+      { x: 82, y: 70, size: 20, color: 'rgba(255, 249, 230, 0.4)', breathe: 12 },
     ],
     aurora: { colors: ['rgba(255,215,0,0.10)', 'rgba(248,247,255,0.14)'], duration: 26 },
   },
   'nova-jerusalem': {
     opacity: 0.5,
     orbs: [
-      { x: 20, y: 18, size: 40, color: 'rgba(255, 215, 0, 0.18)', breathe: 10 },
-      { x: 78, y: 62, size: 34, color: 'rgba(196, 181, 253, 0.20)', breathe: 13 },
+      { x: 20, y: 18, size: 22, color: 'rgba(255, 215, 0, 0.22)', breathe: 10 },
+      { x: 78, y: 62, size: 19, color: 'rgba(196, 181, 253, 0.24)', breathe: 13 },
     ],
   },
   'trono-gloria': {
     opacity: 0.55,
     orbs: [
-      { x: 50, y: 8, size: 48, color: 'rgba(124, 58, 237, 0.16)', breathe: 11 },
-      { x: 84, y: 74, size: 30, color: 'rgba(251, 191, 36, 0.16)', breathe: 9 },
+      { x: 50, y: 8, size: 26, color: 'rgba(124, 58, 237, 0.20)', breathe: 11 },
+      { x: 84, y: 74, size: 17, color: 'rgba(251, 191, 36, 0.20)', breathe: 9 },
     ],
     aurora: { colors: ['rgba(124,58,237,0.10)', 'rgba(251,191,36,0.08)'], duration: 30 },
   },
   'arca-alianca': {
     opacity: 0.45,
     orbs: [
-      { x: 30, y: 20, size: 38, color: 'rgba(217, 119, 6, 0.14)', breathe: 12 },
-      { x: 74, y: 68, size: 32, color: 'rgba(146, 64, 14, 0.12)', breathe: 15 },
+      { x: 30, y: 20, size: 21, color: 'rgba(217, 119, 6, 0.18)', breathe: 12 },
+      { x: 74, y: 68, size: 18, color: 'rgba(146, 64, 14, 0.16)', breathe: 15 },
     ],
   },
   'guerreiro-fe': {
     opacity: 0.5,
     orbs: [
-      { x: 18, y: 76, size: 36, color: 'rgba(220, 38, 38, 0.14)', breathe: 8 },
-      { x: 80, y: 16, size: 30, color: 'rgba(251, 191, 36, 0.12)', breathe: 10 },
+      { x: 18, y: 76, size: 20, color: 'rgba(220, 38, 38, 0.18)', breathe: 8 },
+      { x: 80, y: 16, size: 17, color: 'rgba(251, 191, 36, 0.16)', breathe: 10 },
     ],
   },
   'monte-siao': {
     opacity: 0.5,
     orbs: [
-      { x: 25, y: 10, size: 46, color: 'rgba(96, 165, 250, 0.16)', breathe: 12 },
-      { x: 76, y: 66, size: 36, color: 'rgba(219, 234, 254, 0.35)', breathe: 15 },
+      { x: 25, y: 10, size: 25, color: 'rgba(96, 165, 250, 0.20)', breathe: 12 },
+      { x: 76, y: 66, size: 20, color: 'rgba(219, 234, 254, 0.4)', breathe: 15 },
     ],
     mist: { color: 'rgba(219, 234, 254, 0.35)' },
   },
   'jardim-eden': {
     opacity: 0.5,
     orbs: [
-      { x: 16, y: 20, size: 40, color: 'rgba(16, 185, 129, 0.14)', breathe: 11 },
-      { x: 82, y: 64, size: 34, color: 'rgba(110, 231, 183, 0.18)', breathe: 14 },
+      { x: 16, y: 20, size: 22, color: 'rgba(16, 185, 129, 0.18)', breathe: 11 },
+      { x: 82, y: 64, size: 19, color: 'rgba(110, 231, 183, 0.22)', breathe: 14 },
     ],
     mist: { color: 'rgba(209, 250, 229, 0.4)' },
   },
   'diamante-promessa': {
     opacity: 0.55,
     orbs: [
-      { x: 22, y: 14, size: 44, color: 'rgba(56, 189, 248, 0.16)', breathe: 10 },
-      { x: 78, y: 70, size: 34, color: 'rgba(224, 242, 254, 0.4)', breathe: 12 },
+      { x: 22, y: 14, size: 24, color: 'rgba(56, 189, 248, 0.20)', breathe: 10 },
+      { x: 78, y: 70, size: 19, color: 'rgba(224, 242, 254, 0.45)', breathe: 12 },
     ],
     aurora: { colors: ['rgba(14,165,233,0.10)', 'rgba(125,211,252,0.12)'], duration: 24 },
   },
   'dark-royal': {
     opacity: 0.65,
     orbs: [
-      { x: 20, y: 15, size: 44, color: 'rgba(168, 85, 247, 0.20)', breathe: 9 },
-      { x: 80, y: 70, size: 36, color: 'rgba(251, 191, 36, 0.12)', breathe: 12 },
+      { x: 20, y: 15, size: 24, color: 'rgba(168, 85, 247, 0.24)', breathe: 9 },
+      { x: 80, y: 70, size: 20, color: 'rgba(251, 191, 36, 0.16)', breathe: 12 },
     ],
     aurora: { colors: ['rgba(168,85,247,0.14)', 'rgba(251,191,36,0.08)'], duration: 22 },
   },
   'sabedoria': {
     opacity: 0.4,
     orbs: [
-      { x: 24, y: 16, size: 40, color: 'rgba(30, 64, 175, 0.10)', breathe: 14 },
-      { x: 78, y: 68, size: 32, color: 'rgba(59, 130, 246, 0.10)', breathe: 16 },
+      { x: 24, y: 16, size: 22, color: 'rgba(30, 64, 175, 0.14)', breathe: 14 },
+      { x: 78, y: 68, size: 18, color: 'rgba(59, 130, 246, 0.14)', breathe: 16 },
     ],
   },
   'noite-oracao': {
     opacity: 0.65,
     orbs: [
-      { x: 70, y: 12, size: 30, color: 'rgba(245, 243, 255, 0.14)', breathe: 13 },
-      { x: 20, y: 60, size: 44, color: 'rgba(124, 58, 237, 0.18)', breathe: 10 },
+      { x: 70, y: 12, size: 17, color: 'rgba(245, 243, 255, 0.18)', breathe: 13 },
+      { x: 20, y: 60, size: 24, color: 'rgba(124, 58, 237, 0.22)', breathe: 10 },
     ],
     aurora: { colors: ['rgba(76,29,149,0.16)', 'rgba(167,139,250,0.10)'], duration: 28 },
     mist: { color: 'rgba(76, 29, 149, 0.22)' },
@@ -123,8 +127,8 @@ const ATMOSPHERES: Record<string, AtmosphereConfig | null> = {
   'pentecostes': {
     opacity: 0.5,
     orbs: [
-      { x: 50, y: 82, size: 42, color: 'rgba(249, 115, 22, 0.14)', breathe: 8 },
-      { x: 18, y: 20, size: 30, color: 'rgba(251, 191, 36, 0.12)', breathe: 10 },
+      { x: 50, y: 82, size: 23, color: 'rgba(249, 115, 22, 0.18)', breathe: 8 },
+      { x: 18, y: 20, size: 17, color: 'rgba(251, 191, 36, 0.16)', breathe: 10 },
     ],
     aurora: { colors: ['rgba(220,38,38,0.08)', 'rgba(251,191,36,0.10)'], duration: 20 },
   },
@@ -172,11 +176,17 @@ export const ThemeAtmosphere = memo(({ themeKey }: ThemeAtmosphereProps) => {
         />
       ))}
 
-      {/* Aurora atravessando bem devagar */}
+      {/* Aurora atravessando bem devagar — banda estreita, não a tela
+          inteira: era 200% de largura × 100% de altura, o maior custo de
+          fill-rate da atmosfera (medido, mesma lição das galáxias). */}
       {config.aurora && (
         <div
-          className="absolute -inset-x-1/2 inset-y-0 atmosphere-aurora"
+          className="absolute atmosphere-aurora"
           style={{
+            left: '-25%',
+            width: '150%',
+            top: '8%',
+            height: '38vh',
             background: `linear-gradient(100deg, transparent 20%, ${config.aurora.colors[0]} 40%, ${config.aurora.colors[1]} 55%, transparent 75%)`,
             animationDuration: `${config.aurora.duration}s`,
           }}
