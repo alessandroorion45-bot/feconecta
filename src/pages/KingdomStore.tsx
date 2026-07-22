@@ -19,7 +19,7 @@ import { getTheme } from "@/lib/themes";
 import { useTheme } from "@/contexts/ThemeContext";
 import { playUnlockChime } from "@/lib/badgeSound";
 import {
-  ShoppingBag, Heart, Gift, Search, ArrowLeft, Clock, Copy, Check, PartyPopper, Sparkles, Loader2, CheckCircle2,
+  ShoppingBag, Heart, Gift, Search, ArrowLeft, Clock, Copy, Check, PartyPopper, Sparkles, Loader2, CheckCircle2, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +81,13 @@ const POLL_INTERVAL_MS = 3000;
 const POLL_MAX_ATTEMPTS = 100;
 
 const formatBRL = (v: number) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
+
+/** "Ana", "Ana e João" ou "Ana, João e Maria" */
+const formatRecipientNames = (list: { full_name: string }[]) => {
+  const names = list.map((p) => p.full_name);
+  if (names.length <= 1) return names[0] || "";
+  return `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}`;
+};
 
 /** Pré-visualização de um cosmético (moldura/fundo/efeito) sem asset externo */
 const CosmeticPreview = ({ product }: { product: StoreProduct }) => {
@@ -183,7 +190,7 @@ const KingdomStore = () => {
   const [isGift, setIsGift] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [userResults, setUserResults] = useState<UserSearchResult[]>([]);
-  const [giftTo, setGiftTo] = useState<UserSearchResult | null>(null);
+  const [giftToList, setGiftToList] = useState<UserSearchResult[]>([]);
   const [giftMessage, setGiftMessage] = useState("");
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
@@ -268,11 +275,21 @@ const KingdomStore = () => {
     }
     setBuying(product);
     setIsGift(gift);
-    setGiftTo(null);
+    setGiftToList([]);
     setGiftMessage("");
     setUserSearch("");
     setUserResults([]);
     setStep(gift ? "config" : "payment");
+  };
+
+  const addGiftRecipient = (u: UserSearchResult) => {
+    setGiftToList((prev) => (prev.some((p) => p.id === u.id) ? prev : [...prev, u]));
+    setUserResults([]);
+    setUserSearch("");
+  };
+
+  const removeGiftRecipient = (id: string) => {
+    setGiftToList((prev) => prev.filter((p) => p.id !== id));
   };
 
   const closeBuy = () => {
@@ -306,7 +323,7 @@ const KingdomStore = () => {
       const { data, error } = await supabase.functions.invoke("process-store-purchase", {
         body: {
           productId: buying.id,
-          giftToUserId: isGift ? giftTo?.id : null,
+          giftToUserIds: isGift ? giftToList.map((g) => g.id) : null,
           giftMessage: isGift ? giftMessage : null,
           formData,
           deviceId,
@@ -591,7 +608,9 @@ const KingdomStore = () => {
                 <DialogTitle className="flex items-center gap-2">
                   <Gift className="h-5 w-5 text-amber-500" /> Presentear: {buying.nome}
                 </DialogTitle>
-                <DialogDescription>Escolha quem vai receber e escreva uma mensagem de carinho.</DialogDescription>
+                <DialogDescription>
+                  Escolha quem vai receber — pode adicionar mais de uma pessoa — e escreva uma mensagem de carinho.
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4">
@@ -608,23 +627,45 @@ const KingdomStore = () => {
                   </div>
                   {userResults.length > 0 && (
                     <div className="mt-2 border rounded-lg max-h-48 overflow-y-auto">
-                      {userResults.map((u) => (
-                        <button
-                          key={u.id}
-                          onClick={() => { setGiftTo(u); setUserResults([]); setUserSearch(u.full_name); }}
-                          className="w-full p-2.5 hover:bg-accent text-left flex flex-col transition-colors"
-                        >
-                          <span className="font-medium text-sm">{u.full_name}</span>
-                          <span className="text-xs text-muted-foreground">{u.email}</span>
-                        </button>
-                      ))}
+                      {userResults
+                        .filter((u) => !giftToList.some((g) => g.id === u.id))
+                        .map((u) => (
+                          <button
+                            key={u.id}
+                            onClick={() => addGiftRecipient(u)}
+                            className="w-full p-2.5 hover:bg-accent text-left flex flex-col transition-colors"
+                          >
+                            <span className="font-medium text-sm">{u.full_name}</span>
+                            <span className="text-xs text-muted-foreground">{u.email}</span>
+                          </button>
+                        ))}
                     </div>
                   )}
                 </div>
 
-                {giftTo && (
-                  <div className="rounded-lg bg-muted/50 p-3 text-sm">
-                    🎁 Presente para <strong>{giftTo.full_name}</strong>
+                {giftToList.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {giftToList.length === 1 ? "1 destinatário" : `${giftToList.length} destinatários`}
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {giftToList.map((g) => (
+                        <span
+                          key={g.id}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 pl-3 pr-1.5 py-1 text-sm"
+                        >
+                          🎁 {g.full_name}
+                          <button
+                            type="button"
+                            onClick={() => removeGiftRecipient(g.id)}
+                            className="rounded-full hover:bg-amber-500/20 p-0.5 transition-colors"
+                            aria-label={`Remover ${g.full_name}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -638,18 +679,30 @@ const KingdomStore = () => {
                   />
                 </div>
 
+                {giftToList.length > 1 && (
+                  <div className="rounded-lg bg-muted/50 p-3 text-sm flex items-center justify-between">
+                    <span className="text-muted-foreground">
+                      {formatBRL(buying.preco)} × {giftToList.length} pessoas
+                    </span>
+                    <span className="font-semibold">{formatBRL(buying.preco * giftToList.length)}</span>
+                  </div>
+                )}
+
                 <Button
                   className="w-full h-11 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white font-semibold hover:opacity-90"
-                  disabled={!giftTo}
+                  disabled={giftToList.length === 0}
                   onClick={() => setStep("payment")}
                 >
-                  Continuar · {formatBRL(buying.preco)}
+                  Continuar · {formatBRL(buying.preco * Math.max(1, giftToList.length))}
                 </Button>
               </div>
             </>
           )}
 
-          {buying && step === "payment" && (
+          {buying && step === "payment" && (() => {
+            const giftCount = isGift ? Math.max(1, giftToList.length) : 1;
+            const totalPrice = buying.preco * giftCount;
+            return (
             <>
               <DialogHeader>
                 {isGift && (
@@ -658,19 +711,20 @@ const KingdomStore = () => {
                   </button>
                 )}
                 <DialogTitle>
-                  {isGift ? `Presente: ${buying.nome}` : buying.nome} · {formatBRL(buying.preco)}
+                  {isGift ? `Presente: ${buying.nome}${giftCount > 1 ? ` (${giftCount} pessoas)` : ""}` : buying.nome} · {formatBRL(totalPrice)}
                 </DialogTitle>
                 <DialogDescription>Pagamento processado com segurança pelo Mercado Pago.</DialogDescription>
               </DialogHeader>
 
               <Payment
-                initialization={{ amount: Number(buying.preco) }}
+                initialization={{ amount: Number(totalPrice) }}
                 customization={{ paymentMethods: { bankTransfer: "all" } }}
                 onSubmit={handleBrickSubmit}
                 onError={(err) => console.error("[KingdomStore] Payment Brick error:", err)}
               />
             </>
-          )}
+            );
+          })()}
 
           {buying && step === "qr" && (
             <div className="text-center py-2">
@@ -726,7 +780,7 @@ const KingdomStore = () => {
                   </DialogTitle>
                   <DialogDescription className="text-center">
                     {isGift
-                      ? `${giftTo?.full_name} vai receber "${buying.nome}" com a sua mensagem.`
+                      ? `${formatRecipientNames(giftToList)} ${giftToList.length > 1 ? "vão" : "vai"} receber "${buying.nome}" com a sua mensagem.`
                       : buying.mensagem || "Sua contribuição ajuda a manter esta missão viva."}
                   </DialogDescription>
                 </DialogHeader>

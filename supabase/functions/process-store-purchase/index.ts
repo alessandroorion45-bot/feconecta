@@ -20,7 +20,7 @@ serve(async (req) => {
   }
 
   try {
-    const { productId, giftToUserId, giftMessage, formData, deviceId } = await req.json();
+    const { productId, giftToUserId, giftToUserIds, giftMessage, formData, deviceId } = await req.json();
 
     if (!productId || !formData?.payer?.email) {
       return new Response(
@@ -28,6 +28,12 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
+    // Aceita tanto o campo legado (1 destinatário) quanto o novo (vários)
+    const recipients: string[] = Array.isArray(giftToUserIds) && giftToUserIds.length > 0
+      ? [...new Set(giftToUserIds.filter((id: unknown): id is string => typeof id === "string" && id.length > 0))]
+      : giftToUserId ? [giftToUserId] : [];
+    const quantity = Math.max(1, recipients.length);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -61,33 +67,47 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    if (giftToUserId && !product.giftable) {
+    if (recipients.length > 0 && !product.giftable) {
       return new Response(
         JSON.stringify({ error: "Este item não pode ser presenteado." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    if (product.limitado && product.estoque !== null && product.estoque <= 0) {
+    if (product.limitado && product.estoque !== null && product.estoque < quantity) {
       return new Response(
-        JSON.stringify({ error: "Item esgotado." }),
+        JSON.stringify({ error: recipients.length > 1 ? "Não há estoque suficiente para todos os destinatários." : "Item esgotado." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const { data: purchase, error: insertError } = await serviceClient
-      .from("store_purchases")
-      .insert({
-        buyer_id: buyerId,
-        product_id: product.id,
-        amount: product.preco,
-        gift_to: giftToUserId || null,
-        gift_message: giftMessage || null,
-        status: "pending",
-      })
-      .select("id")
-      .single();
+    // Presente pra vários: 1 linha de store_purchases por destinatário
+    // (preserva o fluxo já existente de abertura/agradecimento por presente),
+    // todas amarradas por gift_batch_id — 1 pagamento cobre a compra toda.
+    const unitPrice = Number(product.preco);
+    const batchId = crypto.randomUUID();
+    const rows = recipients.length > 0
+      ? recipients.map((recipientId) => ({
+          buyer_id: buyerId,
+          product_id: product.id,
+          amount: unitPrice,
+          gift_to: recipientId,
+          gift_message: giftMessage || null,
+          gift_batch_id: batchId,
+          status: "pending",
+        }))
+      : [{
+          buyer_id: buyerId,
+          product_id: product.id,
+          amount: unitPrice,
+          gift_to: null,
+          gift_message: null,
+          gift_batch_id: batchId,
+          status: "pending",
+        }];
 
-    if (insertError || !purchase) {
+    const { error: insertError } = await serviceClient.from("store_purchases").insert(rows);
+
+    if (insertError) {
       console.error("Erro ao criar compra:", insertError);
       throw new Error("Não foi possível registrar a compra.");
     }
@@ -95,11 +115,11 @@ serve(async (req) => {
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     if (!accessToken) throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado.");
 
-    const amountStr = Number(product.preco).toFixed(2);
+    const amountStr = (unitPrice * quantity).toFixed(2);
     const orderBody = {
       type: "online",
       processing_mode: "automatic",
-      external_reference: purchase.id,
+      external_reference: batchId,
       total_amount: amountStr,
       payer: { email: formData.payer.email },
       transactions: {
@@ -112,7 +132,7 @@ serve(async (req) => {
     const mpHeaders: Record<string, string> = {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
-      "X-Idempotency-Key": purchase.id,
+      "X-Idempotency-Key": batchId,
     };
     if (deviceId) mpHeaders["X-meli-session-id"] = deviceId;
 
@@ -126,14 +146,14 @@ serve(async (req) => {
 
     if (!mpResponse.ok) {
       console.error("Erro do Mercado Pago:", mpResponse.status, JSON.stringify(order));
-      await serviceClient.from("store_purchases").update({ status: "rejected" }).eq("id", purchase.id);
+      await serviceClient.from("store_purchases").update({ status: "rejected" }).eq("gift_batch_id", batchId);
       const causeDetail = Array.isArray(order?.cause)
         ? order.cause.map((c: { description?: string; code?: string }) => c.description || c.code).filter(Boolean).join("; ")
         : null;
       return new Response(
         JSON.stringify({
           error: causeDetail || order?.message || order?.errors?.[0]?.message || "Não foi possível processar o pagamento.",
-          purchaseId: purchase.id,
+          purchaseId: batchId,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
@@ -150,11 +170,11 @@ serve(async (req) => {
         mp_payment_id: paymentInOrder?.id ? String(paymentInOrder.id) : null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", purchase.id);
+      .eq("gift_batch_id", batchId);
 
     return new Response(
       JSON.stringify({
-        purchaseId: purchase.id,
+        purchaseId: batchId,
         status: mappedStatus,
         qrCode: paymentInOrder?.payment_method?.qr_code ?? null,
         qrCodeBase64: paymentInOrder?.payment_method?.qr_code_base64 ?? null,

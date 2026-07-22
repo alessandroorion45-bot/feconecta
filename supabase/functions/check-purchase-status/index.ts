@@ -34,27 +34,30 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: purchase } = await serviceClient
+    // purchaseId pode ser o id de 1 linha (compra avulsa/legada) ou o
+    // gift_batch_id compartilhado por várias linhas (presente pra vários).
+    const { data: purchases } = await serviceClient
       .from("store_purchases")
-      .select("id, status, fulfilled, buyer_id, gift_to, gift_message, mp_order_id, product_id")
-      .eq("id", purchaseId)
-      .single();
+      .select("id, status, fulfilled, buyer_id, gift_to, gift_message, mp_order_id, product_id, gift_batch_id")
+      .or(`id.eq.${purchaseId},gift_batch_id.eq.${purchaseId}`);
 
-    if (!purchase) {
+    if (!purchases || purchases.length === 0) {
       return new Response(
         JSON.stringify({ error: "Compra não encontrada." }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    let status = purchase.status;
+    // Todas as linhas do mesmo lote compartilham status/mp_order_id (1 só pagamento)
+    const first = purchases[0];
+    let status = first.status;
 
     // Sem webhook na API de Orders: confere direto no Mercado Pago enquanto pendente
-    if (status === "pending" && purchase.mp_order_id) {
+    if (status === "pending" && first.mp_order_id) {
       const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
       if (accessToken) {
         const orderResponse = await fetch(
-          `https://api.mercadopago.com/v1/orders/${purchase.mp_order_id}`,
+          `https://api.mercadopago.com/v1/orders/${first.mp_order_id}`,
           { headers: { Authorization: `Bearer ${accessToken}` } },
         );
         if (orderResponse.ok) {
@@ -65,23 +68,27 @@ serve(async (req) => {
             await serviceClient
               .from("store_purchases")
               .update({ status: fresh, updated_at: new Date().toISOString() })
-              .eq("id", purchase.id);
+              .in("id", purchases.map((p) => p.id));
           }
         }
       }
     }
 
-    // Entrega o item exatamente uma vez (idempotente via flag fulfilled)
-    if (status === "approved" && !purchase.fulfilled) {
-      const { data: claimed } = await serviceClient
-        .from("store_purchases")
-        .update({ fulfilled: true })
-        .eq("id", purchase.id)
-        .eq("fulfilled", false)
-        .select("id")
-        .maybeSingle();
+    // Entrega cada presente do lote exatamente uma vez (idempotente via flag fulfilled)
+    if (status === "approved") {
+      for (const purchase of purchases) {
+        if (purchase.fulfilled) continue;
 
-      if (claimed) {
+        const { data: claimed } = await serviceClient
+          .from("store_purchases")
+          .update({ fulfilled: true })
+          .eq("id", purchase.id)
+          .eq("fulfilled", false)
+          .select("id")
+          .maybeSingle();
+
+        if (!claimed) continue;
+
         const { data: product } = await serviceClient
           .from("store_products")
           .select("id, nome, tipo, badge_id, cosmetic_key, limitado, estoque")
