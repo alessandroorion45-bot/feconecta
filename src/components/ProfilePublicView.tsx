@@ -205,44 +205,15 @@ export const ProfilePublicView = ({
         />
       </div>
 
-      {/* Profile Header Section — cartão de identidade */}
-      <div className="relative px-4 sm:px-6 -mt-12 sm:-mt-16 md:-mt-20">
-        {/* Name - Full Width Centered */}
-        <div className="text-center mb-4 pt-2">
-          <motion.h1
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground leading-tight uppercase tracking-wide break-words"
-          >
-            {profile.full_name || "Seu Nome"}
-          </motion.h1>
-
-          {/* Título do Reino (baseado no nível — helper puro da lib de gamificação) */}
-          {kingdomTitle && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.15 }}
-              className="mt-1 inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/25 pl-1.5 pr-3 py-1 text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300"
-            >
-              {/* Medalha do nível */}
-              <span
-                className="inline-flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[10px] sm:text-[11px] font-bold text-amber-950 shadow-[inset_0_1px_2px_rgba(255,255,255,0.6),0_1px_3px_rgba(180,120,10,0.45)] ring-1 ring-amber-600/40"
-                style={{ background: "radial-gradient(circle at 32% 28%, #fef3c7, #fbbf24 55%, #d4930d)" }}
-              >
-                {kingdomTitle.level}
-              </span>
-              👑 {kingdomTitle.title}
-            </motion.p>
-          )}
-        </div>
-
-        {/* Avatar + Badges + Quote - Centered Column Layout */}
-        <div className="flex flex-col items-center gap-3">
-          {/* Avatar - 9:16 Portrait Format - Larger Size */}
-          <div className="flex justify-center z-10">
-            {equippedFrame ? (
+      {/* Profile Header Section — cartão de identidade.
+          Ordem: avatar (só ele sobrepõe a capa, ~35% da própria altura)
+          → nome → título do Reino → outros selos → frase. Nome e selos
+          nunca tocam a capa — só o avatar, que é o elemento pensado pra
+          isso (moldura/glow já dão contraste próprio). */}
+      <div className="relative px-4 sm:px-6 -mt-11 sm:-mt-14">
+        {/* Avatar - 9:16 Portrait Format - Larger Size */}
+        <div className="flex justify-center z-10">
+          {equippedFrame ? (
               <AnimatedCosmeticFrame cosmeticKey={equippedFrame.cosmetic_key}>
                 {isOwner ? (
                   <AvatarUpload
@@ -309,40 +280,70 @@ export const ProfilePublicView = ({
                 </div>
               </motion.div>
             )}
-          </div>
+        </div>
 
-          {/* Badges + Quote - Centered Below Avatar */}
-          <div className="flex flex-col items-center gap-2 text-center">
-            {/* Title Badges */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              {badges.length > 0 && badges.map((badge, index) => (
-                <UserBadge
-                  key={index}
-                  icon={badge.badge_icon}
-                  name={badge.badge_name}
-                  color={badge.badge_color}
-                  size="sm"
-                />
-              ))}
+        {/* Name - Full Width Centered, abaixo do avatar, nunca sobre a capa */}
+        <div className="text-center mt-3 mb-3">
+          <motion.h1
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="text-lg sm:text-xl md:text-2xl font-extrabold text-foreground leading-tight uppercase tracking-wide break-words"
+          >
+            {profile.full_name || "Seu Nome"}
+          </motion.h1>
 
-              {profile.is_private && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-200 text-xs font-medium">
-                  <Lock className="h-3 w-3" />
-                  Privado
-                </span>
-              )}
-            </div>
+          {/* Título do Reino (baseado no nível — helper puro da lib de gamificação) */}
+          {kingdomTitle && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className="mt-1.5 inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/25 pl-1.5 pr-3 py-1 text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300"
+            >
+              {/* Medalha do nível */}
+              <span
+                className="inline-flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[10px] sm:text-[11px] font-bold text-amber-950 shadow-[inset_0_1px_2px_rgba(255,255,255,0.6),0_1px_3px_rgba(180,120,10,0.45)] ring-1 ring-amber-600/40"
+                style={{ background: "radial-gradient(circle at 32% 28%, #fef3c7, #fbbf24 55%, #d4930d)" }}
+              >
+                {kingdomTitle.level}
+              </span>
+              👑 {kingdomTitle.title}
+            </motion.p>
+          )}
+        </div>
 
-            {/* Profile Quote — versículo/frase favorita em cartão */}
-            {profile.profile_quote && (
-              <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.07] to-transparent px-4 py-2.5 max-w-sm">
-                <p className="text-sm sm:text-base text-foreground/85 italic text-center flex items-start gap-1.5 justify-center">
-                  <span className="text-base leading-none mt-0.5">📖</span>
-                  <span>"{profile.profile_quote}"</span>
-                </p>
-              </div>
+        {/* Badges + Quote - Centered Below Name */}
+        <div className="flex flex-col items-center gap-2 text-center">
+          {/* Title Badges */}
+          <div className="flex flex-wrap gap-2 justify-center">
+            {badges.length > 0 && badges.map((badge, index) => (
+              <UserBadge
+                key={index}
+                icon={badge.badge_icon}
+                name={badge.badge_name}
+                color={badge.badge_color}
+                size="sm"
+              />
+            ))}
+
+            {profile.is_private && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-200 text-xs font-medium">
+                <Lock className="h-3 w-3" />
+                Privado
+              </span>
             )}
           </div>
+
+          {/* Profile Quote — versículo/frase favorita em cartão */}
+          {profile.profile_quote && (
+            <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.07] to-transparent px-4 py-2.5 max-w-sm">
+              <p className="text-sm sm:text-base text-foreground/85 italic text-center flex items-start gap-1.5 justify-center">
+                <span className="text-base leading-none mt-0.5">📖</span>
+                <span>"{profile.profile_quote}"</span>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
