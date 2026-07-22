@@ -206,11 +206,10 @@ export const ProfilePublicView = ({
       </div>
 
       {/* Profile Header Section — cartão de identidade.
-          Ordem: avatar (só ele sobrepõe a capa, ~35% da própria altura)
-          → nome → título do Reino → outros selos → frase. Nome e selos
-          nunca tocam a capa — só o avatar, que é o elemento pensado pra
-          isso (moldura/glow já dão contraste próprio). */}
-      <div className="relative px-4 sm:px-6 -mt-11 sm:-mt-14">
+          Ordem: avatar → nome → título do Reino → outros selos → frase.
+          Avatar fica inteiro abaixo da capa (sem sobrepor) — pedido
+          explícito do usuário após ver a sobreposição na prática. */}
+      <div className="relative px-4 sm:px-6 mt-3 sm:mt-4">
         {/* Avatar - 9:16 Portrait Format - Larger Size */}
         <div className="flex justify-center z-10">
           {equippedFrame ? (
