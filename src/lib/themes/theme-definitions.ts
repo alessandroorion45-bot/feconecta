@@ -144,7 +144,10 @@ export const darkRoyalThemeTokens: ThemeDesignTokens = {
 export const reinoCelestialThemeTokens: ThemeDesignTokens = {
   // Cores base
   primary: '#ffd700',
-  secondary: '#f8f7ff',
+  // Era #f8f7ff — idêntico ao background do próprio tema, o que fazia o
+  // fim de qualquer texto com gradiente (ex: "Kingdom Store") desaparecer
+  // por cima de um fundo da mesma cor (reportado como "letra apagada").
+  secondary: '#f2ce6b',
   accent: '#fff9e6',
 
   // Backgrounds - Branco celestial
@@ -408,7 +411,9 @@ export const arcaAliancaThemeTokens: ThemeDesignTokens = {
 export const guerreiroFeThemeTokens: ThemeDesignTokens = {
   // Cores base
   primary: '#dc2626',
-  secondary: '#18181b',
+  // Era #18181b — idêntico ao background do próprio tema (mesmo bug do
+  // Reino Celestial): texto com gradiente sumia no fim contra o fundo.
+  secondary: '#7f1d1d',
   accent: '#fbbf24',
 
   // Backgrounds - Preto com vermelho
