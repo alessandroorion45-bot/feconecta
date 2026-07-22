@@ -26,6 +26,20 @@ const ORDER_STATUS_MAP: Record<string, string> = {
   cancelled: "cancelled",
 };
 
+// O Mercado Pago reenvia o webhook se não receber 200 rápido — um timeout
+// curto aqui evita ficar preso numa reconsulta lenta enquanto ainda dá
+// tempo de responder 200 e deixar o MP tentar de novo depois se precisar.
+const MP_TIMEOUT_MS = 10000;
+async function fetchMP(url: string, options: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MP_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -62,7 +76,7 @@ serve(async (req) => {
       : `https://api.mercadopago.com/v1/payments/${resourceId}`;
 
     // Nunca confiar no corpo do webhook — sempre buscar o recurso real na API do MP
-    const resourceResponse = await fetch(endpoint, {
+    const resourceResponse = await fetchMP(endpoint, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 

@@ -64,6 +64,9 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
   const [result, setResult] = useState<PaymentResult | null>(null);
   const [copied, setCopied] = useState(false);
   const submittingRef = useRef(false);
+  // Id estável por tentativa de doação — mesma proteção contra cobrança
+  // duplicada em retry de rede usada na Kingdom Store.
+  const checkoutRequestIdRef = useRef<string>("");
 
   const finalAmount = customAmount ? Number(customAmount.replace(",", ".")) : selectedAmount;
   const isValidAmount = !!finalAmount && finalAmount > 0;
@@ -139,6 +142,7 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
 
     try {
       const deviceId = (window as any).MP_DEVICE_SESSION_ID;
+      if (!checkoutRequestIdRef.current) checkoutRequestIdRef.current = crypto.randomUUID();
 
       const { data, error } = await supabase.functions.invoke("process-donation-payment", {
         body: {
@@ -149,6 +153,7 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
           donorCity: showOnWall ? donorCity : null,
           formData,
           deviceId,
+          clientRequestId: checkoutRequestIdRef.current,
         },
       });
 
@@ -296,7 +301,7 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
               </div>
 
               <Button
-                onClick={() => setStep("payment")}
+                onClick={() => { checkoutRequestIdRef.current = crypto.randomUUID(); setStep("payment"); }}
                 disabled={!isValidAmount}
                 className="w-full h-11 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white font-semibold hover:opacity-90 hover:shadow-lg hover:shadow-amber-500/30 transition-all"
               >
@@ -407,7 +412,7 @@ const DonationModal = ({ open, onOpenChange }: DonationModalProps) => {
                     O pagamento não foi aprovado. Nenhum valor foi cobrado.
                   </DialogDescription>
                 </DialogHeader>
-                <Button variant="outline" onClick={() => setStep("payment")} className="w-full mt-3">
+                <Button variant="outline" onClick={() => { checkoutRequestIdRef.current = crypto.randomUUID(); setStep("payment"); }} className="w-full mt-3">
                   Tentar novamente
                 </Button>
               </>

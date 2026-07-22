@@ -14,6 +14,19 @@ const ORDER_STATUS_MAP: Record<string, string> = {
   cancelled: "cancelled",
 };
 
+// Chamada de polling (a cada poucos segundos) — timeout mais curto, uma
+// falha aqui só significa "tenta de novo no próximo ciclo", nada crítico.
+const MP_TIMEOUT_MS = 8000;
+async function fetchMP(url: string, options: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MP_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -52,24 +65,30 @@ serve(async (req) => {
     const first = purchases[0];
     let status = first.status;
 
-    // Sem webhook na API de Orders: confere direto no Mercado Pago enquanto pendente
+    // Sem webhook na API de Orders: confere direto no Mercado Pago enquanto pendente.
+    // Timeout/falha aqui não deve derrubar a resposta inteira — só significa
+    // que o cliente recebe o status já salvo e tenta de novo no próximo poll.
     if (status === "pending" && first.mp_order_id) {
       const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
       if (accessToken) {
-        const orderResponse = await fetch(
-          `https://api.mercadopago.com/v1/orders/${first.mp_order_id}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } },
-        );
-        if (orderResponse.ok) {
-          const order = await orderResponse.json();
-          const fresh = ORDER_STATUS_MAP[order.status] ?? "pending";
-          if (fresh !== status) {
-            status = fresh;
-            await serviceClient
-              .from("store_purchases")
-              .update({ status: fresh, updated_at: new Date().toISOString() })
-              .in("id", purchases.map((p) => p.id));
+        try {
+          const orderResponse = await fetchMP(
+            `https://api.mercadopago.com/v1/orders/${first.mp_order_id}`,
+            { headers: { Authorization: `Bearer ${accessToken}` } },
+          );
+          if (orderResponse.ok) {
+            const order = await orderResponse.json();
+            const fresh = ORDER_STATUS_MAP[order.status] ?? "pending";
+            if (fresh !== status) {
+              status = fresh;
+              await serviceClient
+                .from("store_purchases")
+                .update({ status: fresh, updated_at: new Date().toISOString() })
+                .in("id", purchases.map((p) => p.id));
+            }
           }
+        } catch (mpError) {
+          console.error("Timeout/falha ao reconsultar o Mercado Pago:", mpError);
         }
       }
     }

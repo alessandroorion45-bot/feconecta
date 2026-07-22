@@ -14,13 +14,27 @@ const ORDER_STATUS_MAP: Record<string, string> = {
   cancelled: "cancelled",
 };
 
+// Sem isso, uma resposta lenta/travada do Mercado Pago deixaria a função
+// rodando até o limite da plataforma em vez de falhar rápido e de forma
+// previsível (cai no catch já existente, retorna erro claro pro cliente).
+const MP_TIMEOUT_MS = 15000;
+async function fetchMP(url: string, options: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MP_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { productId, giftToUserId, giftToUserIds, giftMessage, formData, deviceId } = await req.json();
+    const { productId, giftToUserId, giftToUserIds, giftMessage, formData, deviceId, clientRequestId } = await req.json();
 
     if (!productId || !formData?.payer?.email) {
       return new Response(
@@ -83,33 +97,73 @@ serve(async (req) => {
     // Presente pra vários: 1 linha de store_purchases por destinatário
     // (preserva o fluxo já existente de abertura/agradecimento por presente),
     // todas amarradas por gift_batch_id — 1 pagamento cobre a compra toda.
+    //
+    // Idempotência: se o client mandar um clientRequestId (UUID gerado uma
+    // vez só por tentativa de compra, reenviado igual em caso de retry de
+    // rede), ele vira o próprio gift_batch_id. Isso fecha a janela de
+    // "clicou, caiu a conexão, tentou de novo" cobrar duas vezes — se já
+    // existir linha com esse id, NÃO cria de novo; se já tiver um status
+    // final, devolve ele direto; senão, refaz a chamada ao Mercado Pago
+    // reusando a MESMA X-Idempotency-Key, que o proprio MP garante não
+    // duplicar (mesma requisição, mesma resposta).
+    const isValidUuid = (v: unknown): v is string =>
+      typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
     const unitPrice = Number(product.preco);
-    const batchId = crypto.randomUUID();
-    const rows = recipients.length > 0
-      ? recipients.map((recipientId) => ({
-          buyer_id: buyerId,
-          product_id: product.id,
-          amount: unitPrice,
-          gift_to: recipientId,
-          gift_message: giftMessage || null,
-          gift_batch_id: batchId,
-          status: "pending",
-        }))
-      : [{
-          buyer_id: buyerId,
-          product_id: product.id,
-          amount: unitPrice,
-          gift_to: null,
-          gift_message: null,
-          gift_batch_id: batchId,
-          status: "pending",
-        }];
+    const batchId = isValidUuid(clientRequestId) ? clientRequestId : crypto.randomUUID();
 
-    const { error: insertError } = await serviceClient.from("store_purchases").insert(rows);
+    const { data: existingRows } = await serviceClient
+      .from("store_purchases")
+      .select("id, status, mp_order_id")
+      .eq("gift_batch_id", batchId);
 
-    if (insertError) {
-      console.error("Erro ao criar compra:", insertError);
-      throw new Error("Não foi possível registrar a compra.");
+    let skipInsert = false;
+    if (existingRows && existingRows.length > 0) {
+      const allTerminal = existingRows.every((r) => ["approved", "rejected", "cancelled"].includes(r.status));
+      if (allTerminal) {
+        // Já processado antes (retry tardio) — devolve o resultado que já existe, sem chamar o MP de novo
+        const finalStatus = existingRows[0].status;
+        if (finalStatus === "rejected" || finalStatus === "cancelled") {
+          return new Response(
+            JSON.stringify({ error: "Este pagamento já tinha sido recusado anteriormente.", purchaseId: batchId }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({ purchaseId: batchId, status: finalStatus }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      // Ainda pendente — não insere de novo, só reusa o mesmo lote pra reconsultar o MP abaixo
+      skipInsert = true;
+    }
+
+    if (!skipInsert) {
+      const rows = recipients.length > 0
+        ? recipients.map((recipientId) => ({
+            buyer_id: buyerId,
+            product_id: product.id,
+            amount: unitPrice,
+            gift_to: recipientId,
+            gift_message: giftMessage || null,
+            gift_batch_id: batchId,
+            status: "pending",
+          }))
+        : [{
+            buyer_id: buyerId,
+            product_id: product.id,
+            amount: unitPrice,
+            gift_to: null,
+            gift_message: null,
+            gift_batch_id: batchId,
+            status: "pending",
+          }];
+
+      const { error: insertError } = await serviceClient.from("store_purchases").insert(rows);
+
+      if (insertError) {
+        console.error("Erro ao criar compra:", insertError);
+        throw new Error("Não foi possível registrar a compra.");
+      }
     }
 
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
@@ -136,7 +190,7 @@ serve(async (req) => {
     };
     if (deviceId) mpHeaders["X-meli-session-id"] = deviceId;
 
-    const mpResponse = await fetch("https://api.mercadopago.com/v1/orders", {
+    const mpResponse = await fetchMP("https://api.mercadopago.com/v1/orders", {
       method: "POST",
       headers: mpHeaders,
       body: JSON.stringify(orderBody),
@@ -184,8 +238,13 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Erro em process-store-purchase:", error);
+    const timedOut = error instanceof Error && error.name === "AbortError";
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      JSON.stringify({
+        error: timedOut
+          ? "O Mercado Pago demorou demais pra responder. Tente novamente."
+          : error instanceof Error ? error.message : "Erro desconhecido",
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

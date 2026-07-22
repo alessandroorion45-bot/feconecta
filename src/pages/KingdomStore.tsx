@@ -199,6 +199,10 @@ const KingdomStore = () => {
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const submittingRef = useRef(false);
+  // Id estável por tentativa de compra — reenviado igual se a submissão
+  // falhar na rede e o usuário tentar de novo, pra process-store-purchase
+  // conseguir detectar retry e nunca cobrar duas vezes pela mesma compra.
+  const checkoutRequestIdRef = useRef<string>("");
 
   useEffect(() => {
     ensureMercadoPagoInitialized();
@@ -282,6 +286,7 @@ const KingdomStore = () => {
     setUserSearch("");
     setUserResults([]);
     setStep(gift ? "config" : "payment");
+    checkoutRequestIdRef.current = crypto.randomUUID();
   };
 
   const addGiftRecipient = (u: UserSearchResult) => {
@@ -329,6 +334,7 @@ const KingdomStore = () => {
           giftMessage: isGift ? giftMessage : null,
           formData,
           deviceId,
+          clientRequestId: checkoutRequestIdRef.current,
         },
       });
 
