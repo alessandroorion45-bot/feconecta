@@ -769,8 +769,9 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
         </div>
       </div>
 
-      {/* Albums Section */}
-      {(albums.length > 0 || isOwner) && (
+      {/* Albums Section — some só quando há algo pra filtrar/organizar,
+          senão é só uma fileira "Todas (0)" ocupando espaço à toa */}
+      {(albums.length > 0 || (isOwner && photos.length > 0)) && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -852,20 +853,25 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
       )}
 
       {filteredPhotos.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>{selectedAlbum ? "Nenhuma foto neste álbum." : (isOwner ? "Você ainda não publicou nenhuma foto." : "Nenhuma foto disponível.")}</p>
-          {isOwner && !selectedAlbum && (
-            <Button 
-              variant="outline" 
-              className="mt-4 gap-2 rounded-full"
-              onClick={() => setUploadDialogOpen(true)}
-            >
-              <Upload className="h-4 w-4" />
-              Publicar primeira foto
-            </Button>
-          )}
-        </div>
+        isOwner && !selectedAlbum ? (
+          <button
+            onClick={() => setUploadDialogOpen(true)}
+            className="group flex w-full items-center gap-3 rounded-xl border border-dashed border-border/70 px-4 py-3 text-left transition-colors hover:border-primary/50 hover:bg-muted/40"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+              <ImageIcon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Nenhuma foto ainda</p>
+              <p className="text-xs text-muted-foreground">Publique a primeira e comece seu álbum de memórias.</p>
+            </div>
+            <Plus className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+          </button>
+        ) : (
+          <p className="py-3 text-center text-sm text-muted-foreground">
+            {selectedAlbum ? "Nenhuma foto neste álbum." : "Nenhuma foto disponível."}
+          </p>
+        )
       ) : viewMode === 'timeline' ? (
         /* Timeline View */
         <div className="space-y-6">

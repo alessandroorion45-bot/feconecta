@@ -576,20 +576,23 @@ export const ProfileVideos = ({ userId, isOwner, isFriend = false }: ProfileVide
       </div>
 
       {videos.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <Video className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>{isOwner ? "Você ainda não publicou nenhum vídeo." : "Nenhum vídeo disponível."}</p>
-          {isOwner && (
-            <Button 
-              variant="outline" 
-              className="mt-4 gap-2 rounded-full"
-              onClick={() => setUploadDialogOpen(true)}
-            >
-              <Upload className="h-4 w-4" />
-              Publicar primeiro vídeo
-            </Button>
-          )}
-        </div>
+        isOwner ? (
+          <button
+            onClick={() => setUploadDialogOpen(true)}
+            className="group flex w-full items-center gap-3 rounded-xl border border-dashed border-border/70 px-4 py-3 text-left transition-colors hover:border-primary/50 hover:bg-muted/40"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+              <Video className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Nenhum vídeo ainda</p>
+              <p className="text-xs text-muted-foreground">Publique o primeiro e conte sua história em movimento.</p>
+            </div>
+            <Plus className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+          </button>
+        ) : (
+          <p className="py-3 text-center text-sm text-muted-foreground">Nenhum vídeo disponível.</p>
+        )
       ) : viewMode === 'timeline' ? (
         <div className="space-y-6">
           {monthGroups.length > 1 && (
