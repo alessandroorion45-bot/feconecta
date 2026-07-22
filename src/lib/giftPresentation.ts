@@ -80,11 +80,27 @@ export function isCelebratory(name: string): boolean {
 
 // ============================================================
 // Animação de revelação exclusiva por presente — mapeada pelo
-// slug (estável, não muda se o nome de exibição mudar), só pros
-// 6 presentes espirituais com animação própria. Os demais
-// presentes continuam com o sistema genérico de partículas acima.
+// slug (estável, não muda se o nome de exibição mudar). Cobre
+// todos os presentes da loja; cada um tem sua própria assinatura
+// visual coerente com o significado do presente.
 // ============================================================
-export type GiftAnimationKind = "petals" | "handshake" | "heartbeat" | "prayer-light" | "dove-flight" | "star-twinkle";
+export type GiftAnimationKind =
+  | "petals"
+  | "handshake"
+  | "heartbeat"
+  | "prayer-light"
+  | "dove-flight"
+  | "star-twinkle"
+  | "wheat-harvest"
+  | "olive-branch"
+  | "flame-ember"
+  | "light-path"
+  | "trumpet-fanfare"
+  | "shield-guard"
+  | "globe-lights"
+  | "crown-honor"
+  | "blessing-box"
+  | "crystal-shimmer";
 
 const ANIMATION_BY_SLUG: Record<string, GiftAnimationKind> = {
   "rosa-da-gratidao": "petals",
@@ -93,6 +109,16 @@ const ANIMATION_BY_SLUG: Record<string, GiftAnimationKind> = {
   "oracao-por-voce": "prayer-light",
   "pomba-da-paz": "dove-flight",
   "estrela-da-esperanca": "star-twinkle",
+  "feixe-de-trigo": "wheat-harvest",
+  "ramo-de-oliveira": "olive-branch",
+  "chama-da-esperanca": "flame-ember",
+  "luz-do-caminho": "light-path",
+  "trombeta-da-vitoria": "trumpet-fanfare",
+  "escudo-da-fe": "shield-guard",
+  "globo-missionario": "globe-lights",
+  "coroa-da-honra": "crown-honor",
+  "caixa-de-bencaos": "blessing-box",
+  "cristal-da-fidelidade": "crystal-shimmer",
 };
 
 export function giftAnimationFor(slug: string | null | undefined): GiftAnimationKind | null {

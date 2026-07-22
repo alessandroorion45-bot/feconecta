@@ -1,11 +1,9 @@
 // =====================================================
 // GIFT REVEAL ANIMATION — assinatura visual única por presente
 // =====================================================
-// Cada um dos 6 presentes espirituais (Rosa da Gratidão, Aperto de
-// Mão Fraterno, Coração de Gratidão, Oração por Você, Pomba da Paz,
-// Estrela da Esperança) tem sua própria animação de revelação,
-// coerente com o tema/versículo do presente. Reverente, não
-// gamificado — sem elementos de "conquista de jogo".
+// Cada um dos 16 presentes da Kingdom Store tem sua própria animação
+// de revelação, coerente com o tema/versículo do presente. Reverente,
+// não gamificado — sem elementos de "conquista de jogo".
 //
 // Componente leve (DOM/Framer Motion, sem canvas) pensado pra caber
 // em áreas pequenas (preview no modal de compra, tela de sucesso,
@@ -191,6 +189,247 @@ const StarTwinkle = () => {
   );
 };
 
+const WheatHarvest = () => (
+  <>
+    {[...Array(3)].map((_, i) => (
+      <motion.div
+        key={i}
+        aria-hidden
+        className="absolute bottom-[20%] text-2xl"
+        style={{ left: `${30 + i * 20}%` }}
+        animate={{ rotate: [-4, 4, -4] }}
+        transition={{ duration: 3 + i * 0.4, repeat: Infinity, delay: i * 0.3, ease: "easeInOut" }}
+      >
+        🌾
+      </motion.div>
+    ))}
+    {[...Array(6)].map((_, i) => (
+      <motion.span
+        key={`grain-${i}`}
+        aria-hidden
+        className="absolute top-0 h-1 w-1 rounded-full"
+        style={{ left: `${20 + ((i * 13) % 70)}%`, background: "#eab308" }}
+        initial={{ y: "-10%", opacity: 0 }}
+        animate={{ y: "110%", opacity: [0, 0.9, 0] }}
+        transition={{ duration: 3.5 + (i % 3), repeat: Infinity, delay: i * 0.5, ease: "linear" }}
+      />
+    ))}
+  </>
+);
+
+const OliveBranch = () => (
+  <>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+      style={{ width: 60, height: 60, background: "radial-gradient(circle, rgba(134,239,172,0.35), transparent 70%)" }}
+      animate={{ scale: [0.8, 1.15, 0.8], opacity: [0.4, 0.7, 0.4] }}
+      transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+    />
+    {[...Array(5)].map((_, i) => (
+      <motion.span
+        key={i}
+        aria-hidden
+        className="absolute text-lg"
+        style={{ left: `${20 + i * 15}%`, top: `${40 + (i % 2 === 0 ? -8 : 8)}%` }}
+        animate={{ rotate: [0, i % 2 === 0 ? 10 : -10, 0], y: [0, -3, 0] }}
+        transition={{ duration: 2.8, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
+      >
+        🌿
+      </motion.span>
+    ))}
+  </>
+);
+
+const FlameEmber = () => (
+  <>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl"
+      animate={{ scale: [1, 1.1, 0.95, 1.08, 1], rotate: [0, -3, 2, -2, 0] }}
+      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+    >
+      🔥
+    </motion.div>
+    {[...Array(6)].map((_, i) => (
+      <motion.span
+        key={i}
+        aria-hidden
+        className="absolute bottom-[38%] h-1 w-1 rounded-full"
+        style={{ left: `${44 + ((i * 7) % 14) - 7}%`, background: "#fb923c" }}
+        initial={{ y: 0, opacity: 0 }}
+        animate={{ y: "-160%", x: [0, (i % 2 === 0 ? 1 : -1) * 8], opacity: [0, 0.9, 0] }}
+        transition={{ duration: 2.2 + (i % 3) * 0.4, repeat: Infinity, delay: i * 0.35, ease: "easeOut" }}
+      />
+    ))}
+  </>
+);
+
+const LightPath = () => (
+  <>
+    <div
+      aria-hidden
+      className="absolute inset-x-0 bottom-[38%] h-px"
+      style={{ background: "linear-gradient(90deg, transparent, rgba(253,230,138,0.6), transparent)" }}
+    />
+    {[...Array(5)].map((_, i) => (
+      <motion.span
+        key={i}
+        aria-hidden
+        className="absolute bottom-[36%] h-1.5 w-1.5 rounded-full"
+        style={{ left: `${10 + i * 18}%`, background: "#fde68a", boxShadow: "0 0 8px rgba(253,230,138,0.9)" }}
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: [0, 1, 0.3], scale: [0.6, 1.2, 0.9] }}
+        transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
+      />
+    ))}
+  </>
+);
+
+const TrumpetFanfare = () => (
+  <>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl"
+      animate={{ rotate: [0, -8, 0], scale: [1, 1.08, 1] }}
+      transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+    >
+      🎺
+    </motion.div>
+    {[...Array(3)].map((_, i) => (
+      <motion.div
+        key={i}
+        aria-hidden
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{ border: "1.5px solid rgba(251,191,36,0.6)" }}
+        initial={{ width: 10, height: 10, opacity: 0 }}
+        animate={{ width: [10, 90], height: [10, 90], opacity: [0, 0.6, 0] }}
+        transition={{ duration: 2.2, repeat: Infinity, delay: i * 0.6, ease: "easeOut" }}
+      />
+    ))}
+  </>
+);
+
+const ShieldGuard = () => (
+  <>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl"
+      animate={{ scale: [1, 1.05, 1] }}
+      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+    >
+      🛡️
+    </motion.div>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+      style={{ border: "1.5px solid rgba(212,175,55,0.55)" }}
+      initial={{ width: 20, height: 20, opacity: 0.6 }}
+      animate={{ width: [20, 80, 20], height: [20, 80, 20], opacity: [0.6, 0, 0.6] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
+  </>
+);
+
+const GlobeLights = () => (
+  <>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+    >
+      🌍
+    </motion.div>
+    {[...Array(4)].map((_, i) => (
+      <motion.span
+        key={i}
+        aria-hidden
+        className="absolute h-1 w-1 rounded-full"
+        style={{ left: `${25 + ((i * 17) % 55)}%`, top: `${30 + ((i * 23) % 40)}%`, background: "#fde68a" }}
+        animate={{ opacity: [0, 1, 0], scale: [0.6, 1.4, 0.6] }}
+        transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.5, ease: "easeInOut" }}
+      />
+    ))}
+  </>
+);
+
+const CrownHonor = () => (
+  <>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl"
+      initial={{ y: -14, opacity: 0 }}
+      animate={{ y: [-14, 0, 0], opacity: [0, 1, 1] }}
+      transition={{ duration: 2.6, repeat: Infinity, times: [0, 0.4, 1], ease: "easeOut" }}
+    >
+      👑
+    </motion.div>
+    {[...Array(6)].map((_, i) => (
+      <motion.span
+        key={i}
+        aria-hidden
+        className="absolute left-1/2 top-1/2 h-1 w-1 rounded-full"
+        style={{ background: "#fde68a" }}
+        initial={{ x: "-50%", y: "-50%", opacity: 0 }}
+        animate={{
+          x: `${-50 + Math.cos(i * 1.05) * 40}%`,
+          y: `${-50 + Math.sin(i * 1.05) * 40}%`,
+          opacity: [0, 0.9, 0],
+        }}
+        transition={{ duration: 2.2, repeat: Infinity, delay: i * 0.3, ease: "easeOut" }}
+      />
+    ))}
+  </>
+);
+
+const BlessingBox = () => (
+  <>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl"
+      animate={{ rotate: [0, -4, 4, 0] }}
+      transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+    >
+      🎁
+    </motion.div>
+    {[...Array(6)].map((_, i) => (
+      <motion.span
+        key={i}
+        aria-hidden
+        className="absolute left-1/2 top-1/2 h-1 w-1 rounded-full"
+        style={{ background: "#fde68a" }}
+        initial={{ x: "-50%", y: "-20%", opacity: 0 }}
+        animate={{ y: "-140%", x: `${-50 + (i % 2 === 0 ? -1 : 1) * (10 + i * 4)}%`, opacity: [0, 0.9, 0] }}
+        transition={{ duration: 2.6, repeat: Infinity, delay: i * 0.4, ease: "easeOut" }}
+      />
+    ))}
+  </>
+);
+
+const CrystalShimmer = () => (
+  <>
+    <motion.div
+      aria-hidden
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl"
+      animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.06, 1] }}
+      transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+    >
+      💎
+    </motion.div>
+    {[...Array(4)].map((_, i) => (
+      <motion.div
+        key={i}
+        aria-hidden
+        className="absolute top-0 h-full w-4 opacity-0"
+        style={{ left: `${30 + i * 15}%`, background: "linear-gradient(180deg, rgba(191,219,254,0.5), transparent)" }}
+        animate={{ opacity: [0, 0.5, 0] }}
+        transition={{ duration: 2.6, repeat: Infinity, delay: i * 0.5, ease: "easeInOut" }}
+      />
+    ))}
+  </>
+);
+
 const RENDERERS: Record<GiftAnimationKind, () => JSX.Element> = {
   petals: Petals,
   handshake: Handshake,
@@ -198,6 +437,16 @@ const RENDERERS: Record<GiftAnimationKind, () => JSX.Element> = {
   "prayer-light": PrayerLight,
   "dove-flight": DoveFlight,
   "star-twinkle": StarTwinkle,
+  "wheat-harvest": WheatHarvest,
+  "olive-branch": OliveBranch,
+  "flame-ember": FlameEmber,
+  "light-path": LightPath,
+  "trumpet-fanfare": TrumpetFanfare,
+  "shield-guard": ShieldGuard,
+  "globe-lights": GlobeLights,
+  "crown-honor": CrownHonor,
+  "blessing-box": BlessingBox,
+  "crystal-shimmer": CrystalShimmer,
 };
 
 export const GiftRevealAnimation = ({ kind, onRevealComplete }: GiftRevealAnimationProps) => {
