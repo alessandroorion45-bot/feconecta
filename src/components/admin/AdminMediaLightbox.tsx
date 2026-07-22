@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 
 export interface LightboxItem {
   url: string;
@@ -41,20 +41,13 @@ export function AdminMediaLightbox({ items, index, onClose, onNavigate }: AdminM
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-none bg-black/95">
+      {/* DialogContent já injeta seu próprio botão de fechar — estiliza
+          ele aqui em vez de renderizar um segundo por cima. */}
+      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-none bg-black/95 [&>button]:top-2 [&>button]:right-2 [&>button]:z-20 [&>button]:bg-black/50 [&>button]:hover:bg-black/70 [&>button]:text-white [&>button]:rounded-full [&>button]:opacity-100 [&>button]:h-9 [&>button]:w-9 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button_svg]:h-6 [&>button_svg]:w-6">
         <DialogTitle className="sr-only">
           {item.kind === "image" ? "Visualização da foto" : "Visualização do vídeo"}
         </DialogTitle>
         <div className="relative w-full h-[90vh] flex items-center justify-center overflow-hidden">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={onClose}
-          >
-            <X className="h-6 w-6" />
-          </Button>
-
           {item.kind === "image" && (
             <Button
               variant="ghost"

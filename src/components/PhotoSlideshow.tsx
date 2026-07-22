@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  X, 
-  Play, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Play,
   Pause,
   Maximize2
 } from "lucide-react";
@@ -104,7 +103,10 @@ export const PhotoSlideshow = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black/95">
+      {/* DialogContent já injeta seu próprio botão de fechar — estiliza
+          ele aqui em vez de renderizar um segundo por cima (botão
+          duplicado reportado no ImageLightbox, mesmo padrão aqui). */}
+      <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black/95 [&>button]:top-4 [&>button]:right-4 [&>button]:z-30 [&>button]:text-white [&>button]:opacity-100 [&>button]:hover:bg-white/20 [&>button]:rounded-md [&>button_svg]:h-6 [&>button_svg]:w-6">
         <div className="relative w-full h-full flex flex-col">
           {/* Top controls */}
           <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent">
@@ -126,14 +128,6 @@ export const PhotoSlideshow = ({
                 {isPlaying ? 'Pausar' : 'Reproduzir'}
               </Button>
             </div>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={onClose}
-              className="text-white hover:bg-white/20"
-            >
-              <X className="h-6 w-6" />
-            </Button>
           </div>
 
           {/* Main photo area */}

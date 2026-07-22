@@ -3,8 +3,6 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface ImageLightboxProps {
   src: string;
@@ -23,17 +21,12 @@ const ImageLightbox = ({ src, alt = "", className = "" }: ImageLightboxProps) =>
         className={`cursor-pointer transition-transform hover:scale-[1.02] ${className}`}
         onClick={() => setIsOpen(true)}
       />
+      {/* DialogContent já injeta seu próprio botão de fechar — só estiliza
+          ele aqui (bolinha escura, X branco) em vez de renderizar um
+          segundo por cima, que era o botão duplicado reportado. */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-none bg-transparent">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-none bg-transparent [&>button]:top-2 [&>button]:right-2 [&>button]:z-10 [&>button]:bg-black/50 [&>button]:hover:bg-black/70 [&>button]:text-white [&>button]:rounded-full [&>button]:opacity-100 [&>button]:h-9 [&>button]:w-9 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button_svg]:h-5 [&>button_svg]:w-5">
           <div className="relative w-full h-full flex items-center justify-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
-              onClick={() => setIsOpen(false)}
-            >
-              <X className="h-6 w-6" />
-            </Button>
             <img
               src={src}
               alt={alt}
