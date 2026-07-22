@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
 import AnimatedCosmeticFrame from "@/components/AnimatedCosmeticFrame";
@@ -14,6 +14,7 @@ import { AvatarUpload } from "./AvatarUpload";
 import ProfileStats from "@/components/profile/ProfileStats";
 import ProfileBadgesShowcase from "@/components/profile/ProfileBadgesShowcase";
 import ProfileGifts from "@/components/profile/ProfileGifts";
+import { ProfileEditHub } from "@/components/ProfileEditHub";
 
 interface Badge {
   badge_name: string;
@@ -91,6 +92,10 @@ export const ProfilePublicView = ({
   // Contadores só-leitura: conquistas e posição no ranking
   const [achievementsCount, setAchievementsCount] = useState<number | null>(null);
   const [rankPosition, setRankPosition] = useState<number | null>(null);
+  // Hub "Editar Perfil" — um botão só, com atalhos pra ações que já existiam
+  const [hubOpen, setHubOpen] = useState(false);
+  const [avatarPickerTrigger, setAvatarPickerTrigger] = useState<(() => void) | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!userId) return;
@@ -152,13 +157,20 @@ export const ProfilePublicView = ({
       {/* Cover Image with Gradient Overlay */}
       <div className="relative w-full h-[220px] sm:h-[280px] md:h-[320px] overflow-hidden">
         {profile.cover_image_url ? (
-          <img
-            src={profile.cover_image_url}
-            alt={`Capa do perfil de ${profile.full_name}`}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: "50% 40%" }}
-            loading="lazy"
-          />
+          <AnimatePresence mode="popLayout">
+            <motion.img
+              key={profile.cover_image_url}
+              src={profile.cover_image_url}
+              alt={`Capa do perfil de ${profile.full_name}`}
+              className="absolute inset-0 w-full h-full object-cover motion-reduce:!scale-100"
+              style={{ objectPosition: "50% 40%" }}
+              loading="lazy"
+              initial={{ opacity: 0, scale: 1.06 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+          </AnimatePresence>
         ) : bgStyle ? (
           <div className="absolute inset-0" style={{ background: bgStyle }} />
         ) : (
@@ -183,8 +195,14 @@ export const ProfilePublicView = ({
           </div>
         )}
 
-        {/* Bottom gradient for smooth transition */}
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card via-card/80 to-transparent" />
+        {/* Scrim bem sutil — só o suficiente pro avatar/badge que sobrepõem
+            a capa (margin negativo abaixo) terem contraste, sem esconder
+            a foto. Era uma faixa opaca da cor do card cobrindo ~30% da
+            capa; agora é praticamente transparente até os últimos 35%. */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(180deg, transparent 65%, rgba(0,0,0,0.18) 100%)" }}
+        />
       </div>
 
       {/* Profile Header Section — cartão de identidade */}
@@ -233,6 +251,7 @@ export const ProfilePublicView = ({
                     onUploadComplete={onAvatarUpdate}
                     variant="rectangular"
                     fallbackName={profile.full_name}
+                    onTriggerReady={(fn) => setAvatarPickerTrigger(() => fn)}
                   />
                 ) : (
                   <AvatarPro
@@ -276,6 +295,7 @@ export const ProfilePublicView = ({
                       onUploadComplete={onAvatarUpdate}
                       variant="rectangular"
                       fallbackName={profile.full_name}
+                      onTriggerReady={(fn) => setAvatarPickerTrigger(() => fn)}
                     />
                   ) : (
                     <AvatarPro
@@ -474,10 +494,10 @@ export const ProfilePublicView = ({
           </Link>
         </div>
 
-        {/* Edit Profile Button - Repositioned below info section */}
+        {/* Edit Profile Button - abre o hub com todos os atalhos de gerenciamento */}
         {isOwner && (
           <Button
-            onClick={onEditClick}
+            onClick={() => setHubOpen(true)}
             className="w-full gap-2 bg-gradient-primary text-primary-foreground rounded-xl h-12 mt-2 border border-transparent hover:!bg-gradient-to-r hover:!from-amber-400 hover:!to-amber-500 hover:!text-amber-950 hover:border-amber-300/60 hover:shadow-lg hover:shadow-amber-500/30 hover:scale-[1.01] transition-all duration-[250ms]"
           >
             <Pencil className="h-4 w-4" />
@@ -485,6 +505,19 @@ export const ProfilePublicView = ({
           </Button>
         )}
       </CardContent>
+
+      {isOwner && (
+        <ProfileEditHub
+          open={hubOpen}
+          onOpenChange={setHubOpen}
+          onEditInfo={onEditClick}
+          onChangeAvatar={() => avatarPickerTrigger?.()}
+          onAddPhotos={() => document.getElementById("profile-photos-section")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          onAddVideo={() => document.getElementById("profile-videos-section")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          onChangeTheme={() => navigate("/themes")}
+          onPrivacy={onSettingsClick}
+        />
+      )}
     </Card>
   );
 };

@@ -710,8 +710,8 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
     <Card className="p-6 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Camera className="h-5 w-5 text-primary" />
+        <div className="group flex items-center gap-2">
+          <Camera className="h-[18px] w-[18px] text-muted-foreground opacity-55 transition-all duration-200 group-hover:opacity-100 group-hover:scale-110" />
           <h3 className="font-semibold">Fotos</h3>
           <span className="text-sm text-muted-foreground">({photos.length})</span>
         </div>
@@ -862,8 +862,8 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
               <ImageIcon className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">Nenhuma foto ainda</p>
-              <p className="text-xs text-muted-foreground">Publique a primeira e comece seu álbum de memórias.</p>
+              <p className="text-sm font-medium">Compartilhe seus melhores momentos</p>
+              <p className="text-xs text-muted-foreground">Sua primeira foto ficará em destaque no perfil.</p>
             </div>
             <Plus className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
           </button>
@@ -1094,7 +1094,7 @@ export const ProfilePhotos = memo(({ userId, isOwner, isFriend = false }: Profil
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05, duration: 0.3 }}
-              className="group relative bg-muted rounded-lg overflow-hidden cursor-pointer"
+              className="group relative bg-muted rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               onClick={() => openPhotoDetail(photo)}
             >
               {/* Photo with preserved aspect ratio using padding trick */}

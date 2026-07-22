@@ -313,7 +313,7 @@ const Profile = () => {
 
         {/* Photos Section - Lazy loaded with Suspense */}
         {user && !loading && (
-          <div className="mt-6 px-4 sm:px-0">
+          <div id="profile-photos-section" className="mt-6 px-4 sm:px-0 scroll-mt-20">
             <Suspense fallback={
               <Card className="p-6">
                 <Skeleton className="h-8 w-48 mb-4" />
@@ -334,7 +334,7 @@ const Profile = () => {
 
         {/* Videos Section - Lazy loaded with Suspense */}
         {user && !loading && (
-          <div className="mt-6 px-4 sm:px-0">
+          <div id="profile-videos-section" className="mt-6 px-4 sm:px-0 scroll-mt-20">
             <Suspense fallback={
               <Card className="p-6">
                 <Skeleton className="h-8 w-48 mb-4" />

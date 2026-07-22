@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Camera, X, Check } from "lucide-react";
@@ -17,6 +17,9 @@ interface AvatarUploadProps {
   onUploadComplete: (url: string) => void;
   variant?: "circular" | "rectangular";
   fallbackName?: string;
+  /** Chamado uma vez com uma função pra abrir o seletor de arquivo de fora
+   * (ex: um menu de atalhos), sem precisar clicar direto no avatar. */
+  onTriggerReady?: (openPicker: () => void) => void;
 }
 
 function getInitials(name?: string): string {
@@ -53,6 +56,7 @@ export const AvatarUpload = ({
   onUploadComplete,
   variant = "circular",
   fallbackName,
+  onTriggerReady,
 }: AvatarUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,6 +68,11 @@ export const AvatarUpload = ({
   const imgRef = useRef<HTMLImageElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    onTriggerReady?.(() => inputRef.current?.click());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
