@@ -115,11 +115,25 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 md:py-24 text-center">
-        {/* manchas suaves de cor ao fundo, na paleta do próprio tema */}
+        {/* manchas suaves de cor ao fundo, na paleta do próprio tema.
+            Gradiente radial em vez de blur(círculo sólido): blur() nunca
+            chega a 0 de opacidade de verdade, então sobra uma borda visível
+            do "blob" contra o fundo claro — radial-gradient funde de
+            verdade até transparent, sem costura (mesma lição da faixa de
+            aurora dos temas premium). */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-secondary/10 blur-3xl" />
-          <div className="absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
-          <div className="absolute bottom-0 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+          <div
+            className="absolute -top-32 -left-32 h-[26rem] w-[26rem] rounded-full"
+            style={{ background: "radial-gradient(circle, hsl(var(--secondary) / 0.14), transparent 68%)" }}
+          />
+          <div
+            className="absolute top-1/4 -right-32 h-[30rem] w-[30rem] rounded-full"
+            style={{ background: "radial-gradient(circle, hsl(var(--accent) / 0.13), transparent 68%)" }}
+          />
+          <div
+            className="absolute bottom-0 left-1/4 h-96 w-96 rounded-full"
+            style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.11), transparent 68%)" }}
+          />
         </div>
 
         <div className="relative mx-auto max-w-4xl">
