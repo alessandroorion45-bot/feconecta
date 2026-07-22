@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
 import SeloPremiumModal, { SeloPremiumBadge } from "@/components/kingdom-badges/SeloPremiumModal";
+import GiftStorePreviewModal from "@/components/gifts/GiftStorePreviewModal";
 import { BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
 import AnimatedCosmeticFrame from "@/components/AnimatedCosmeticFrame";
 import { getTheme } from "@/lib/themes";
@@ -182,6 +183,7 @@ const KingdomStore = () => {
   const [ownedBadgeIds, setOwnedBadgeIds] = useState<Set<string>>(new Set());
   const [badgeUnlockedAt, setBadgeUnlockedAt] = useState<Record<string, string>>({});
   const [premiumBadge, setPremiumBadge] = useState<SeloPremiumBadge | null>(null);
+  const [previewGift, setPreviewGift] = useState<StoreProduct | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<{ mensal: number; ativa: boolean; progresso: number } | null>(null);
@@ -515,14 +517,33 @@ const KingdomStore = () => {
                             size="lg"
                           />
                         </button>
+                      ) : product.tipo === "presente" ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewGift(product)}
+                          className="rounded-xl transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
+                          title="Ver o presente"
+                        >
+                          <CosmeticPreview product={product} />
+                        </button>
                       ) : (
                         <CosmeticPreview product={product} />
                       )}
                     </div>
 
                     <h3
-                      className={product.tipo === "selo" ? "font-bold cursor-pointer hover:text-amber-600 dark:hover:text-amber-400 transition-colors" : "font-bold"}
-                      onClick={product.tipo === "selo" ? () => openPremiumSelo(product) : undefined}
+                      className={
+                        product.tipo === "selo" || product.tipo === "presente"
+                          ? "font-bold cursor-pointer hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                          : "font-bold"
+                      }
+                      onClick={
+                        product.tipo === "selo"
+                          ? () => openPremiumSelo(product)
+                          : product.tipo === "presente"
+                          ? () => setPreviewGift(product)
+                          : undefined
+                      }
                     >
                       {product.nome}
                     </h3>
@@ -829,6 +850,17 @@ const KingdomStore = () => {
       </Dialog>
 
       <SeloPremiumModal badge={premiumBadge} onClose={() => setPremiumBadge(null)} />
+
+      <GiftStorePreviewModal
+        product={previewGift}
+        onClose={() => setPreviewGift(null)}
+        onPresentear={() => {
+          if (!previewGift) return;
+          const product = previewGift;
+          setPreviewGift(null);
+          openBuy(product, true);
+        }}
+      />
     </div>
   );
 };
