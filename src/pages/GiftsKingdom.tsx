@@ -29,6 +29,7 @@ interface GiftRecord {
   gift_to: string | null;
   store_products: {
     nome: string;
+    slug: string | null;
     icone: string | null;
     image_url: string | null;
     descricao: string | null;
@@ -85,12 +86,12 @@ const GiftsKingdom = () => {
 
     const [{ data: rec }, { data: env }] = await Promise.all([
       sb.from("store_purchases")
-        .select("id, gift_message, opened_at, thanked_at, created_at, buyer_id, gift_to, store_products(nome, icone, image_url, descricao, verse_reference, verse_text, raridade)")
+        .select("id, gift_message, opened_at, thanked_at, created_at, buyer_id, gift_to, store_products(nome, slug, icone, image_url, descricao, verse_reference, verse_text, raridade)")
         .eq("gift_to", user.id)
         .eq("status", "approved")
         .order("created_at", { ascending: false }),
       sb.from("store_purchases")
-        .select("id, gift_message, opened_at, thanked_at, created_at, buyer_id, gift_to, store_products(nome, icone, image_url, descricao, verse_reference, verse_text, raridade)")
+        .select("id, gift_message, opened_at, thanked_at, created_at, buyer_id, gift_to, store_products(nome, slug, icone, image_url, descricao, verse_reference, verse_text, raridade)")
         .eq("buyer_id", user.id)
         .not("gift_to", "is", null)
         .eq("status", "approved")
@@ -347,6 +348,7 @@ const GiftsKingdom = () => {
               <GiftPremiumExperience
                 purchaseId={opening.id}
                 productName={opening.store_products?.nome || "Presente"}
+                productSlug={opening.store_products?.slug}
                 imageUrl={opening.store_products?.image_url || null}
                 icone={opening.store_products?.icone || null}
                 giftMessage={opening.gift_message}

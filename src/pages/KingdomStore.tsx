@@ -18,6 +18,8 @@ import AnimatedCosmeticFrame from "@/components/AnimatedCosmeticFrame";
 import { getTheme } from "@/lib/themes";
 import { useTheme } from "@/contexts/ThemeContext";
 import { playUnlockChime } from "@/lib/badgeSound";
+import { giftAnimationFor } from "@/lib/giftPresentation";
+import GiftRevealAnimation from "@/components/gifts/GiftRevealAnimation";
 import {
   ShoppingBag, Heart, Gift, Search, ArrowLeft, Clock, Copy, Check, PartyPopper, Sparkles, Loader2, CheckCircle2, X,
 } from "lucide-react";
@@ -613,6 +615,17 @@ const KingdomStore = () => {
                 </DialogDescription>
               </DialogHeader>
 
+              {giftAnimationFor(buying.slug) && (
+                <div className="relative mb-1 flex h-24 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-amber-500/[0.06] to-transparent">
+                  <GiftRevealAnimation kind={giftAnimationFor(buying.slug)!} />
+                  {buying.image_url ? (
+                    <img src={buying.image_url} alt="" className="relative h-16 w-16 object-contain drop-shadow" />
+                  ) : (
+                    <span className="relative text-4xl">{buying.icone || "🎁"}</span>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Para quem?</label>
@@ -771,9 +784,20 @@ const KingdomStore = () => {
               </AnimatePresence>
 
               <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200 }}>
-                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
-                  <PartyPopper className="h-7 w-7 text-emerald-500" />
-                </div>
+                {isGift && giftAnimationFor(buying.slug) ? (
+                  <div className="relative mx-auto mb-3 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-amber-500/[0.08] to-transparent">
+                    <GiftRevealAnimation kind={giftAnimationFor(buying.slug)!} />
+                    {buying.image_url ? (
+                      <img src={buying.image_url} alt="" className="relative h-12 w-12 object-contain drop-shadow" />
+                    ) : (
+                      <span className="relative text-3xl">{buying.icone || "🎁"}</span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
+                    <PartyPopper className="h-7 w-7 text-emerald-500" />
+                  </div>
+                )}
                 <DialogHeader>
                   <DialogTitle className="text-center">
                     {isGift ? "Presente enviado! 🎁" : "Muito obrigado! 🎉"}

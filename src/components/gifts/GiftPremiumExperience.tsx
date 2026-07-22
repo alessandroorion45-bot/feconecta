@@ -11,9 +11,11 @@ import {
   fetchGiftVerse,
   FetchedVerse,
   ParticleKind,
+  giftAnimationFor,
 } from "@/lib/giftPresentation";
 import { startGiftAmbient, stopGiftAmbient } from "@/lib/giftAmbient";
 import { Heart, Share2, Bookmark, BookmarkCheck, Volume2, VolumeX, Sparkles } from "lucide-react";
+import GiftRevealAnimation from "./GiftRevealAnimation";
 
 const sb = supabase as any;
 
@@ -41,6 +43,10 @@ const PARTICLE_EMOJI: Record<ParticleKind, string> = {
 export interface GiftPremiumExperienceProps {
   purchaseId: string;
   productName: string;
+  /** slug estável do produto — usado só pra escolher a animação exclusiva
+   * (quando existe uma pros 6 presentes espirituais); opcional pra não
+   * quebrar quem ainda não passa esse campo */
+  productSlug?: string | null;
   imageUrl: string | null;
   icone: string | null;
   giftMessage?: string | null;
@@ -57,6 +63,7 @@ export interface GiftPremiumExperienceProps {
 const GiftPremiumExperience = ({
   purchaseId,
   productName,
+  productSlug,
   imageUrl,
   icone,
   giftMessage,
@@ -73,6 +80,7 @@ const GiftPremiumExperience = ({
   const style = rarityStyle(raridade);
   const theme = giftThemeFor(productName);
   const celebratory = isCelebratory(productName);
+  const bespokeAnimation = giftAnimationFor(productSlug);
 
   const [verse, setVerse] = useState<FetchedVerse | null>(null);
   const [verseLoading, setVerseLoading] = useState(true);
@@ -230,36 +238,41 @@ const GiftPremiumExperience = ({
       className="relative overflow-hidden rounded-lg"
       style={{ background: "radial-gradient(circle at 50% 20%, rgba(255,255,255,0.06), transparent 55%), linear-gradient(165deg, #14101f 0%, #1c1530 55%, #0f0b18 100%)" }}
     >
-      {/* Partículas sutis de fundo */}
-      {!reduced && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          {theme.particle === "light-rays"
-            ? [...Array(5)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute top-0 h-full w-8 opacity-0"
-                  style={{
-                    left: `${10 + i * 20}%`,
-                    background: `linear-gradient(180deg, transparent, ${style.glow}, transparent)`,
-                    filter: "blur(6px)",
-                  }}
-                  animate={{ opacity: [0, 0.5, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, delay: i * 0.8, ease: "easeInOut" }}
-                />
-              ))
-            : [...Array(10)].map((_, i) => (
-                <motion.span
-                  key={i}
-                  className="absolute text-sm opacity-70"
-                  style={{ left: `${6 + ((i * 41) % 88)}%` }}
-                  initial={{ y: "108%", opacity: 0 }}
-                  animate={{ y: "-8%", opacity: [0, 0.8, 0] }}
-                  transition={{ duration: 7 + (i % 5), repeat: Infinity, delay: i * 0.7, ease: "linear" }}
-                >
-                  {particleEmoji}
-                </motion.span>
-              ))}
-        </div>
+      {/* Animação exclusiva do presente (6 espirituais) — substitui as
+          partículas genéricas quando existe uma assinatura própria */}
+      {bespokeAnimation ? (
+        <GiftRevealAnimation kind={bespokeAnimation} />
+      ) : (
+        !reduced && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+            {theme.particle === "light-rays"
+              ? [...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute top-0 h-full w-8 opacity-0"
+                    style={{
+                      left: `${10 + i * 20}%`,
+                      background: `linear-gradient(180deg, transparent, ${style.glow}, transparent)`,
+                      filter: "blur(6px)",
+                    }}
+                    animate={{ opacity: [0, 0.5, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, delay: i * 0.8, ease: "easeInOut" }}
+                  />
+                ))
+              : [...Array(10)].map((_, i) => (
+                  <motion.span
+                    key={i}
+                    className="absolute text-sm opacity-70"
+                    style={{ left: `${6 + ((i * 41) % 88)}%` }}
+                    initial={{ y: "108%", opacity: 0 }}
+                    animate={{ y: "-8%", opacity: [0, 0.8, 0] }}
+                    transition={{ duration: 7 + (i % 5), repeat: Infinity, delay: i * 0.7, ease: "linear" }}
+                  >
+                    {particleEmoji}
+                  </motion.span>
+                ))}
+          </div>
+        )
       )}
 
       <div className="relative flex flex-col items-center text-center px-6 py-8">

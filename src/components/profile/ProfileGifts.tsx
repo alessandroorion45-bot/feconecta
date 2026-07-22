@@ -16,6 +16,7 @@ interface ReceivedGift {
   gift_message: string | null;
   store_products: {
     nome: string;
+    slug: string | null;
     icone: string | null;
     image_url: string | null;
     descricao: string | null;
@@ -47,7 +48,7 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
     (async () => {
       const { data } = await sb
         .from("store_purchases")
-        .select("id, created_at, buyer_id, gift_message, store_products(nome, icone, image_url, descricao, verse_reference, verse_text, raridade)")
+        .select("id, created_at, buyer_id, gift_message, store_products(nome, slug, icone, image_url, descricao, verse_reference, verse_text, raridade)")
         .eq("gift_to", userId)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
@@ -146,6 +147,7 @@ const ProfileGifts = memo(({ userId, isOwner }: ProfileGiftsProps) => {
             <GiftPremiumExperience
               purchaseId={detail.id}
               productName={detail.store_products?.nome || "Presente"}
+              productSlug={detail.store_products?.slug}
               imageUrl={detail.store_products?.image_url || null}
               icone={detail.store_products?.icone || null}
               giftMessage={detail.gift_message}

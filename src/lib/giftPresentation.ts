@@ -79,6 +79,28 @@ export function isCelebratory(name: string): boolean {
 }
 
 // ============================================================
+// Animação de revelação exclusiva por presente — mapeada pelo
+// slug (estável, não muda se o nome de exibição mudar), só pros
+// 6 presentes espirituais com animação própria. Os demais
+// presentes continuam com o sistema genérico de partículas acima.
+// ============================================================
+export type GiftAnimationKind = "petals" | "handshake" | "heartbeat" | "prayer-light" | "dove-flight" | "star-twinkle";
+
+const ANIMATION_BY_SLUG: Record<string, GiftAnimationKind> = {
+  "rosa-da-gratidao": "petals",
+  "aperto-de-mao-fraterno": "handshake",
+  "coracao-de-gratidao": "heartbeat",
+  "oracao-por-voce": "prayer-light",
+  "pomba-da-paz": "dove-flight",
+  "estrela-da-esperanca": "star-twinkle",
+};
+
+export function giftAnimationFor(slug: string | null | undefined): GiftAnimationKind | null {
+  if (!slug) return null;
+  return ANIMATION_BY_SLUG[slug] ?? null;
+}
+
+// ============================================================
 // Versículo: busca sempre na Bíblia já importada no Supabase
 // (bible_books + bible_verses) — nunca duplica texto bíblico.
 // Aceita "Livro Cap:Verso" (ex.: "João 3:16"); ranges como
