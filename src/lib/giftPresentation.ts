@@ -127,6 +127,42 @@ export function giftAnimationFor(slug: string | null | undefined): GiftAnimation
 }
 
 // ============================================================
+// Cor primária por presente — usada pra derivar automaticamente o
+// glow, o gradiente de fundo e as sombras da modal de preview, sem
+// precisar estilizar cada presente na mão. rgb fica separado do hex
+// só pra facilitar montar rgba(...) nos estilos inline.
+// ============================================================
+export interface GiftColorTheme {
+  hex: string;
+  rgb: string;
+}
+
+const DEFAULT_GIFT_COLOR: GiftColorTheme = { hex: "#f43f5e", rgb: "244,63,94" };
+
+const COLOR_BY_SLUG: Record<string, GiftColorTheme> = {
+  "rosa-da-gratidao": { hex: "#f43f5e", rgb: "244,63,94" },
+  "aperto-de-mao-fraterno": { hex: "#d4930d", rgb: "212,147,13" },
+  "coracao-de-gratidao": { hex: "#dc2626", rgb: "220,38,38" },
+  "oracao-por-voce": { hex: "#fbbf24", rgb: "251,191,36" },
+  "pomba-da-paz": { hex: "#7dd3fc", rgb: "125,211,252" },
+  "estrela-da-esperanca": { hex: "#f59e0b", rgb: "245,158,11" },
+  "feixe-de-trigo": { hex: "#eab308", rgb: "234,179,8" },
+  "ramo-de-oliveira": { hex: "#22c55e", rgb: "34,197,94" },
+  "chama-da-esperanca": { hex: "#f97316", rgb: "249,115,22" },
+  "luz-do-caminho": { hex: "#fcd34d", rgb: "252,211,77" },
+  "trombeta-da-vitoria": { hex: "#f59e0b", rgb: "245,158,11" },
+  "escudo-da-fe": { hex: "#60a5fa", rgb: "96,165,250" },
+  "globo-missionario": { hex: "#0ea5e9", rgb: "14,165,233" },
+  "coroa-da-honra": { hex: "#f59e0b", rgb: "245,158,11" },
+  "caixa-de-bencaos": { hex: "#fb7185", rgb: "251,113,133" },
+  "cristal-da-fidelidade": { hex: "#38bdf8", rgb: "56,189,248" },
+};
+
+export function giftColorFor(slug: string | null | undefined): GiftColorTheme {
+  return (slug && COLOR_BY_SLUG[slug]) || DEFAULT_GIFT_COLOR;
+}
+
+// ============================================================
 // Versículo: busca sempre na Bíblia já importada no Supabase
 // (bible_books + bible_verses) — nunca duplica texto bíblico.
 // Aceita "Livro Cap:Verso" (ex.: "João 3:16"); ranges como
