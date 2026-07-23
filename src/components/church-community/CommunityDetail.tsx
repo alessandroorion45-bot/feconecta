@@ -279,16 +279,17 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
               </div>
             </div>
           )}
-          {/* Overlay leve: a imagem é o destaque; o degradê só ajuda a leitura */}
+          {/* Overlay escuro tingido de roxo Kingdom — dá personalidade e
+              contraste, sem o degradê branco que desbotava a capa */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.04) 30%, transparent 50%)",
+                "linear-gradient(180deg, rgba(13,6,32,0.35) 0%, rgba(13,6,32,0.08) 35%, transparent 55%, rgba(13,6,32,0.55) 100%)",
             }}
           />
-          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 ring-1 ring-inset ring-black/10 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-purple-500/15 mix-blend-overlay pointer-events-none" />
+          <div className="absolute inset-0 ring-1 ring-inset ring-white/5 pointer-events-none" />
 
           {/* Alterar/remover capa (somente criador, aparece no hover) */}
           {isCreator && (
