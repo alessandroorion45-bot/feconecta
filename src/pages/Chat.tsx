@@ -180,9 +180,12 @@ const Chat = () => {
     }
   }, [selectedConversation]);
 
+  // friendIsTyping também: o indicador "está digitando..." renderiza DEPOIS
+  // da última mensagem — sem rolar junto, ele fica abaixo da dobra e o
+  // usuário nunca vê (o mecanismo funcionava, mas invisível na prática)
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, friendIsTyping]);
 
   useEffect(() => {
     if (!selectedConversation || !user) return;
