@@ -217,11 +217,11 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
         )}
       </div>
 
-      {/* Identidade */}
-      <CardContent className="relative -mt-12 pb-4">
-        <div className="flex items-end gap-3">
+      {/* Identidade — avatar totalmente abaixo da capa (sem sobreposição) */}
+      <CardContent className="relative pt-4 pb-4">
+        <div className="flex items-center gap-3">
           {/* Avatar 9:16 premium — glass + glow + sombra + zoom no hover */}
-          <div className="relative w-[68px] shrink-0" style={{ aspectRatio: "9 / 16" }}>
+          <div className="relative w-[60px] shrink-0" style={{ aspectRatio: "9 / 16" }}>
             <div className="absolute -inset-1 rounded-[22px] bg-gradient-to-br from-primary/60 via-purple-500/40 to-sky-400/40 blur-md opacity-70 group-hover:opacity-100 transition-opacity duration-300" aria-hidden />
             <div
               className="relative h-full w-full rounded-[20px] overflow-hidden border border-white/20 shadow-2xl transition-transform duration-300 group-hover:scale-[1.05]"
