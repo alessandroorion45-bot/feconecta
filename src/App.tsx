@@ -71,6 +71,7 @@ const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
 const AdminAutomation = lazy(() => import("./pages/admin/Automation"));
 const AdminReports = lazy(() => import("./pages/admin/Reports"));
 const AdminLinkViolations = lazy(() => import("./pages/admin/LinkViolations"));
+const AdminVigilancia = lazy(() => import("./pages/admin/Vigilancia"));
 const AdminSystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -143,6 +144,7 @@ const routes: RouteObject[] = [
   { path: "/admin/automation", element: <ProtectedRoute><AdminRoute><AdminAutomation /></AdminRoute></ProtectedRoute> },
   { path: "/admin/reports", element: <ProtectedRoute><AdminRoute><AdminReports /></AdminRoute></ProtectedRoute> },
   { path: "/admin/link-violations", element: <ProtectedRoute><AdminRoute><AdminLinkViolations /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/vigilancia", element: <ProtectedRoute><AdminRoute><AdminVigilancia /></AdminRoute></ProtectedRoute> },
   { path: "/admin/system", element: <ProtectedRoute><AdminRoute><AdminSystemHealth /></AdminRoute></ProtectedRoute> },
 
   { path: "/user/:userId", element: <UserProfile /> },

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle, Globe, WifiOff } from "lucide-react";
 import SEO from "@/components/SEO";
+import IntrusionWarning from "@/components/security/IntrusionWarning";
 import { FcGoogle } from "react-icons/fc";
 import { 
   emailSchema, 
@@ -130,6 +131,7 @@ const Auth = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { t, setLanguage, language } = useLanguage();
   const [loading, setLoading] = useState(false);
+  const [intrusion, setIntrusion] = useState<{ ip: string | null; location: string | null } | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string>("");
@@ -554,6 +556,15 @@ const Auth = () => {
                                    language === 'es' ? "Correo o contraseña incorrectos" :
                                    language === 'nl' ? "Onjuist e-mailadres of wachtwoord" :
                                    "Incorrect email or password" });
+          // Olho da Vigilância: registra a falha; se cruzar o limite de
+          // tentativas nesta conta, o servidor devolve blocked=true e o
+          // dono da conta é notificado. Best-effort — nunca trava o login.
+          supabase.functions
+            .invoke("record-login-failure", { body: { email, userAgent: navigator.userAgent } })
+            .then(({ data }) => {
+              if (data?.blocked) setIntrusion({ ip: data.ip ?? null, location: data.location ?? null });
+            })
+            .catch(() => {});
         } else if (error.message?.includes("rate limit") || error.status === 429) {
           toast({
             title: language === 'pt' ? "Muitas tentativas" : 
@@ -754,6 +765,10 @@ const Auth = () => {
       </div>
     );
   };
+
+  if (intrusion) {
+    return <IntrusionWarning ip={intrusion.ip} location={intrusion.location} onDismiss={() => setIntrusion(null)} />;
+  }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 dark:from-amber-950 dark:via-yellow-950/60 dark:to-orange-950/60 p-3 sm:p-4">
