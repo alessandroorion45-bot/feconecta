@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Church, Users, LogIn, LogOut, Crown, MapPin, Hash, RefreshCw } from "lucide-react";
 import LocationFilter, { LocationFilters } from "./LocationFilter";
-import RectAvatar from "@/components/RectAvatar";
 import CommunityWelcomeModal from "./CommunityWelcomeModal";
 
 interface Community {
@@ -186,7 +185,7 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
       <div className="card-shine pointer-events-none absolute inset-0 z-20" aria-hidden />
 
       {/* Capa */}
-      <div className="relative h-24 overflow-hidden">
+      <div className="relative h-28 overflow-hidden">
         {community.banner_url || community.cover_image_url ? (
           <img
             src={community.banner_url || community.cover_image_url!}
@@ -195,20 +194,23 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-purple-500/25 to-amber-500/30 transition-transform duration-500 group-hover:scale-110">
-            <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-25 select-none">⛪</span>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-600 to-indigo-700 transition-transform duration-500 group-hover:scale-110">
+            <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-30 select-none">⛪</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
+        {/* Overlay escuro tingido de roxo Kingdom — dá personalidade e
+            contraste, sem o degradê branco que desbotava a capa */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0620]/85 via-[#1a0f35]/45 to-primary/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20 mix-blend-overlay" />
 
-        {/* Membros — chama para a comunhão */}
-        <Badge className="absolute top-2 right-2 gap-1 bg-background/85 text-foreground backdrop-blur-sm shadow border-0">
-          <Users className="h-3 w-3 text-primary" />
-          {community.member_count} {community.member_count === 1 ? "irmão" : "irmãos"}
+        {/* Membros — glass premium */}
+        <Badge className="absolute top-2.5 right-2.5 gap-1.5 bg-white/10 text-white backdrop-blur-md shadow-lg border border-white/15 font-medium">
+          <Users className="h-3 w-3 text-sky-300" />
+          {community.member_count} {community.member_count === 1 ? "irmão em Cristo" : "irmãos em Cristo"}
         </Badge>
 
         {community.member_role === "admin" && (
-          <Badge className="absolute top-2 left-2 gap-1 bg-amber-500/90 text-white backdrop-blur-sm shadow border-0">
+          <Badge className="absolute top-2.5 left-2.5 gap-1 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 backdrop-blur-sm shadow-lg border-0 font-semibold">
             <Crown className="h-3 w-3" />
             Sua igreja
           </Badge>
@@ -216,17 +218,28 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
       </div>
 
       {/* Identidade */}
-      <CardContent className="relative -mt-9 pb-4">
+      <CardContent className="relative -mt-12 pb-4">
         <div className="flex items-end gap-3">
-          <div className="rounded-xl ring-2 ring-background shadow-lg transition-transform duration-300 group-hover:scale-105">
-            <RectAvatar
-              src={community.cover_image_url}
-              fallback={community.name}
-              size="md"
-            />
+          {/* Avatar 9:16 premium — glass + glow + sombra + zoom no hover */}
+          <div className="relative w-[68px] shrink-0" style={{ aspectRatio: "9 / 16" }}>
+            <div className="absolute -inset-1 rounded-[22px] bg-gradient-to-br from-primary/60 via-purple-500/40 to-sky-400/40 blur-md opacity-70 group-hover:opacity-100 transition-opacity duration-300" aria-hidden />
+            <div
+              className="relative h-full w-full rounded-[20px] overflow-hidden border border-white/20 shadow-2xl transition-transform duration-300 group-hover:scale-[1.05]"
+              style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(4px)" }}
+            >
+              {community.cover_image_url ? (
+                <img src={community.cover_image_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary to-purple-600 text-white text-2xl font-bold">
+                  {community.name.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              {/* brilho de vidro cruzando o avatar */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
+            </div>
           </div>
-          <div className="min-w-0 flex-1 pb-0.5">
-            <h3 className="font-bold text-lg leading-tight truncate group-hover:text-primary transition-colors">
+          <div className="min-w-0 flex-1 pb-1">
+            <h3 className="font-bold text-xl leading-tight truncate group-hover:text-primary transition-colors">
               {community.name}
             </h3>
             <p className="text-xs text-muted-foreground truncate">⛪ {community.church_name}</p>
@@ -247,18 +260,25 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
           </span>
         </div>
 
-        {/* Versículo ou descrição — o toque de curiosidade */}
-        <p className="text-sm text-muted-foreground italic mt-2 line-clamp-2 min-h-[20px]">
-          {community.main_verse?.trim()
-            ? `"${community.main_verse.replace(/^"|"$/g, "")}"`
-            : community.description || "Uma comunidade esperando por você... 🙏"}
+        {/* Descrição curta — resumo da comunidade (com fallback elegante) */}
+        <p className="text-sm text-foreground/80 mt-2.5 line-clamp-2 min-h-[20px]">
+          {community.description?.trim() || "Uma comunidade de fé, comunhão e esperança. 🙏"}
         </p>
+
+        {/* Versículo — cartão translúcido */}
+        {community.main_verse?.trim() && (
+          <div className="mt-2.5 rounded-xl border border-primary/15 bg-primary/[0.06] backdrop-blur-sm px-3 py-2">
+            <p className="text-[13px] italic text-foreground/85 leading-snug line-clamp-2">
+              "{community.main_verse.replace(/^"|"$/g, "")}"
+            </p>
+          </div>
+        )}
 
         {/* Chamado à ação */}
         <div className="flex items-center gap-2 mt-3" onClick={e => e.stopPropagation()}>
           {showJoin ? (
             <Button
-              className="flex-1 gap-2 bg-gradient-to-r from-primary via-primary to-purple-600 text-primary-foreground shadow-md transition-all group-hover:shadow-lg group-hover:shadow-primary/30"
+              className="flex-1 gap-2 !bg-gradient-to-r !from-primary !via-purple-600 !to-indigo-600 text-white shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40 group-hover:brightness-110"
               onClick={() => handleJoin(community.id)}
               disabled={joiningId === community.id}
             >
@@ -269,7 +289,7 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
           ) : (
             <>
               <Button
-                className="flex-1 gap-2 bg-gradient-to-r from-primary via-primary to-purple-600 text-primary-foreground shadow-md transition-all group-hover:shadow-lg group-hover:shadow-primary/30"
+                className="flex-1 gap-2 !bg-gradient-to-r !from-primary !via-purple-600 !to-indigo-600 text-white shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40 group-hover:brightness-110"
                 onClick={() => onSelectCommunity(community.id)}
               >
                 Entrar na Comunidade
