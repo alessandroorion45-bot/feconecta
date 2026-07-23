@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Search, LinkIcon, ChevronLeft, ChevronRight, ShieldAlert, Users, AlertTriangle } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { ModerationActions } from "@/components/admin/ModerationActions";
 
 interface Violation {
   id: string;
@@ -154,18 +155,19 @@ export default function LinkViolations() {
                   <TableHead>Conteúdo tentado</TableHead>
                   <TableHead className="text-center">Tentativas</TableHead>
                   <TableHead>Quando</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       Nenhuma violação registrada. 🙏
                     </TableCell>
                   </TableRow>
@@ -191,6 +193,14 @@ export default function LinkViolations() {
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(r.created_at).toLocaleString("pt-BR")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <ModerationActions
+                          userId={r.user_id}
+                          userName={r.user_name || r.user_email || r.user_id}
+                          defaultReason={`Compartilhamento reincidente de links externos (${r.total_violacoes_usuario} tentativas)`}
+                          onDone={load}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
