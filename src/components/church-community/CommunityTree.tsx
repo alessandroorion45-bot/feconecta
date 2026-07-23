@@ -82,22 +82,52 @@ const Branch = ({ label, emoji, flowers }: { label: string; emoji: string; flowe
       <path d="M280,20 C290,14 296,10 304,4" fill="none" stroke="url(#branchGrad)" strokeWidth="2.5" strokeLinecap="round" />
       <defs>
         <linearGradient id="branchGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgb(120 72 30 / 0.55)" />
-          <stop offset="50%" stopColor="rgb(146 94 42 / 0.75)" />
-          <stop offset="100%" stopColor="rgb(120 72 30 / 0.55)" />
+          <stop offset="0%" stopColor="rgb(92 55 22 / 0.7)" />
+          <stop offset="50%" stopColor="rgb(160 110 55 / 0.95)" />
+          <stop offset="100%" stopColor="rgb(92 55 22 / 0.7)" />
         </linearGradient>
+        <filter id="branchGlow" x="-20%" y="-40%" width="140%" height="200%">
+          <feGaussianBlur stdDeviation="1.4" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
       </defs>
     </svg>
+    {/* fio dourado de luz correndo pelo galho */}
+    <svg viewBox="0 0 400 28" className="w-full max-w-[520px] h-7 absolute inset-x-0 mx-auto" preserveAspectRatio="none" style={{ maxWidth: 520 }}>
+      <path d="M200,26 C150,20 90,24 20,8 M200,26 C250,20 310,24 380,8" fill="none" stroke="rgba(255,215,106,0.55)" strokeWidth="1" strokeLinecap="round" className="root-glow" />
+    </svg>
     {/* Folhas balançando + flores */}
-    <span className="tree-leaf absolute left-[6%] -top-1 text-sm">🍃</span>
-    <span className="tree-leaf absolute right-[6%] -top-1 text-sm" style={{ animationDelay: "0.9s" }}>🍃</span>
+    <span className="tree-leaf absolute left-[6%] -top-1 text-sm drop-shadow-[0_0_5px_rgba(74,222,128,0.6)]">🍃</span>
+    <span className="tree-leaf absolute right-[6%] -top-1 text-sm drop-shadow-[0_0_5px_rgba(74,222,128,0.6)]" style={{ animationDelay: "0.9s" }}>🍃</span>
     {flowers > 0 && <span className="tree-leaf absolute left-[22%] -top-2 text-xs" style={{ animationDelay: "0.4s" }}>🌸</span>}
     {flowers > 1 && <span className="tree-leaf absolute right-[22%] -top-2 text-xs" style={{ animationDelay: "1.3s" }}>🌸</span>}
-    <span className="absolute -top-3 bg-background/80 backdrop-blur-sm border border-amber-800/20 rounded-full px-3 py-0.5 text-xs font-medium text-amber-900/80 dark:text-amber-200/80 shadow-sm">
+    <span
+      className="absolute -top-3 rounded-full px-3 py-0.5 text-xs font-semibold text-amber-100 shadow-lg"
+      style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,215,106,0.3)" }}
+    >
       {emoji} {label}
     </span>
   </div>
 );
+
+// Estrelas e partículas geradas uma única vez (posições estáveis, não
+// re-randomizam a cada render). Puramente decorativas.
+const STARS = Array.from({ length: 34 }, (_, i) => ({
+  x: (i * 37.13) % 100,
+  y: (i * 53.7) % 92,
+  sz: 1 + (i % 3),
+  dur: 2.5 + (i % 5),
+  delay: (i % 7) * 0.4,
+}));
+
+const EMBERS = Array.from({ length: 18 }, (_, i) => ({
+  x: 4 + (i * 61.7) % 92,
+  sz: 2 + (i % 3),
+  dur: 9 + (i % 6),
+  delay: (i % 9) * 0.9,
+  drift: ((i % 5) - 2) * 14,
+  gold: i % 3 !== 0,
+}));
 
 const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
   const navigate = useNavigate();
@@ -260,7 +290,7 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Animações das folhas (discretas) */}
+      {/* Animações das folhas (discretas) + atmosfera cinematográfica */}
       <style>{`
         @keyframes treeLeafSway {
           0%, 100% { transform: rotate(-6deg) translateY(0); }
@@ -272,6 +302,49 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
           50% { box-shadow: 0 0 0 7px rgb(234 179 8 / 0); }
         }
         .fruit-highlight { animation: fruitPulse 1.6s ease-out infinite; border-radius: 9999px; }
+
+        /* Luz divina descendo do topo — respira, nunca pisca */
+        @keyframes divineBreath {
+          0%, 100% { opacity: 0.35; transform: translateX(-50%) scaleY(1); }
+          50% { opacity: 0.6; transform: translateX(-50%) scaleY(1.05); }
+        }
+        .divine-light { animation: divineBreath 6s ease-in-out infinite; }
+
+        /* Glow geral respirando */
+        @keyframes auraBreath {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.7; }
+        }
+        .aura-breath { animation: auraBreath 6s ease-in-out infinite; }
+
+        /* Partículas de luz subindo lentamente (poeira dourada / vagalumes) */
+        @keyframes emberFloat {
+          0% { transform: translateY(0) translateX(0); opacity: 0; }
+          10% { opacity: 0.9; }
+          90% { opacity: 0.7; }
+          100% { transform: translateY(-260px) translateX(var(--drift, 12px)); opacity: 0; }
+        }
+        .tree-ember { position: absolute; border-radius: 9999px; animation: emberFloat linear infinite; will-change: transform, opacity; }
+
+        /* Estrelas piscando de leve ao fundo */
+        @keyframes starTwinkle {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.9; }
+        }
+        .tree-star { position: absolute; border-radius: 9999px; background: #fff; animation: starTwinkle ease-in-out infinite; }
+
+        /* Raízes pulsando de leve */
+        @keyframes rootPulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.85; }
+        }
+        .root-glow { animation: rootPulse 5s ease-in-out infinite; }
+
+        /* Card do membro flutuando de leve */
+        @keyframes nodeFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
       `}</style>
 
       {/* Estatísticas */}
@@ -344,7 +417,7 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
       </div>
 
       {/* A Árvore */}
-      <Card className="overflow-hidden bg-gradient-to-b from-sky-400/10 via-emerald-500/5 to-amber-950/15">
+      <Card className="overflow-hidden border-white/10 shadow-2xl">
         <CardContent className="p-0">
           <div
             className="relative overflow-hidden cursor-grab active:cursor-grabbing touch-none min-h-[420px]"
@@ -352,32 +425,82 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
+            style={{
+              background:
+                "radial-gradient(120% 80% at 50% 0%, #1e1245 0%, #140a2e 35%, #0b0620 70%, #07040f 100%)",
+            }}
           >
+            {/* ===== Backdrop cinematográfico (parallax fixo, não arrasta) ===== */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+              {/* Nebulosas de profundidade */}
+              <div className="aura-breath absolute -top-10 left-[12%] w-72 h-72 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(108,59,255,0.45), transparent 70%)" }} />
+              <div className="aura-breath absolute top-24 right-[8%] w-80 h-80 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(79,157,255,0.30), transparent 70%)", animationDelay: "2s" }} />
+              <div className="aura-breath absolute bottom-0 left-1/2 -translate-x-1/2 w-[28rem] h-64 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(168,85,247,0.28), transparent 70%)", animationDelay: "3s" }} />
+              <div className="absolute bottom-0 inset-x-0 h-40 blur-2xl" style={{ background: "radial-gradient(60% 100% at 50% 100%, rgba(255,200,87,0.18), transparent 70%)" }} />
+
+              {/* Luz divina descendo do topo (representa Deus — respira, não pisca) */}
+              <div
+                className="divine-light absolute left-1/2 top-0 h-[70%] w-40"
+                style={{ background: "linear-gradient(180deg, rgba(255,240,200,0.55) 0%, rgba(255,220,140,0.18) 35%, transparent 75%)", filter: "blur(6px)", clipPath: "polygon(38% 0, 62% 0, 100% 100%, 0% 100%)" }}
+              />
+              <div className="aura-breath absolute left-1/2 -translate-x-1/2 top-1 w-24 h-24 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(255,236,180,0.7), transparent 70%)" }} />
+
+              {/* Estrelas pequenas */}
+              {STARS.map((s, i) => (
+                <span key={i} className="tree-star" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.sz, height: s.sz, animationDuration: `${s.dur}s`, animationDelay: `${s.delay}s` }} />
+              ))}
+
+              {/* Poeira dourada / vagalumes subindo */}
+              {EMBERS.map((e, i) => (
+                <span
+                  key={i}
+                  className="tree-ember"
+                  style={{
+                    left: `${e.x}%`, bottom: `-8px`, width: e.sz, height: e.sz,
+                    background: e.gold ? "radial-gradient(circle, #ffd76a, rgba(255,215,106,0))" : "radial-gradient(circle, #a855f7, rgba(168,85,247,0))",
+                    boxShadow: e.gold ? "0 0 6px rgba(255,215,106,0.8)" : "0 0 6px rgba(168,85,247,0.7)",
+                    animationDuration: `${e.dur}s`, animationDelay: `${e.delay}s`,
+                    ["--drift" as any]: `${e.drift}px`,
+                  }}
+                />
+              ))}
+            </div>
+
             <div
               className="relative mx-auto py-8 px-4 origin-top will-change-transform"
               style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, maxWidth: 900 }}
             >
-              {/* Copa frondosa (profundidade suave) */}
+              {/* Copa frondosa (profundidade + glow vivo) */}
               <div className="absolute left-1/2 -translate-x-1/2 top-2 w-[85%] h-64 -z-0 pointer-events-none" aria-hidden>
-                <div className="absolute left-[8%] top-8 w-44 h-32 rounded-full bg-emerald-500/15 blur-2xl" />
-                <div className="absolute right-[8%] top-8 w-44 h-32 rounded-full bg-green-500/15 blur-2xl" />
-                <div className="absolute left-1/2 -translate-x-1/2 top-0 w-64 h-40 rounded-full bg-emerald-400/20 blur-2xl" />
+                <div className="aura-breath absolute left-[8%] top-8 w-44 h-32 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(74,222,128,0.28), transparent 70%)" }} />
+                <div className="aura-breath absolute right-[8%] top-8 w-44 h-32 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(108,59,255,0.28), transparent 70%)", animationDelay: "2s" }} />
+                <div className="aura-breath absolute left-1/2 -translate-x-1/2 top-0 w-64 h-40 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(168,85,247,0.30), transparent 70%)", animationDelay: "1s" }} />
               </div>
 
               {/* Sol e copa */}
               <div className="text-center mb-3 select-none relative z-10" aria-hidden>
                 <span className="tree-leaf inline-block text-2xl" style={{ animationDelay: "0.2s" }}>🌿</span>
-                <span className="inline-block text-3xl mx-2 drop-shadow-[0_0_12px_rgba(250,204,21,0.5)]">☀️</span>
+                <span className="inline-block text-3xl mx-2 drop-shadow-[0_0_16px_rgba(255,236,180,0.8)]">✨</span>
                 <span className="tree-leaf inline-block text-2xl" style={{ animationDelay: "1.1s" }}>🌿</span>
               </div>
 
-              {/* Tronco detalhado */}
+              {/* Tronco detalhado — madeira com fibras douradas e luz lateral */}
               <div
-                className="absolute left-1/2 -translate-x-1/2 top-16 bottom-24 w-4 rounded-full -z-0 shadow-[inset_-2px_0_4px_rgba(0,0,0,0.25)]"
-                style={{ background: "linear-gradient(to bottom, rgb(146 94 42 / 0.55), rgb(92 55 22 / 0.85))" }}
+                className="absolute left-1/2 -translate-x-1/2 top-16 bottom-24 w-5 -z-0 overflow-hidden"
+                style={{
+                  borderRadius: "40% 40% 30% 30% / 6% 6% 4% 4%",
+                  background: "linear-gradient(90deg, #2a1608 0%, #5c3716 22%, #8a5a2b 50%, #4a2c12 78%, #1f1006 100%)",
+                  boxShadow: "inset -2px 0 5px rgba(0,0,0,0.5), inset 2px 0 4px rgba(255,200,120,0.15), 0 0 22px rgba(255,200,87,0.12)",
+                }}
                 aria-hidden
-              />
-              <div className="absolute left-1/2 -translate-x-1/2 top-24 w-1 h-16 bg-amber-950/20 rounded-full -z-0" aria-hidden />
+              >
+                {/* fibras/veios claros da madeira */}
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-amber-200/25" />
+                <div className="absolute inset-y-0 left-[30%] w-px bg-amber-900/40" />
+                <div className="absolute inset-y-0 right-[30%] w-px bg-amber-900/40" />
+                {/* fibra dourada de luz descendo (respira) */}
+                <div className="root-glow absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px]" style={{ background: "linear-gradient(to bottom, rgba(255,215,106,0.9), rgba(255,215,106,0.1))" }} />
+              </div>
 
               {/* Camadas (galhos) */}
               <div className="relative z-10 space-y-7">
@@ -409,22 +532,24 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                             aria-label={`${member.profile?.full_name || "Membro"}, ${info.label}`}
                           >
                             <div className={cn(
-                              "relative rounded-full ring-2 transition-shadow",
-                              member.user_id === userId ? "ring-primary shadow-lg shadow-primary/40" : "ring-emerald-500/60 shadow-md shadow-emerald-900/20",
-                              "group-hover:shadow-xl group-hover:shadow-amber-400/30",
+                              "relative rounded-full ring-2 transition-all duration-300",
+                              member.user_id === userId ? "ring-primary shadow-[0_0_18px_rgba(108,59,255,0.7)]" : "ring-emerald-400/70 shadow-[0_0_14px_rgba(74,222,128,0.35)]",
+                              "group-hover:ring-amber-300 group-hover:shadow-[0_0_22px_rgba(255,215,106,0.6)]",
                               highlight && "fruit-highlight ring-yellow-400"
                             )}>
+                              {/* halo de glow atrás do avatar */}
+                              <span className="absolute -inset-1 rounded-full blur-md opacity-60 group-hover:opacity-100 transition-opacity -z-10" style={{ background: member.user_id === userId ? "radial-gradient(circle, rgba(108,59,255,0.6), transparent 70%)" : "radial-gradient(circle, rgba(74,222,128,0.4), transparent 70%)" }} aria-hidden />
                               <UserAvatar
                                 src={member.profile?.avatar_url || undefined}
                                 fallback={member.profile?.full_name || "?"}
                                 size="md"
                               />
-                              <span className="absolute -bottom-1 -right-1 text-sm drop-shadow" aria-hidden>{info.emoji}</span>
+                              <span className="absolute -bottom-1 -right-1 text-sm drop-shadow-[0_0_4px_rgba(0,0,0,0.6)]" aria-hidden>{info.emoji}</span>
                             </div>
-                            <span className="text-[10px] font-medium mt-1 truncate w-full text-center">
+                            <span className="text-[10px] font-semibold mt-1.5 truncate w-full text-center text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                               {member.profile?.full_name?.split(" ")[0] || "Membro"}
                             </span>
-                            <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                            <span className="text-[9px] font-medium truncate w-full text-center text-amber-300/90">
                               {info.label}
                             </span>
                           </motion.button>
@@ -435,16 +560,45 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                 ))}
               </div>
 
-              {/* Raiz */}
+              {/* Raiz — sistema de raízes com veios dourados */}
               <div className="relative z-10 mt-8 text-center">
-                <div className="text-2xl select-none tree-leaf" aria-hidden>🌱</div>
-                <div className="inline-block rounded-xl border border-primary/30 bg-primary/5 backdrop-blur-sm px-4 py-2 mt-1 shadow-sm">
-                  <p className="text-sm font-semibold text-primary">✝️ Cristo — a Raiz</p>
-                  <p className="text-xs text-muted-foreground italic mt-0.5 max-w-xs">
+                {/* raízes desenhadas espalhando pelo solo (decorativo) */}
+                <div className="absolute left-1/2 -translate-x-1/2 -top-4 w-[90%] max-w-[520px] h-24 pointer-events-none" aria-hidden>
+                  <svg viewBox="0 0 400 90" className="w-full h-full" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="rootGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgb(146 94 42 / 0.9)" />
+                        <stop offset="100%" stopColor="rgb(60 34 14 / 0.15)" />
+                      </linearGradient>
+                      <linearGradient id="rootGold" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(255,215,106,0.9)" />
+                        <stop offset="100%" stopColor="rgba(255,215,106,0)" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M200,0 C180,25 120,30 60,70 M200,0 C160,30 110,45 30,58" fill="none" stroke="url(#rootGrad)" strokeWidth="5" strokeLinecap="round" />
+                    <path d="M200,0 C220,25 280,30 340,70 M200,0 C240,30 290,45 370,58" fill="none" stroke="url(#rootGrad)" strokeWidth="5" strokeLinecap="round" />
+                    <path d="M200,0 C195,35 190,55 175,85 M200,0 C205,35 210,55 225,85" fill="none" stroke="url(#rootGrad)" strokeWidth="4" strokeLinecap="round" />
+                    {/* veios dourados de luz por cima (respiram) */}
+                    <g className="root-glow">
+                      <path d="M200,0 C180,25 120,30 60,70 M200,0 C220,25 280,30 340,70 M200,0 C195,35 190,55 175,85" fill="none" stroke="url(#rootGold)" strokeWidth="1.2" strokeLinecap="round" />
+                    </g>
+                  </svg>
+                </div>
+
+                <div className="text-2xl select-none tree-leaf relative" aria-hidden>🌱</div>
+                {/* Caixa do versículo — glass sagrada */}
+                <div
+                  className="relative inline-block rounded-2xl px-5 py-3 mt-2 shadow-2xl"
+                  style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(18px)", border: "1px solid rgba(255,215,106,0.25)", boxShadow: "0 0 30px rgba(168,85,247,0.25)" }}
+                >
+                  <p className="text-sm font-semibold text-amber-200 flex items-center justify-center gap-1.5">
+                    <span className="drop-shadow-[0_0_8px_rgba(255,215,106,0.8)]">✝️</span> Cristo — a Raiz
+                  </p>
+                  <p className="text-xs text-white/75 italic mt-1 max-w-xs font-serif">
                     "Eu sou a videira, vós as varas. Quem permanece em mim, e eu nele, esse dá muito fruto." — João 15:5
                   </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-2">
+                <p className="text-[11px] text-white/50 mt-2">
                   📖 Alimentada pela Palavra de Deus
                 </p>
               </div>
