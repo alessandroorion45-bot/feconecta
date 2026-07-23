@@ -32,13 +32,49 @@ export const LinkBlockProvider = ({ children }: { children: ReactNode }) => {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center px-4 overflow-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            style={{ background: "rgba(4, 20, 10, 0.7)", backdropFilter: "blur(3px)" }}
+            style={{ background: "rgba(4, 20, 10, 0.72)", backdropFilter: "blur(3px)" }}
             onClick={() => setOpen(false)}
           >
+            {/* Sirene: flash da tela inteira alternando dois tons de verde,
+                como um alarme de comunidade — imersivo mas coerente com a
+                marca (nao vermelho de "invasor"). Desligado em reduced-motion. */}
+            {!reduced && (
+              <>
+                <motion.div
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: "radial-gradient(circle at 25% 40%, rgba(16,185,129,0.45), transparent 60%)" }}
+                  animate={{ opacity: [0, 0.9, 0, 0] }}
+                  transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: "radial-gradient(circle at 75% 60%, rgba(5,150,105,0.4), transparent 60%)" }}
+                  animate={{ opacity: [0, 0, 0.9, 0] }}
+                  transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut", delay: 0.55 }}
+                />
+                {/* flash branco curto de "estroboscopio" cobrindo tudo */}
+                <motion.div
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none bg-emerald-50"
+                  animate={{ opacity: [0, 0.5, 0, 0, 0.5, 0] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                />
+                {/* borda de alarme pulsando */}
+                <motion.div
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none border-[6px] border-emerald-400/70"
+                  animate={{ opacity: [0.2, 0.85, 0.2] }}
+                  transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </>
+            )}
+
             <motion.div
               role="alertdialog"
               aria-label="Compartilhamento de link bloqueado"
@@ -48,12 +84,33 @@ export const LinkBlockProvider = ({ children }: { children: ReactNode }) => {
               animate={
                 reduced
                   ? { opacity: 1 }
-                  : { scale: 1, opacity: 1, x: [0, -12, 11, -9, 7, -4, 0] }
+                  : {
+                      scale: 1,
+                      opacity: 1,
+                      x: [0, -12, 11, -9, 7, -4, 0],
+                      boxShadow: [
+                        "0 0 0 rgba(16,185,129,0)",
+                        "0 0 45px rgba(16,185,129,0.75)",
+                        "0 0 0 rgba(16,185,129,0)",
+                      ],
+                    }
               }
               exit={reduced ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
-              transition={reduced ? { duration: 0.2 } : { x: { duration: 0.55, ease: "easeInOut" }, scale: { duration: 0.25 } }}
+              transition={
+                reduced
+                  ? { duration: 0.2 }
+                  : {
+                      x: { duration: 0.55, ease: "easeInOut" },
+                      scale: { duration: 0.25 },
+                      boxShadow: { duration: 1.1, repeat: Infinity, ease: "easeInOut" },
+                    }
+              }
             >
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600" />
+              <motion.div
+                className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600"
+                animate={reduced ? undefined : { opacity: [1, 0.3, 1] }}
+                transition={reduced ? undefined : { duration: 0.55, repeat: Infinity, ease: "easeInOut" }}
+              />
 
               <button
                 onClick={() => setOpen(false)}
