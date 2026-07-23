@@ -1,10 +1,9 @@
 import { ReactNode, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { ShieldX, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useAdminIdleTimeout } from "@/hooks/useAdminIdleTimeout";
+import { AdminAccessDenied } from "@/components/AdminAccessDenied";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AdminRouteProps {
@@ -34,19 +33,21 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
 
   useAdminIdleTimeout(isAdmin);
 
-  // Log de acesso: 1 registro por tela do painel por sessão de aba.
-  // setTimeout(0) pra nunca rodar chamada Supabase de forma síncrona
-  // dentro do fluxo de render/auth (lição do deadlock de onAuthStateChange).
+  // Log de acesso (admin) e de tentativa negada (não-admin): 1 registro
+  // por tela por sessão de aba. setTimeout(0) pra nunca rodar chamada
+  // Supabase de forma síncrona dentro do fluxo de render/auth (lição do
+  // deadlock de onAuthStateChange).
   useEffect(() => {
-    if (!isAdmin || adminLoading) return;
+    if (adminLoading) return;
     const path = location.pathname;
-    if (loggedPaths.has(path)) return;
-    loggedPaths.add(path);
+    const key = `${isAdmin ? "ok" : "denied"}:${path}`;
+    if (loggedPaths.has(key)) return;
+    loggedPaths.add(key);
     setTimeout(() => {
       supabase
         .rpc("log_user_activity", {
           p_user_id: userIdRef.current,
-          p_action_type: "admin_panel_access",
+          p_action_type: isAdmin ? "admin_panel_access" : "admin_access_denied",
           p_details: { path },
         } as never)
         .then(({ error }) => {
@@ -64,26 +65,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   }
 
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-            <ShieldX className="h-8 w-8 text-destructive" />
-          </div>
-          <p className="text-xs font-semibold tracking-widest text-muted-foreground mb-2">ERRO 403</p>
-          <h1 className="text-2xl font-bold mb-2">Acesso negado</h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            Sua conta não tem permissão para acessar o painel administrativo.
-            Se você acredita que isso é um engano, fale com um administrador.
-          </p>
-          <Link to="/feed">
-            <Button className="gap-2">
-              <ArrowLeft className="h-4 w-4" /> Voltar ao app
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
+    return <AdminAccessDenied />;
   }
 
   return <>{children}</>;
