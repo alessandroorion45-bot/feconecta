@@ -71,13 +71,16 @@ export const useChatWebSocket = ({
           presence: { key: userId }
         }
       })
+      // Sem `filter`: a sintaxe or(...) não existe no Realtime (só filtro
+      // simples de 1 coluna) e fazia a assinatura nunca casar com nada.
+      // O escopo é garantido server-side pela RLS de messages — o Realtime
+      // só entrega linhas onde auth.uid() é sender ou receiver.
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
-          filter: `or(sender_id.eq.${userId},receiver_id.eq.${userId})`
+          table: 'messages'
         },
         (payload) => {
           const newMessage = payload.new as Message;
@@ -95,8 +98,7 @@ export const useChatWebSocket = ({
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'messages',
-          filter: `or(sender_id.eq.${userId},receiver_id.eq.${userId})`
+          table: 'messages'
         },
         (payload) => {
           const updatedMessage = payload.new as Message;

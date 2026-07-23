@@ -171,14 +171,14 @@ export const useChatEngine = () => {
         }
       })
 
-      // Nova mensagem
+      // Nova mensagem — sem `filter`: or(...) não é sintaxe válida de
+      // Realtime; a RLS de messages já limita a entrega ao próprio usuário
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
-          filter: `or(sender_id.eq.${user.id},receiver_id.eq.${user.id},conversation_id.in.(${conversations.map(c => c.id).join(',')}))`
+          table: 'messages'
         },
         (payload) => {
           const newMessage = payload.new as Message;
