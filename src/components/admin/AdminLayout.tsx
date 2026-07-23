@@ -22,6 +22,7 @@ import {
   HeartPulse,
   Award,
   ShoppingBag,
+  Link2Off,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -37,6 +38,7 @@ const navItems = [
   { path: "/admin/photos", icon: Image, label: "Fotos" },
   { path: "/admin/videos", icon: Video, label: "Vídeos" },
   { path: "/admin/reports", icon: Flag, label: "Denúncias" },
+  { path: "/admin/link-violations", icon: Link2Off, label: "Violações de Link" },
   { path: "/admin/notifications", icon: Bell, label: "Notificações" },
   { path: "/admin/logs", icon: FileText, label: "Logs" },
   { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },

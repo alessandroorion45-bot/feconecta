@@ -13,6 +13,8 @@ import { useChatSounds } from '@/hooks/useChatSounds';
 import { useDynamicBackground } from '@/hooks/useDynamicBackground';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useChatWebSocket } from '@/hooks/useChatWebSocket';
+import { containsExternalLink } from '@/lib/antiLink';
+import { useLinkBlock } from '@/components/anti-link/LinkBlockModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePresence } from '@/contexts/PresenceContext';
 import { ChatStatusPicker } from '@/components/chat/ChatStatusPicker';
@@ -75,6 +77,7 @@ const MESSAGES_PAGE_SIZE = 50;
 const Chat = () => {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
+  const { blockLink } = useLinkBlock();
   const location = useLocation();
   const { preferences, playSound, updatePreferences } = useChatSounds();
   const { theme: dynamicTheme, timeOfDay } = useDynamicBackground();
@@ -460,6 +463,12 @@ const Chat = () => {
   ) => {
     if (!user || !selectedConversation) return;
 
+    // Só texto puro (mensagens de mídia não passam por aqui com content de link)
+    if (content && containsExternalLink(content)) {
+      blockLink(content, "mensagem");
+      return;
+    }
+
     stopTyping();
 
     const { error } = await supabase
@@ -486,7 +495,7 @@ const Chat = () => {
     }
 
     playSound('send');
-  }, [user, selectedConversation, stopTyping, playSound, toast]);
+  }, [user, selectedConversation, stopTyping, playSound, toast, blockLink]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

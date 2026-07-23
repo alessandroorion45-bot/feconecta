@@ -8,6 +8,8 @@ import { Send, Reply } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContentActionsMenu } from "@/components/ContentActionsMenu";
+import { containsExternalLink } from "@/lib/antiLink";
+import { useLinkBlock } from "@/components/anti-link/LinkBlockModal";
 
 interface FeedComment {
   id: string;
@@ -26,6 +28,7 @@ interface FeedCommentsProps {
 
 export const FeedComments = ({ postId, userId, onCountChange }: FeedCommentsProps) => {
   const { toast } = useToast();
+  const { blockLink } = useLinkBlock();
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
@@ -78,6 +81,12 @@ export const FeedComments = ({ postId, userId, onCountChange }: FeedCommentsProp
     }
     const content = newComment.trim();
     if (!content) return;
+
+    if (containsExternalLink(content)) {
+      blockLink(content, "comentario");
+      return;
+    }
+
     setSending(true);
 
     const payload: any = { post_id: postId, user_id: userId, content };

@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
+import { LinkBlockProvider } from "@/components/anti-link/LinkBlockModal";
 import LoadingFallback from "@/components/LoadingFallback";
 import { DailyLoginTracker } from "@/components/gamification/DailyLoginTracker";
 import { PremiumEffectsWrapper } from "@/components/effects/PremiumEffectsWrapper";
@@ -69,6 +70,7 @@ const AdminLogs = lazy(() => import("./pages/admin/Logs"));
 const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
 const AdminAutomation = lazy(() => import("./pages/admin/Automation"));
 const AdminReports = lazy(() => import("./pages/admin/Reports"));
+const AdminLinkViolations = lazy(() => import("./pages/admin/LinkViolations"));
 const AdminSystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -140,6 +142,7 @@ const routes: RouteObject[] = [
   { path: "/admin/analytics", element: <ProtectedRoute><AdminRoute><AdminAnalytics /></AdminRoute></ProtectedRoute> },
   { path: "/admin/automation", element: <ProtectedRoute><AdminRoute><AdminAutomation /></AdminRoute></ProtectedRoute> },
   { path: "/admin/reports", element: <ProtectedRoute><AdminRoute><AdminReports /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/link-violations", element: <ProtectedRoute><AdminRoute><AdminLinkViolations /></AdminRoute></ProtectedRoute> },
   { path: "/admin/system", element: <ProtectedRoute><AdminRoute><AdminSystemHealth /></AdminRoute></ProtectedRoute> },
 
   { path: "/user/:userId", element: <UserProfile /> },
@@ -166,12 +169,14 @@ const App = () => (
                   <DailyLoginTracker />
                   <LanguageProvider>
                     <TooltipProvider>
-                      <Toaster />
-                      <Sonner />
-                      <NetworkStatusIndicator />
-                      <Suspense fallback={<LoadingFallback />}>
-                        <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
-                      </Suspense>
+                      <LinkBlockProvider>
+                        <Toaster />
+                        <Sonner />
+                        <NetworkStatusIndicator />
+                        <Suspense fallback={<LoadingFallback />}>
+                          <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
+                        </Suspense>
+                      </LinkBlockProvider>
                     </TooltipProvider>
                   </LanguageProvider>
                 </PremiumEffectsWrapper>

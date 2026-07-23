@@ -12,9 +12,12 @@ import { FeedFilters } from "@/components/feed/FeedFilters";
 import { FeedItemCard } from "@/components/feed/FeedItemCard";
 import { Upload, Image as ImageIcon, Video, Search, Loader2, RefreshCw } from "lucide-react";
 import { pageCache } from "@/lib/pageCache";
+import { containsExternalLink } from "@/lib/antiLink";
+import { useLinkBlock } from "@/components/anti-link/LinkBlockModal";
 
 const Feed = () => {
   const { toast } = useToast();
+  const { blockLink } = useLinkBlock();
   const { user } = useAuth();
   const {
     items, loading, loadingMore, hasMore,
@@ -71,6 +74,11 @@ const Feed = () => {
 
   const createPost = async () => {
     if (!newPost.trim() && !mediaFile) return;
+
+    if (containsExternalLink(newPost)) {
+      blockLink(newPost, "post");
+      return;
+    }
 
     try {
       setUploading(true);
