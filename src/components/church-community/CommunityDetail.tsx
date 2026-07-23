@@ -363,8 +363,8 @@ const CommunityDetail = ({ communityId, userId, onBack }: CommunityDetailProps) 
           />
         </div>
 
-        <CardContent className="relative -mt-12 pb-4">
-          <div className="flex items-end gap-4 flex-wrap">
+        <CardContent className="relative pt-4 pb-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <CommunityPhotoUpload
               communityId={community.id}
               currentImageUrl={community.cover_image_url}
