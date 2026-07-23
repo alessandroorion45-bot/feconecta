@@ -13,6 +13,7 @@ import { PresenceProvider } from "@/contexts/PresenceContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 import LoadingFallback from "@/components/LoadingFallback";
 import { DailyLoginTracker } from "@/components/gamification/DailyLoginTracker";
 import { PremiumEffectsWrapper } from "@/components/effects/PremiumEffectsWrapper";
@@ -124,20 +125,22 @@ const routes: RouteObject[] = [
   { path: "/loja", element: <KingdomStore /> },
   { path: "/presentes", element: <ProtectedRoute><GiftsKingdom /></ProtectedRoute> },
 
-  // Admin Routes
-  { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
-  { path: "/admin/users", element: <ProtectedRoute><AdminUsers /></ProtectedRoute> },
-  { path: "/admin/themes", element: <ProtectedRoute><AdminThemes /></ProtectedRoute> },
-  { path: "/admin/badges", element: <ProtectedRoute><AdminBadges /></ProtectedRoute> },
-  { path: "/admin/store", element: <ProtectedRoute><AdminStore /></ProtectedRoute> },
-  { path: "/admin/photos", element: <ProtectedRoute><AdminPhotos /></ProtectedRoute> },
-  { path: "/admin/videos", element: <ProtectedRoute><AdminVideos /></ProtectedRoute> },
-  { path: "/admin/notifications", element: <ProtectedRoute><AdminNotifications /></ProtectedRoute> },
-  { path: "/admin/logs", element: <ProtectedRoute><AdminLogs /></ProtectedRoute> },
-  { path: "/admin/analytics", element: <ProtectedRoute><AdminAnalytics /></ProtectedRoute> },
-  { path: "/admin/automation", element: <ProtectedRoute><AdminAutomation /></ProtectedRoute> },
-  { path: "/admin/reports", element: <ProtectedRoute><AdminReports /></ProtectedRoute> },
-  { path: "/admin/system", element: <ProtectedRoute><AdminSystemHealth /></ProtectedRoute> },
+  // Admin Routes — ProtectedRoute (401: não autenticado → /auth) +
+  // AdminRoute (403: autenticado sem papel admin → tela de acesso negado,
+  // timeout de inatividade e log de acesso ao painel)
+  { path: "/admin", element: <ProtectedRoute><AdminRoute><AdminDashboard /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/users", element: <ProtectedRoute><AdminRoute><AdminUsers /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/themes", element: <ProtectedRoute><AdminRoute><AdminThemes /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/badges", element: <ProtectedRoute><AdminRoute><AdminBadges /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/store", element: <ProtectedRoute><AdminRoute><AdminStore /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/photos", element: <ProtectedRoute><AdminRoute><AdminPhotos /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/videos", element: <ProtectedRoute><AdminRoute><AdminVideos /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/notifications", element: <ProtectedRoute><AdminRoute><AdminNotifications /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/logs", element: <ProtectedRoute><AdminRoute><AdminLogs /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/analytics", element: <ProtectedRoute><AdminRoute><AdminAnalytics /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/automation", element: <ProtectedRoute><AdminRoute><AdminAutomation /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/reports", element: <ProtectedRoute><AdminRoute><AdminReports /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/system", element: <ProtectedRoute><AdminRoute><AdminSystemHealth /></AdminRoute></ProtectedRoute> },
 
   { path: "/user/:userId", element: <UserProfile /> },
   { path: "/friend/:friendId", element: <FriendDetails /> },
