@@ -274,13 +274,15 @@ export const VerseImageGenerator = ({
       y += lineHeight;
     });
 
-    // Logo/marca d'água no rodapé
-    ctx.fillStyle = theme.secondaryTextColor;
-    ctx.font = `italic 42px ${theme.fontFamily}`;
-    ctx.fillText('✨ Aliança', width / 2, height - 180);
+    // Logo/marca d'água no rodapé — dentro da moldura, com folga da linha
+    // (a borda inferior fica em height-120; o texto fica bem acima dela).
+    ctx.fillStyle = theme.accentColor;
+    ctx.font = `bold italic 46px ${theme.fontFamily}`;
+    ctx.fillText('✨ Aliança Kingdom', width / 2, height - 220);
 
-    ctx.font = '32px sans-serif';
-    ctx.fillText('Fortaleça sua fé diariamente', width / 2, height - 120);
+    ctx.fillStyle = theme.secondaryTextColor;
+    ctx.font = `30px ${theme.fontFamily}`;
+    ctx.fillText('Fortaleça sua fé diariamente', width / 2, height - 170);
 
     // Gerar data URL em alta qualidade
     const dataUrl = canvas.toDataURL('image/png', 1.0);
