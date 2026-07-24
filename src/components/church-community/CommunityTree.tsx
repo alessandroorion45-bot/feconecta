@@ -92,9 +92,21 @@ const Branch = ({ label, emoji, flowers }: { label: string; emoji: string; flowe
         </filter>
       </defs>
     </svg>
-    {/* fio dourado de luz correndo pelo galho */}
-    <svg viewBox="0 0 400 28" className="w-full max-w-[520px] h-7 absolute inset-x-0 mx-auto" preserveAspectRatio="none" style={{ maxWidth: 520 }}>
+    {/* fio dourado de luz + seiva viva (partículas fluindo pela conexão,
+        seguindo a curva exata do galho — a vida que corre de Cristo) */}
+    <svg viewBox="0 0 400 28" className="w-full max-w-[520px] h-7 absolute inset-x-0 mx-auto overflow-visible" preserveAspectRatio="none" style={{ maxWidth: 520 }}>
       <path d="M200,26 C150,20 90,24 20,8 M200,26 C250,20 310,24 380,8" fill="none" stroke="rgba(255,215,106,0.55)" strokeWidth="1" strokeLinecap="round" className="root-glow" />
+      {[
+        { d: "M200,26 C150,20 90,24 20,8", n: 2 },
+        { d: "M200,26 C250,20 310,24 380,8", n: 2 },
+      ].flatMap((br, bi) =>
+        Array.from({ length: br.n }, (_, i) => (
+          <circle key={`${bi}-${i}`} r="1.8" fill="#ffe9a8" style={{ filter: "drop-shadow(0 0 3px rgba(255,215,106,0.9))" }}>
+            <animateMotion dur={`${2.6 + i}s`} repeatCount="indefinite" begin={`${-i * 1.3}s`} path={br.d} />
+            <animate attributeName="opacity" values="0;1;1;0" dur={`${2.6 + i}s`} repeatCount="indefinite" begin={`${-i * 1.3}s`} />
+          </circle>
+        )),
+      )}
     </svg>
     {/* Folhas balançando + flores */}
     <span className="tree-leaf absolute left-[6%] -top-1 text-sm drop-shadow-[0_0_5px_rgba(74,222,128,0.6)]">🍃</span>
@@ -347,6 +359,16 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
         }
       `}</style>
 
+      {/* Título — A Videira Viva */}
+      <div className="text-center mb-1">
+        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(255,215,106,0.35)]">
+          🍇 A Videira Viva
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Toda a vida flui de Cristo, a Raiz — cada membro é um ramo do Reino
+        </p>
+      </div>
+
       {/* Estatísticas */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
@@ -427,15 +449,15 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
             onPointerCancel={onPointerUp}
             style={{
               background:
-                "radial-gradient(120% 80% at 50% 0%, #1e1245 0%, #140a2e 35%, #0b0620 70%, #07040f 100%)",
+                "radial-gradient(120% 85% at 50% 100%, #10233f 0%, #0a1830 30%, #060f22 60%, #030812 100%)",
             }}
           >
             {/* ===== Backdrop cinematográfico (parallax fixo, não arrasta) ===== */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
               {/* Nebulosas de profundidade */}
-              <div className="aura-breath absolute -top-10 left-[12%] w-72 h-72 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(108,59,255,0.45), transparent 70%)" }} />
+              <div className="aura-breath absolute -top-10 left-[12%] w-72 h-72 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(56,120,220,0.42), transparent 70%)" }} />
               <div className="aura-breath absolute top-24 right-[8%] w-80 h-80 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(79,157,255,0.30), transparent 70%)", animationDelay: "2s" }} />
-              <div className="aura-breath absolute bottom-0 left-1/2 -translate-x-1/2 w-[28rem] h-64 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(168,85,247,0.28), transparent 70%)", animationDelay: "3s" }} />
+              <div className="aura-breath absolute bottom-0 left-1/2 -translate-x-1/2 w-[28rem] h-64 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(255,200,120,0.20), transparent 70%)", animationDelay: "3s" }} />
               <div className="absolute bottom-0 inset-x-0 h-40 blur-2xl" style={{ background: "radial-gradient(60% 100% at 50% 100%, rgba(255,200,87,0.18), transparent 70%)" }} />
 
               {/* Luz divina descendo do topo (representa Deus — respira, não pisca) */}
@@ -457,8 +479,8 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                   className="tree-ember"
                   style={{
                     left: `${e.x}%`, bottom: `-8px`, width: e.sz, height: e.sz,
-                    background: e.gold ? "radial-gradient(circle, #ffd76a, rgba(255,215,106,0))" : "radial-gradient(circle, #a855f7, rgba(168,85,247,0))",
-                    boxShadow: e.gold ? "0 0 6px rgba(255,215,106,0.8)" : "0 0 6px rgba(168,85,247,0.7)",
+                    background: e.gold ? "radial-gradient(circle, #ffd76a, rgba(255,215,106,0))" : "radial-gradient(circle, #7db8ff, rgba(125,184,255,0))",
+                    boxShadow: e.gold ? "0 0 6px rgba(255,215,106,0.8)" : "0 0 6px rgba(125,184,255,0.7)",
                     animationDuration: `${e.dur}s`, animationDelay: `${e.delay}s`,
                     ["--drift" as any]: `${e.drift}px`,
                   }}
@@ -473,8 +495,8 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
               {/* Copa frondosa (profundidade + glow vivo) */}
               <div className="absolute left-1/2 -translate-x-1/2 top-2 w-[85%] h-64 -z-0 pointer-events-none" aria-hidden>
                 <div className="aura-breath absolute left-[8%] top-8 w-44 h-32 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(74,222,128,0.28), transparent 70%)" }} />
-                <div className="aura-breath absolute right-[8%] top-8 w-44 h-32 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(108,59,255,0.28), transparent 70%)", animationDelay: "2s" }} />
-                <div className="aura-breath absolute left-1/2 -translate-x-1/2 top-0 w-64 h-40 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(168,85,247,0.30), transparent 70%)", animationDelay: "1s" }} />
+                <div className="aura-breath absolute right-[8%] top-8 w-44 h-32 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(56,120,220,0.28), transparent 70%)", animationDelay: "2s" }} />
+                <div className="aura-breath absolute left-1/2 -translate-x-1/2 top-0 w-64 h-40 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(255,200,120,0.26), transparent 70%)", animationDelay: "1s" }} />
               </div>
 
               {/* Sol e copa */}
