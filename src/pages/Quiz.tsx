@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
-import { Trophy, Target, Zap, Crown, Award, TrendingUp, Timer, Flame } from "lucide-react";
+import { Trophy, Target, Zap, Crown, Award, TrendingUp, Timer, Flame, Check, Sparkles, BookOpen } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AvatarPro } from "@/components/AvatarPro";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -394,55 +394,108 @@ const Quiz = () => {
             )}
 
             {!quizStarted && !quizFinished && (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-7">
+                <p className="text-center text-sm font-medium text-muted-foreground">
+                  Escolha o seu nível
+                </p>
+                <div className="grid md:grid-cols-3 gap-4 sm:gap-5">
                   {[
-                    { key: "iniciante", label: "🟢 Iniciante", desc: "Perguntas básicas", pts: 10, icon: Target },
-                    { key: "profissional", label: "🔵 Profissional", desc: "Perguntas intermediárias", pts: 20, icon: Zap },
-                    { key: "especialista", label: "🔴 Especialista", desc: "Perguntas avançadas", pts: 30, icon: Crown }
-                  ].map(d => (
-                    <Card
-                      key={d.key}
-                      className={`cursor-pointer transition-all hover:shadow-divine ${
-                        selectedDifficulty === d.key ? `ring-2 ring-primary` : ""
-                      }`}
-                      onClick={() => setSelectedDifficulty(d.key)}
-                    >
-                      <CardHeader className="text-center">
-                        <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${getDifficultyColor(d.key)} flex items-center justify-center mx-auto mb-3`}>
-                          <d.icon className="h-6 w-6 text-white" />
+                    { key: "iniciante", label: "Iniciante", emoji: "🟢", desc: "Perguntas básicas", pts: 10, icon: Target, glow: "16,185,129", ring: "ring-emerald-400", grad: "from-emerald-400 to-green-600" },
+                    { key: "profissional", label: "Profissional", emoji: "🔵", desc: "Perguntas intermediárias", pts: 20, icon: Zap, glow: "59,130,246", ring: "ring-blue-400", grad: "from-sky-400 to-blue-600" },
+                    { key: "especialista", label: "Especialista", emoji: "🔴", desc: "Perguntas avançadas", pts: 30, icon: Crown, glow: "239,68,68", ring: "ring-red-400", grad: "from-rose-400 to-red-600" },
+                  ].map(d => {
+                    const active = selectedDifficulty === d.key;
+                    return (
+                      <button
+                        key={d.key}
+                        type="button"
+                        onClick={() => setSelectedDifficulty(d.key)}
+                        className={`group relative text-left rounded-2xl p-[1.5px] transition-all duration-300 ${active ? "scale-[1.03]" : "hover:-translate-y-1"}`}
+                        style={{
+                          background: active
+                            ? `linear-gradient(135deg, rgba(${d.glow},0.9), rgba(${d.glow},0.4))`
+                            : "transparent",
+                        }}
+                      >
+                        {/* glow por trás quando selecionado */}
+                        {active && (
+                          <span
+                            className="absolute -inset-2 rounded-3xl blur-xl -z-10"
+                            style={{ background: `radial-gradient(circle, rgba(${d.glow},0.45), transparent 70%)` }}
+                            aria-hidden
+                          />
+                        )}
+                        <div
+                          className={`relative h-full rounded-2xl bg-card p-5 text-center overflow-hidden border transition-colors ${
+                            active ? "border-transparent" : "border-border/70 group-hover:border-primary/30 shadow-sm group-hover:shadow-xl"
+                          }`}
+                        >
+                          {/* check de selecionado */}
+                          {active && (
+                            <span
+                              className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full text-white shadow"
+                              style={{ background: `rgb(${d.glow})` }}
+                            >
+                              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                            </span>
+                          )}
+                          {/* faixa de brilho no topo */}
+                          <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${d.grad} ${active ? "opacity-100" : "opacity-0 group-hover:opacity-60"} transition-opacity`} />
+
+                          <div
+                            className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${d.grad} flex items-center justify-center mx-auto mb-3 transition-transform duration-300 group-hover:scale-110`}
+                            style={{ boxShadow: `0 8px 24px -6px rgba(${d.glow},0.6)` }}
+                          >
+                            <d.icon className="h-7 w-7 text-white" />
+                          </div>
+                          <h3 className="text-lg font-bold flex items-center justify-center gap-1.5">
+                            <span className="text-sm">{d.emoji}</span> {d.label}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-1 mb-3">{d.desc}</p>
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-white"
+                            style={{ background: `linear-gradient(135deg, rgb(${d.glow}), rgba(${d.glow},0.7))` }}
+                          >
+                            +{d.pts} pts / acerto
+                          </span>
                         </div>
-                        <CardTitle className="text-lg">{d.label}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-center">
-                        <p className="text-sm text-muted-foreground mb-2">{d.desc}</p>
-                        <Badge variant="outline">{d.pts} pts/acerto</Badge>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <div className="max-w-xs mx-auto">
+                {/* Seleção de tema */}
+                <div className="max-w-sm mx-auto">
+                  <label className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground mb-2">
+                    <BookOpen className="h-3.5 w-3.5" /> Tema das perguntas
+                  </label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger><SelectValue placeholder="Tema" /></SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Tema" /></SelectTrigger>
                     <SelectContent>
                       {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="text-center space-y-3">
-                  <div className="text-sm text-muted-foreground">
-                    <p>✨ Sistema de combo - acerte seguido para multiplicar pontos!</p>
-                    <p>⚡ Bônus de velocidade - responda rápido para ganhar mais!</p>
-                  </div>
+                {/* Chips de mecânica */}
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+                    <Sparkles className="h-3.5 w-3.5" /> Combo multiplica pontos
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-sky-500/10 border border-sky-500/20 px-3.5 py-1.5 text-xs font-medium text-sky-700 dark:text-sky-300">
+                    <Zap className="h-3.5 w-3.5" /> Bônus de velocidade
+                  </span>
+                </div>
+
+                {/* Botão começar */}
+                <div className="text-center">
                   <Button
                     size="lg"
                     onClick={startQuiz}
                     disabled={loading}
-                    className="bg-gradient-primary text-primary-foreground shadow-glow"
+                    className="h-14 px-10 text-base gap-2 !bg-gradient-to-r !from-primary !via-purple-600 !to-indigo-600 text-white shadow-glow rounded-2xl transition-all duration-300 hover:scale-[1.04] hover:shadow-2xl hover:shadow-primary/40"
                   >
-                    <Trophy className="mr-2 h-5 w-5" />
+                    <Trophy className="h-5 w-5" />
                     {loading ? "Carregando..." : "Começar Quiz"}
                   </Button>
                 </div>
