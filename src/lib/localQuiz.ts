@@ -1,10 +1,10 @@
 /**
- * Gerador local de quiz bíblico.
+ * Gerador local de quiz bíblico (sem IA — custo zero).
  *
- * Usado como fallback quando a Edge Function generate-quiz-questions
- * não está disponível: cria perguntas reais a partir dos próprios
- * versículos lidos (completar o versículo e identificar o versículo),
- * garantindo que a leitura compartilhada nunca trave no quiz.
+ * Gera o quiz da leitura compartilhada a partir dos próprios versículos
+ * lidos (completar o versículo e identificar o versículo). É o único
+ * caminho: a antiga Edge Function de IA foi removida para eliminar o
+ * custo de IA nessa funcionalidade.
  */
 
 import type { QuizQuestion } from '@/hooks/useSharedReading';
