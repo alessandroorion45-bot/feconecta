@@ -3,8 +3,6 @@ project_id = "ucpsiqmsxocwasorvojw"
 [functions.bible]
 verify_jwt = false
 
-[functions.generate-verse-image]
-verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
