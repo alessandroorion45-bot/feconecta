@@ -34,6 +34,20 @@ serve(async (req) => {
       );
     }
 
+    // Rate limit: geração de imagem é cara — no máximo 10 por usuário por hora
+    const { data: allowed } = await authClient.rpc('check_ai_rate_limit', {
+      p_user_id: claimsData.claims.sub,
+      p_action: 'generate-verse-image',
+      p_max: 10,
+      p_window_seconds: 3600,
+    });
+    if (allowed === false) {
+      return new Response(
+        JSON.stringify({ error: 'Você atingiu o limite de gerações de imagem por enquanto. Tente novamente daqui a pouco.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { bookName, chapter, verseNumber, verseText } = await req.json();
     
     console.log("Generating verse image for:", bookName, chapter, verseNumber);

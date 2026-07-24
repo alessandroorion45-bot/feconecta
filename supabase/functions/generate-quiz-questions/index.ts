@@ -35,6 +35,20 @@ serve(async (req) => {
       );
     }
 
+    // Rate limit: no máximo 15 gerações de quiz por usuário por hora
+    const { data: allowed } = await authClient.rpc('check_ai_rate_limit', {
+      p_user_id: claimsData.claims.sub,
+      p_action: 'generate-quiz-questions',
+      p_max: 15,
+      p_window_seconds: 3600,
+    });
+    if (allowed === false) {
+      return new Response(
+        JSON.stringify({ error: 'Você atingiu o limite de gerações de quiz por enquanto. Tente novamente daqui a pouco.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { bookName, chapter, verseTexts } = await req.json();
 
     if (!bookName || !chapter || !verseTexts) {

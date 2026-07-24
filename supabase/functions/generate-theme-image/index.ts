@@ -71,6 +71,20 @@ serve(async (req) => {
       );
     }
 
+    // Rate limit: geração de imagem é cara — no máximo 8 por usuário por hora
+    const { data: allowed } = await authClient.rpc('check_ai_rate_limit', {
+      p_user_id: claimsData.claims.sub,
+      p_action: 'generate-theme-image',
+      p_max: 8,
+      p_window_seconds: 3600,
+    });
+    if (allowed === false) {
+      return new Response(
+        JSON.stringify({ error: 'Você atingiu o limite de gerações de imagem por enquanto. Tente novamente daqui a pouco.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { theme } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
