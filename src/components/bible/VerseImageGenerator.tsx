@@ -3,7 +3,7 @@ import { VERSE_IMAGE_THEMES, getThemeById, type VerseImageTheme } from '@/lib/ve
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Palette, Download, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Palette, Download, Image as ImageIcon } from 'lucide-react';
 
 interface VerseImageGeneratorProps {
   book: string;
@@ -350,30 +350,30 @@ export const VerseImageGenerator = ({
         </div>
 
         <Tabs value={photoBgUrl ? '' : selectedTheme} onValueChange={(v) => { setPhotoBgUrl(null); setSelectedTheme(v); }} className="w-full">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto gap-2 bg-transparent">
+          {/* Cada tema mostra uma amostra do gradiente + nome que respira
+              (grade com poucas colunas, texto quebra em vez de sobrepor). */}
+          <TabsList className="grid grid-cols-3 sm:grid-cols-4 h-auto gap-2 bg-transparent p-0">
             {VERSE_IMAGE_THEMES.map((theme) => (
               <TabsTrigger
                 key={theme.id}
                 value={theme.id}
-                className="flex-col h-auto py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex-col gap-1.5 h-auto min-w-0 p-1.5 rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:ring-2 data-[state=active]:ring-primary"
                 title={theme.description}
               >
-                <Sparkles className="h-4 w-4 mb-1" />
-                <span className="text-xs font-semibold text-center leading-tight">
+                <span
+                  className="w-full rounded-lg border border-white/10 shadow-sm"
+                  style={{
+                    aspectRatio: '16 / 10',
+                    background: `linear-gradient(to bottom, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`,
+                  }}
+                  aria-hidden
+                />
+                <span className="text-[11px] font-medium text-center leading-tight break-words whitespace-normal w-full">
                   {theme.name}
                 </span>
               </TabsTrigger>
             ))}
           </TabsList>
-
-          {VERSE_IMAGE_THEMES.map((theme) => (
-            <TabsContent key={theme.id} value={theme.id} className="mt-3">
-              <div className="theme-card p-4 rounded-lg">
-                <h4 className="font-bold mb-1">{theme.name}</h4>
-                <p className="text-sm text-muted-foreground">{theme.description}</p>
-              </div>
-            </TabsContent>
-          ))}
         </Tabs>
       </div>
 
