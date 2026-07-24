@@ -73,6 +73,7 @@ const AdminReports = lazy(() => import("./pages/admin/Reports"));
 const AdminLinkViolations = lazy(() => import("./pages/admin/LinkViolations"));
 const AdminVigilancia = lazy(() => import("./pages/admin/Vigilancia"));
 const AdminStoreStats = lazy(() => import("./pages/admin/StoreStats"));
+const AdminVerseBackgrounds = lazy(() => import("./pages/admin/VerseBackgrounds"));
 const AdminSystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -138,6 +139,7 @@ const routes: RouteObject[] = [
   { path: "/admin/badges", element: <ProtectedRoute><AdminRoute><AdminBadges /></AdminRoute></ProtectedRoute> },
   { path: "/admin/store", element: <ProtectedRoute><AdminRoute><AdminStore /></AdminRoute></ProtectedRoute> },
   { path: "/admin/store-stats", element: <ProtectedRoute><AdminRoute><AdminStoreStats /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/verse-backgrounds", element: <ProtectedRoute><AdminRoute><AdminVerseBackgrounds /></AdminRoute></ProtectedRoute> },
   { path: "/admin/photos", element: <ProtectedRoute><AdminRoute><AdminPhotos /></AdminRoute></ProtectedRoute> },
   { path: "/admin/videos", element: <ProtectedRoute><AdminRoute><AdminVideos /></AdminRoute></ProtectedRoute> },
   { path: "/admin/notifications", element: <ProtectedRoute><AdminRoute><AdminNotifications /></AdminRoute></ProtectedRoute> },
