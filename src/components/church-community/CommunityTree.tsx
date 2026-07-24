@@ -66,61 +66,6 @@ const TREE_TIERS: { label: string; emoji: string; roles: string[] }[] = [
 
 const MINISTRY_NAME = Object.fromEntries(MINISTRIES.map(m => [m.id, m.name.replace("Ministério de ", "")]));
 
-/** Galho orgânico em SVG (curvas Bézier), com folhas e flores decorativas */
-const Branch = ({ label, emoji, flowers }: { label: string; emoji: string; flowers: number }) => (
-  <div className="relative flex items-center justify-center mb-1 select-none" aria-hidden>
-    <svg viewBox="0 0 400 28" className="w-full max-w-[520px] h-7" preserveAspectRatio="none">
-      <path
-        d="M200,26 C150,20 90,24 20,8"
-        fill="none" stroke="url(#branchGrad)" strokeWidth="5" strokeLinecap="round"
-      />
-      <path
-        d="M200,26 C250,20 310,24 380,8"
-        fill="none" stroke="url(#branchGrad)" strokeWidth="5" strokeLinecap="round"
-      />
-      <path d="M120,20 C110,14 104,10 96,4" fill="none" stroke="url(#branchGrad)" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M280,20 C290,14 296,10 304,4" fill="none" stroke="url(#branchGrad)" strokeWidth="2.5" strokeLinecap="round" />
-      <defs>
-        <linearGradient id="branchGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgb(92 55 22 / 0.7)" />
-          <stop offset="50%" stopColor="rgb(160 110 55 / 0.95)" />
-          <stop offset="100%" stopColor="rgb(92 55 22 / 0.7)" />
-        </linearGradient>
-        <filter id="branchGlow" x="-20%" y="-40%" width="140%" height="200%">
-          <feGaussianBlur stdDeviation="1.4" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
-    </svg>
-    {/* fio dourado de luz + seiva viva (partículas fluindo pela conexão,
-        seguindo a curva exata do galho — a vida que corre de Cristo) */}
-    <svg viewBox="0 0 400 28" className="w-full max-w-[520px] h-7 absolute inset-x-0 mx-auto overflow-visible" preserveAspectRatio="none" style={{ maxWidth: 520 }}>
-      <path d="M200,26 C150,20 90,24 20,8 M200,26 C250,20 310,24 380,8" fill="none" stroke="rgba(255,215,106,0.55)" strokeWidth="1" strokeLinecap="round" className="root-glow" />
-      {[
-        { d: "M200,26 C150,20 90,24 20,8", n: 2 },
-        { d: "M200,26 C250,20 310,24 380,8", n: 2 },
-      ].flatMap((br, bi) =>
-        Array.from({ length: br.n }, (_, i) => (
-          <circle key={`${bi}-${i}`} r="1.8" fill="#ffe9a8" style={{ filter: "drop-shadow(0 0 3px rgba(255,215,106,0.9))" }}>
-            <animateMotion dur={`${2.6 + i}s`} repeatCount="indefinite" begin={`${-i * 1.3}s`} path={br.d} />
-            <animate attributeName="opacity" values="0;1;1;0" dur={`${2.6 + i}s`} repeatCount="indefinite" begin={`${-i * 1.3}s`} />
-          </circle>
-        )),
-      )}
-    </svg>
-    {/* Folhas balançando + flores */}
-    <span className="tree-leaf absolute left-[6%] -top-1 text-sm drop-shadow-[0_0_5px_rgba(74,222,128,0.6)]">🍃</span>
-    <span className="tree-leaf absolute right-[6%] -top-1 text-sm drop-shadow-[0_0_5px_rgba(74,222,128,0.6)]" style={{ animationDelay: "0.9s" }}>🍃</span>
-    {flowers > 0 && <span className="tree-leaf absolute left-[22%] -top-2 text-xs" style={{ animationDelay: "0.4s" }}>🌸</span>}
-    {flowers > 1 && <span className="tree-leaf absolute right-[22%] -top-2 text-xs" style={{ animationDelay: "1.3s" }}>🌸</span>}
-    <span
-      className="absolute -top-3 rounded-full px-3 py-0.5 text-xs font-semibold text-amber-100 shadow-lg"
-      style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,215,106,0.3)" }}
-    >
-      {emoji} {label}
-    </span>
-  </div>
-);
 
 // Estrelas e partículas geradas uma única vez (posições estáveis, não
 // re-randomizam a cada render). Puramente decorativas.
@@ -272,7 +217,6 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
   }, [members]);
 
   // Flores surgem conforme a comunidade cresce (1 a cada 3 membros)
-  const flowersPerTier = Math.min(Math.floor(members.length / 3), 2);
 
   // Arrastar a árvore (mouse e toque, via pointer events)
   const onPointerDown = (e: React.PointerEvent) => {
@@ -357,6 +301,14 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-3px); }
         }
+        /* Luz correndo pela coluna central (a vida subindo de Cristo) */
+        @keyframes spineFlow {
+          0% { top: 100%; opacity: 0; }
+          12% { opacity: 1; }
+          88% { opacity: 1; }
+          100% { top: 0%; opacity: 0; }
+        }
+        .spine-flow { animation: spineFlow 3.4s linear infinite; }
       `}</style>
 
       {/* Título — A Videira Viva */}
@@ -506,36 +458,46 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                 <span className="tree-leaf inline-block text-2xl" style={{ animationDelay: "1.1s" }}>🌿</span>
               </div>
 
-              {/* Tronco detalhado — madeira com fibras douradas e luz lateral */}
+              {/* Coluna central de luz — a vida que sobe de Cristo (a Raiz)
+                  até toda a hierarquia. Substitui o tronco desenhado. */}
               <div
-                className="absolute left-1/2 -translate-x-1/2 top-16 bottom-24 w-5 -z-0 overflow-hidden"
+                className="absolute left-1/2 -translate-x-1/2 top-16 bottom-24 w-[3px] -z-0 rounded-full"
                 style={{
-                  borderRadius: "40% 40% 30% 30% / 6% 6% 4% 4%",
-                  background: "linear-gradient(90deg, #2a1608 0%, #5c3716 22%, #8a5a2b 50%, #4a2c12 78%, #1f1006 100%)",
-                  boxShadow: "inset -2px 0 5px rgba(0,0,0,0.5), inset 2px 0 4px rgba(255,200,120,0.15), 0 0 22px rgba(255,200,87,0.12)",
+                  background: "linear-gradient(to bottom, rgba(255,215,106,0.12), rgba(255,215,106,0.8) 50%, rgba(255,215,106,0.12))",
+                  boxShadow: "0 0 16px rgba(255,215,106,0.5)",
                 }}
                 aria-hidden
               >
-                {/* fibras/veios claros da madeira */}
-                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-amber-200/25" />
-                <div className="absolute inset-y-0 left-[30%] w-px bg-amber-900/40" />
-                <div className="absolute inset-y-0 right-[30%] w-px bg-amber-900/40" />
-                {/* fibra dourada de luz descendo (respira) */}
-                <div className="root-glow absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px]" style={{ background: "linear-gradient(to bottom, rgba(255,215,106,0.9), rgba(255,215,106,0.1))" }} />
+                <div className="spine-flow absolute inset-x-[-3px] h-16 rounded-full" style={{ background: "linear-gradient(to bottom, transparent, rgba(255,245,205,0.95), transparent)", filter: "blur(1px)" }} />
               </div>
 
-              {/* Camadas (galhos) */}
-              <div className="relative z-10 space-y-7">
+              {/* Níveis da hierarquia — Mapa Vivo do Reino */}
+              <div className="relative z-10 space-y-9">
                 {tiers.map((tier, tierIndex) => (
-                  <div key={tier.label} className="relative pt-3">
-                    <Branch label={tier.label} emoji={tier.emoji} flowers={flowersPerTier} />
+                  <div key={tier.label} className="relative pt-6">
+                    {/* Barra do nível: linha dourada luminosa + rótulo */}
+                    <div className="relative flex items-center justify-center mb-4 select-none" aria-hidden>
+                      <div
+                        className="absolute inset-x-[6%] h-[2px] rounded-full"
+                        style={{ background: "linear-gradient(90deg, transparent, rgba(255,215,106,0.55), rgba(255,215,106,0.85), rgba(255,215,106,0.55), transparent)", boxShadow: "0 0 10px rgba(255,215,106,0.45)" }}
+                      />
+                      <span
+                        className="relative rounded-full px-3.5 py-1 text-xs font-semibold text-amber-100 shadow-lg"
+                        style={{ background: "rgba(9,18,36,0.85)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,215,106,0.35)" }}
+                      >
+                        {tier.emoji} {tier.label}
+                      </span>
+                    </div>
 
-                    {/* Frutos */}
-                    <div className="flex flex-wrap justify-center gap-3 mt-1">
+                    {/* Cards premium dos membros */}
+                    <div className="flex flex-wrap justify-center gap-3">
                       {tier.members.map((member, i) => {
                         const visible = matches(member);
                         const highlight = isSearching && visible;
                         const info = getRoleInfo(member.role);
+                        const isSelf = member.user_id === userId;
+                        const ministryCount = member.ministries?.length || 0;
+                        const featured = tierIndex === 0;
                         const assignRef = highlight && !firstMatchAssigned
                           ? (el: HTMLButtonElement | null) => { firstMatchRef.current = el; }
                           : undefined;
@@ -544,36 +506,52 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                           <motion.button
                             key={member.id}
                             ref={assignRef}
-                            initial={{ scale: 0, opacity: 0, y: -8 }}
-                            animate={{ scale: visible ? 1 : 0.7, opacity: visible ? 1 : 0.2, y: 0 }}
-                            whileHover={visible ? { scale: 1.12, y: -2 } : undefined}
-                            transition={{ delay: Math.min(tierIndex * 0.08 + i * 0.03, 0.7), type: "spring", stiffness: 260, damping: 18 }}
+                            initial={{ scale: 0.7, opacity: 0, y: 12 }}
+                            animate={{ scale: visible ? 1 : 0.85, opacity: visible ? 1 : 0.25, y: 0 }}
+                            whileHover={visible ? { y: -4 } : undefined}
+                            transition={{ delay: Math.min(tierIndex * 0.1 + i * 0.04, 0.9), type: "spring", stiffness: 240, damping: 20 }}
                             onClick={() => setSelected(member)}
-                            className="flex flex-col items-center w-[76px] group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1"
+                            className={cn("group relative rounded-2xl p-[1.5px] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300", featured ? "w-[152px]" : "w-[132px]")}
+                            style={{
+                              background: highlight
+                                ? "linear-gradient(135deg, #facc15, #f59e0b)"
+                                : isSelf
+                                  ? "linear-gradient(135deg, rgba(168,120,255,0.85), rgba(168,120,255,0.3))"
+                                  : "linear-gradient(135deg, rgba(255,215,106,0.5), rgba(255,215,106,0.14))",
+                            }}
                             title={`${member.profile?.full_name || "Membro"} — ${info.label}`}
                             aria-label={`${member.profile?.full_name || "Membro"}, ${info.label}`}
                           >
-                            <div className={cn(
-                              "relative rounded-full ring-2 transition-all duration-300",
-                              member.user_id === userId ? "ring-primary shadow-[0_0_18px_rgba(108,59,255,0.7)]" : "ring-emerald-400/70 shadow-[0_0_14px_rgba(74,222,128,0.35)]",
-                              "group-hover:ring-amber-300 group-hover:shadow-[0_0_22px_rgba(255,215,106,0.6)]",
-                              highlight && "fruit-highlight ring-yellow-400"
-                            )}>
-                              {/* halo de glow atrás do avatar */}
-                              <span className="absolute -inset-1 rounded-full blur-md opacity-60 group-hover:opacity-100 transition-opacity -z-10" style={{ background: member.user_id === userId ? "radial-gradient(circle, rgba(108,59,255,0.6), transparent 70%)" : "radial-gradient(circle, rgba(74,222,128,0.4), transparent 70%)" }} aria-hidden />
-                              <UserAvatar
-                                src={member.profile?.avatar_url || undefined}
-                                fallback={member.profile?.full_name || "?"}
-                                size="md"
-                              />
-                              <span className="absolute -bottom-1 -right-1 text-sm drop-shadow-[0_0_4px_rgba(0,0,0,0.6)]" aria-hidden>{info.emoji}</span>
+                            {/* glow no hover */}
+                            <span className="absolute -inset-1.5 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity -z-10" style={{ background: "radial-gradient(circle, rgba(255,215,106,0.5), transparent 70%)" }} aria-hidden />
+                            <div
+                              className={cn("relative rounded-2xl flex flex-col items-center text-center overflow-hidden", featured ? "px-3 pt-4 pb-3" : "px-2.5 pt-3 pb-2.5")}
+                              style={{ background: "linear-gradient(160deg, rgba(16,26,48,0.94), rgba(8,15,30,0.96))", backdropFilter: "blur(6px)" }}
+                            >
+                              {/* brilho superior do card */}
+                              <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+                              {/* avatar com halo */}
+                              <div className="relative">
+                                <span className="absolute -inset-1 rounded-full blur-md opacity-70" style={{ background: isSelf ? "radial-gradient(circle, rgba(168,120,255,0.55), transparent 70%)" : "radial-gradient(circle, rgba(255,215,106,0.4), transparent 70%)" }} aria-hidden />
+                                <div className={cn("relative rounded-full ring-2", isSelf ? "ring-purple-300/80" : highlight ? "ring-yellow-300 fruit-highlight" : "ring-amber-300/70")}>
+                                  <UserAvatar
+                                    src={member.profile?.avatar_url || undefined}
+                                    fallback={member.profile?.full_name || "?"}
+                                    size={featured ? "lg" : "md"}
+                                  />
+                                </div>
+                                <span className="absolute -bottom-1 -right-1 text-sm drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]" aria-hidden>{info.emoji}</span>
+                              </div>
+                              <span className={cn("font-bold mt-2 leading-tight text-white line-clamp-2", featured ? "text-[13px]" : "text-[12px]")}>
+                                {member.profile?.full_name || "Membro"}
+                              </span>
+                              <span className="text-[10px] font-medium text-amber-300/90 leading-tight mt-0.5">{info.label}</span>
+                              {ministryCount > 0 && (
+                                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-400/25 px-2 py-0.5 text-[9px] text-emerald-200">
+                                  🌿 {ministryCount} ministério{ministryCount > 1 ? "s" : ""}
+                                </span>
+                              )}
                             </div>
-                            <span className="text-[10px] font-semibold mt-1.5 truncate w-full text-center text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-                              {member.profile?.full_name?.split(" ")[0] || "Membro"}
-                            </span>
-                            <span className="text-[9px] font-medium truncate w-full text-center text-amber-300/90">
-                              {info.label}
-                            </span>
                           </motion.button>
                         );
                       })}
