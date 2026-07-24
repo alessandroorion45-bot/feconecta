@@ -61,39 +61,11 @@ export const SharedReadingRoom = ({ roomId, onLeave }: SharedReadingRoomProps) =
       const selectedVerses = chapter.vers.filter(v =>
         !room.verse_start || (v.number >= room.verse_start && v.number <= (room.verse_end || room.verse_start))
       );
-      const verseTexts = selectedVerses.map(v => `${v.number}. ${v.verse}`).join('\n');
 
-      // 1º: tenta a Edge Function (quiz por IA); se ela não estiver
-      // publicada ou falhar, gera o quiz localmente a partir dos versículos
-      let questions: QuizQuestion[] | null = null;
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-quiz-questions`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-            },
-            body: JSON.stringify({
-              bookName: chapter.name,
-              chapter: room.current_chapter,
-              verseTexts
-            })
-          }
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.questions?.length) questions = data.questions;
-        }
-      } catch {
-        console.warn('[SharedReading] Edge Function indisponível, gerando quiz local');
-      }
-
-      if (!questions || questions.length === 0) {
-        const { generateLocalQuiz } = await import('@/lib/localQuiz');
-        questions = generateLocalQuiz(selectedVerses, chapter.name, room.current_chapter);
-      }
+      // Quiz gerado 100% localmente a partir dos próprios versículos lidos
+      // (completar o versículo / identificar o versículo). Sem IA paga — custo zero.
+      const { generateLocalQuiz } = await import('@/lib/localQuiz');
+      const questions: QuizQuestion[] = generateLocalQuiz(selectedVerses, chapter.name, room.current_chapter);
 
       await setQuizQuestions(questions);
     } catch (error) {
