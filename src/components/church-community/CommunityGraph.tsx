@@ -1,4 +1,4 @@
-import { useMemo, useEffect, memo } from "react";
+import { useMemo, useEffect, useRef, memo } from "react";
 import {
   ReactFlow,
   Background,
@@ -207,8 +207,96 @@ const layout = (nodes: Node[], edges: Edge[]): Node[] => {
 
 const ROOT_ID = "__root__";
 
-// Estrelas/poeira do fundo (posições estáveis)
-const STARS = Array.from({ length: 40 }, (_, i) => ({ x: (i * 47.3) % 100, y: (i * 71.9) % 100, sz: 1 + (i % 3), dur: 3 + (i % 5), delay: (i % 8) * 0.5 }));
+// -------- Campo estelar (canvas leve — galáxia girando + parallax) --------
+// Só a camada de estrelas usa canvas; nebulosa/gradiente/vinheta ficam em CSS.
+// ~240 estrelas, um requestAnimationFrame simples, roda atrás do React Flow
+// com pointer-events: none. Sem lib de partículas.
+const StarField = memo(() => {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const parent = canvas.parentElement;
+    if (!ctx || !parent) return;
+
+    let raf = 0;
+    let W = 0, H = 0;
+    const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+    type Star = { ang: number; dist: number; r: number; layer: number; base: number; ph: number; sp: number; tint: string };
+    let stars: Star[] = [];
+
+    const build = () => {
+      const count = Math.min(240, Math.max(90, Math.round((W * H) / 9000)));
+      stars = Array.from({ length: count }, () => {
+        const layer = Math.random() < 0.6 ? 0 : Math.random() < 0.78 ? 1 : 2;
+        const hue = Math.random();
+        return {
+          ang: Math.random() * Math.PI * 2,
+          dist: Math.pow(Math.random(), 0.62) * 0.74,
+          r: layer === 2 ? 1.3 + Math.random() * 1.1 : layer === 1 ? 0.8 + Math.random() * 0.6 : 0.4 + Math.random() * 0.5,
+          layer,
+          base: 0.35 + Math.random() * 0.5,
+          ph: Math.random() * Math.PI * 2,
+          sp: 0.5 + Math.random() * 1.6,
+          tint: hue > 0.86 ? "255,224,158" : hue > 0.62 ? "197,216,255" : "255,255,255",
+        };
+      });
+    };
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = parent.clientWidth; H = parent.clientHeight;
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      canvas.style.width = W + "px"; canvas.style.height = H + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      build();
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(parent);
+
+    const onMove = (e: PointerEvent) => {
+      const rect = parent.getBoundingClientRect();
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
+      mouse.tx = (e.clientX - rect.left) / rect.width - 0.5;
+      mouse.ty = (e.clientY - rect.top) / rect.height - 0.5;
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+
+    const t0 = performance.now();
+    const render = (now: number) => {
+      const t = (now - t0) / 1000;
+      mouse.x += (mouse.tx - mouse.x) * 0.05;
+      mouse.y += (mouse.ty - mouse.y) * 0.05;
+      ctx.clearRect(0, 0, W, H);
+      const cx = W / 2, cy = H * 0.4, half = Math.hypot(W, H) / 2;
+      for (const s of stars) {
+        const depth = s.layer + 1;
+        const a = s.ang + t * 0.011 * depth;          // rotação lenta da galáxia (camadas em ritmos diferentes)
+        const px = cx + Math.cos(a) * s.dist * half - mouse.x * depth * 16;
+        const py = cy + Math.sin(a) * s.dist * half - mouse.y * depth * 16;
+        const tw = s.base * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph));
+        if (s.layer === 2) { ctx.shadowColor = `rgba(${s.tint},0.85)`; ctx.shadowBlur = 6; } else { ctx.shadowBlur = 0; }
+        ctx.beginPath();
+        ctx.arc(px, py, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${s.tint},${tw})`;
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      raf = requestAnimationFrame(render);
+    };
+    raf = requestAnimationFrame(render);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("pointermove", onMove);
+    };
+  }, []);
+  return <canvas ref={ref} className="absolute inset-0 pointer-events-none" style={{ width: "100%", height: "100%" }} aria-hidden />;
+});
+StarField.displayName = "StarField";
 
 const CommunityGraphInner = ({ members, userId, discipleCounts, cellsByLeader, matches, isSearching, onSelect, focusId }: CommunityGraphProps) => {
   const { rawNodes, rawEdges } = useMemo(() => {
@@ -291,7 +379,7 @@ const CommunityGraphInner = ({ members, userId, discipleCounts, cellsByLeader, m
   }, [rawNodes, rawEdges, setNodes, setEdges]);
 
   return (
-    <div className="relative h-[580px] w-full rounded-lg overflow-hidden" style={{ background: "radial-gradient(120% 90% at 50% 100%, #12294a 0%, #0a1a34 30%, #060f24 60%, #030812 100%)" }}>
+    <div className="relative h-[580px] w-full rounded-lg overflow-hidden" style={{ background: "radial-gradient(130% 100% at 50% 32%, #16305a 0%, #0c1c3a 26%, #060f26 52%, #03081a 78%, #01030c 100%)" }}>
       <style>{`
         @keyframes cgFlow { to { stroke-dashoffset: -230; } }
         .cg-flow { animation: cgFlow 3.2s linear infinite; }
@@ -299,31 +387,28 @@ const CommunityGraphInner = ({ members, userId, discipleCounts, cellsByLeader, m
         .cg-breath { animation: cgBreath 5s ease-in-out infinite; }
         @keyframes cgHalo { to { transform: translate(-50%,-50%) rotate(360deg);} }
         .cg-halo { animation: cgHalo 18s linear infinite; }
-        @keyframes cgStar { 0%,100%{opacity:.25} 50%{opacity:.95} }
-        .cg-star { position:absolute; border-radius:9999px; background:#fff; animation: cgStar ease-in-out infinite; }
         @keyframes cgSweepK { 0%{background-position:-160% 0} 100%{background-position:260% 0} }
         .cg-sweep { background:linear-gradient(105deg,transparent 40%,rgba(255,215,106,0.5) 50%,transparent 60%); background-size:220% 100%; animation:cgSweepK 1.3s ease-in-out infinite; mix-blend-mode:screen; }
+        @keyframes cgNebula { 0%,100%{opacity:.5; transform:scale(1) translateZ(0);} 50%{opacity:.8; transform:scale(1.08);} }
+        .cg-nebula { animation: cgNebula 11s ease-in-out infinite; mix-blend-mode:screen; }
       `}</style>
 
-      {/* Camadas de fundo: névoa, estrelas, Árvore da Vida sutil, vinheta */}
+      {/* Camadas de fundo: nebulosa (CSS) + campo estelar (canvas) + brilho da Raiz + vinheta.
+          Sem o antigo SVG de "galho" — só profundidade galáctica sóbria. */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-        <div className="cg-breath absolute top-[10%] left-[15%] w-72 h-72 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(56,120,220,0.25), transparent 70%)" }} />
-        <div className="cg-breath absolute bottom-0 left-1/2 -translate-x-1/2 w-[34rem] h-72 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(255,200,120,0.16), transparent 70%)", animationDelay: "2s" }} />
-        {STARS.map((s, i) => (
-          <span key={i} className="cg-star" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.sz, height: s.sz, animationDuration: `${s.dur}s`, animationDelay: `${s.delay}s` }} />
-        ))}
-        {/* Árvore da Vida ancestral (esculpida em luz, muito sutil) */}
-        <svg className="absolute left-1/2 -translate-x-1/2 bottom-0 h-[92%] w-[70%] opacity-[0.10]" viewBox="0 0 400 500" preserveAspectRatio="xMidYMax meet">
-          <g fill="none" stroke="rgba(255,215,106,0.9)" strokeWidth="2" strokeLinecap="round">
-            <path d="M200,500 C200,420 200,360 200,300" />
-            <path d="M200,320 C150,280 110,250 70,210 M70,210 C50,190 40,170 34,150" />
-            <path d="M200,320 C250,280 290,250 330,210 M330,210 C350,190 360,170 366,150" />
-            <path d="M200,260 C170,230 140,210 110,180 M200,260 C230,230 260,210 290,180" />
-            <path d="M200,300 C195,240 190,200 175,150 M200,300 C205,240 210,200 225,150" />
-          </g>
-        </svg>
+        {/* nebulosas discretas nos cantos (roxo/magenta/azul), blur + screen */}
+        <div className="cg-nebula absolute -top-16 -left-16 w-[26rem] h-[26rem] rounded-full blur-[70px]" style={{ background: "radial-gradient(circle, rgba(138,92,246,0.22), transparent 68%)" }} />
+        <div className="cg-nebula absolute -bottom-24 -right-16 w-[30rem] h-[30rem] rounded-full blur-[80px]" style={{ background: "radial-gradient(circle, rgba(56,120,220,0.20), transparent 70%)", animationDelay: "3.5s" }} />
+        <div className="cg-nebula absolute top-1/3 -right-24 w-[20rem] h-[20rem] rounded-full blur-[70px]" style={{ background: "radial-gradient(circle, rgba(232,72,180,0.12), transparent 72%)", animationDelay: "6s" }} />
+
+        {/* campo estelar animado (galáxia girando + parallax) */}
+        <StarField />
+
+        {/* brilho central pulsando atrás da Raiz (Cristo, topo-centro) */}
+        <div className="cg-breath absolute left-1/2 top-[6%] -translate-x-1/2 w-80 h-56 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(255,214,120,0.20), transparent 70%)" }} />
+
         {/* vinheta */}
-        <div className="absolute inset-0" style={{ boxShadow: "inset 0 0 160px 40px rgba(3,8,18,0.85)" }} />
+        <div className="absolute inset-0" style={{ boxShadow: "inset 0 0 170px 44px rgba(1,3,12,0.88)" }} />
       </div>
 
       <ReactFlow
@@ -342,7 +427,7 @@ const CommunityGraphInner = ({ members, userId, discipleCounts, cellsByLeader, m
         nodesDraggable={false}
         style={{ background: "transparent" }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={30} size={1} color="rgba(255,215,106,0.10)" />
+        <Background variant={BackgroundVariant.Dots} gap={34} size={1} color="rgba(150,180,255,0.05)" />
         <Controls showInteractive={false} className="!bg-white/10 !border !border-amber-300/25 backdrop-blur-md rounded-lg overflow-hidden [&>button]:!bg-transparent [&>button]:!border-white/10 [&>button]:!text-amber-100 [&>button:hover]:!bg-amber-400/20" />
         <MiniMap
           pannable
