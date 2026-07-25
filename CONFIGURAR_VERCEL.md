@@ -23,11 +23,11 @@ https://vercel.com/alessandroorion45-bots-projects/feconecta/settings/environmen
 ```
 VITE_SUPABASE_PROJECT_ID=kfetvofrwtuduwmpvdlz
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_8-a3qVJjeLmRBhKui1rCvg_9hWQMqqR
-VITE_SUPABASE_URL=https://kfetvofrwtuduwmpvdlz.supabase.co
-```
+                                                                                                                                                                                    VITE_SUPABASE_URL=https://kfetvofrwtuduwmpvdlz.supabase.co
+                                                                                                                                                                                    ```
 
-#### **ImageKit.io (obrigatório):**
-```
+                                                                                                                                                                                    #### **ImageKit.io (obrigatório):**
+                                                                                                                                                                                    ```
 VITE_IMAGEKIT_PUBLIC_KEY=public_rFmCkdvenfXBSY/M2+7x8F/qLMM=
 VITE_IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/0wfnlsfxm
 VITE_IMAGEKIT_PRIVATE_KEY=private_PwxgnxD+nIVApf0uLujylKkb2vs=
