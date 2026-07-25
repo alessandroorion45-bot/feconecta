@@ -87,7 +87,7 @@ const GameTopBar = memo(({
           )}
         </AnimatePresence>
 
-        <div className={`pv-timer ${timerFrozen ? 'pv-timer-frozen' : timeLeft <= 30 ? 'pv-timer-danger' : ''}`}>
+        <div className={`pv-timer ${timerFrozen ? 'pv-timer-frozen' : timeLeft <= 15 ? 'pv-timer-critical' : timeLeft <= 30 ? 'pv-timer-danger' : ''}`}>
           {timerFrozen ? <Snowflake className="h-4 w-4" /> : <Timer className="h-4 w-4" />}
           <span className="font-mono text-sm font-bold">{formatTime(timeLeft)}</span>
         </div>

@@ -921,9 +921,133 @@ All colors MUST be HSL.
   height: 100%;
   background: linear-gradient(90deg, hsl(var(--pv-blue-accent)), hsl(var(--pv-gold)), hsl(var(--pv-gold-bright)));
   border-radius: 999px;
-  transition: width 0.5s ease;
+  transition: width 0.4s ease-out;
   box-shadow: 0 0 10px hsl(var(--pv-gold) / 0.4);
 }
+
+/* Timer crítico (últimos 15s): pulso tenso, sem ser agressivo */
+.pv-timer-critical {
+  border-color: hsl(14 85% 55% / 0.7);
+  color: hsl(14 90% 68%);
+  animation: pvTimerTense 0.9s ease-in-out infinite;
+}
+
+@keyframes pvTimerTense {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 8px hsl(14 85% 55% / 0.25); }
+  50% { transform: scale(1.08); box-shadow: 0 0 18px hsl(14 85% 55% / 0.55); }
+}
+
+/* === HOME (tela de boas-vindas) === */
+.pv-home {
+  position: relative;
+  z-index: 2;
+  min-height: 72vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem 3rem;
+}
+.pv-home-inner {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+.pv-home-crest-wrap { position: relative; display: grid; place-items: center; margin-bottom: 0.25rem; }
+.pv-home-halo {
+  position: absolute;
+  width: 128px; height: 128px;
+  border-radius: 999px;
+  background: radial-gradient(circle, hsl(var(--pv-gold) / 0.45), transparent 70%);
+  filter: blur(6px);
+}
+.pv-home-crest {
+  position: relative;
+  width: 84px; height: 84px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  color: hsl(var(--pv-gold-bright));
+  background: linear-gradient(160deg, hsl(var(--pv-navy-surface)), hsl(var(--pv-navy)));
+  border: 1.5px solid hsl(var(--pv-border-gold) / 0.6);
+  box-shadow: 0 0 30px hsl(var(--pv-gold) / 0.35), inset 0 1px 0 hsl(0 0% 100% / 0.08);
+}
+.pv-home-title {
+  font-size: clamp(1.6rem, 5vw, 2.3rem);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: hsl(var(--pv-gold-bright));
+  text-shadow: 0 0 22px hsl(var(--pv-gold) / 0.4);
+}
+.pv-home-subtitle {
+  font-size: 0.95rem;
+  color: hsl(var(--pv-text-dim));
+  max-width: 40ch;
+  line-height: 1.5;
+}
+.pv-home-card {
+  width: 100%;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  padding: 1.1rem;
+  border-radius: 1.1rem;
+  background: hsl(var(--pv-navy-surface) / 0.7);
+  border: 1px solid hsl(var(--pv-border-gold) / 0.35);
+  box-shadow: 0 0 40px hsl(var(--pv-gold) / 0.08);
+  backdrop-filter: blur(6px);
+  margin-top: 0.5rem;
+}
+.pv-home-card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.pv-home-card-badge {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.72rem; font-weight: 700;
+  color: hsl(var(--pv-gold-light));
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.pv-home-card-theme { font-size: 0.75rem; color: hsl(var(--pv-text-dim)); }
+.pv-home-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.pv-home-card-stats > div {
+  display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: 0.7rem;
+  background: hsl(var(--pv-navy) / 0.6);
+  border: 1px solid hsl(var(--pv-border) / 0.4);
+}
+.pv-home-stat-num { font-size: 1.05rem; font-weight: 800; color: #fff; }
+.pv-flex-center { display: inline-flex; align-items: center; gap: 0.2rem; }
+.pv-home-stat-lbl { font-size: 0.65rem; color: hsl(var(--pv-text-dim)); text-transform: uppercase; letter-spacing: 0.04em; }
+.pv-home-restart {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  font-size: 0.78rem; color: hsl(var(--pv-text-dim));
+  background: transparent; border: none; cursor: pointer;
+  transition: color 0.2s ease;
+}
+.pv-home-restart:hover { color: hsl(var(--pv-gold-light)); }
+.pv-home-start { margin-top: 0.75rem; padding: 0.85rem 2rem; font-size: 1rem; }
+.pv-home-secondary { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
+.pv-home-ghost {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem; font-weight: 600;
+  color: hsl(var(--pv-text-dim));
+  background: hsl(var(--pv-navy-surface) / 0.5);
+  border: 1px solid hsl(var(--pv-border) / 0.4);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.pv-home-ghost:hover, .pv-home-ghost.is-active {
+  color: hsl(var(--pv-gold-light));
+  border-color: hsl(var(--pv-border-gold) / 0.5);
+  background: hsl(var(--pv-gold) / 0.08);
+}
+.pv-home-panel { width: 100%; overflow: hidden; margin-top: 0.25rem; }
+.pv-home-how { display: flex; flex-direction: column; gap: 0.5rem; text-align: left; padding: 0.5rem 0; }
+.pv-home-how li {
+  display: flex; align-items: flex-start; gap: 0.4rem;
+  font-size: 0.85rem; color: hsl(var(--pv-text-dim)); line-height: 1.4;
+}
+.pv-home-how li svg { color: hsl(var(--pv-gold)); margin-top: 0.15rem; flex-shrink: 0; }
 
 .pv-progress-label {
   position: absolute;
@@ -1079,6 +1203,14 @@ All colors MUST be HSL.
   box-shadow: 0 0 25px hsl(var(--pv-gold) / 0.7), inset 0 0 8px hsl(42 80% 70% / 0.2);
   transform: scale(1.15);
   text-shadow: 0 0 8px hsl(var(--pv-gold) / 0.5);
+  animation: cellPop 0.18s ease;
+}
+
+/* "Pop" ao tocar/arrastar sobre a letra */
+@keyframes cellPop {
+  0% { transform: scale(1); }
+  55% { transform: scale(1.24); }
+  100% { transform: scale(1.15); }
 }
 
 .pv-cell-found {
@@ -1198,6 +1330,28 @@ All colors MUST be HSL.
   border-color: hsl(var(--pv-gold) / 0.4);
   background: hsl(var(--pv-gold) / 0.1);
   box-shadow: 0 0 12px hsl(var(--pv-gold) / 0.15);
+  opacity: 0.85;
+  transform: scale(0.97);
+}
+
+/* Risco dourado que se desenha da esquerda pra direita ao achar a palavra */
+.pv-word-text { position: relative; display: inline-block; }
+.pv-word-found .pv-word-text::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  background: hsl(var(--pv-gold));
+  box-shadow: 0 0 6px hsl(var(--pv-gold) / 0.7);
+  transform-origin: left center;
+  animation: pvStrike 0.35s ease forwards;
+}
+
+@keyframes pvStrike {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 @keyframes check-pop {

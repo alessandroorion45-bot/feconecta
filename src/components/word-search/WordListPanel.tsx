@@ -31,7 +31,7 @@ const WordListPanel = memo(({ placements }: WordListPanelProps) => {
                 <Sparkles className="h-3.5 w-3.5" />
               </motion.span>
             )}
-            <span className={p.found ? 'line-through opacity-60' : ''}>{p.word}</span>
+            <span className="pv-word-text">{p.word}</span>
             {p.found && (
               <Check className="h-3.5 w-3.5 pv-check-animate" />
             )}

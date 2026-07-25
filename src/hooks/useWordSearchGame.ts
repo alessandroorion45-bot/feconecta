@@ -17,21 +17,33 @@ export interface CellPosition {
 export interface GameLevel {
   level: number;
   gridSize: number;
+  /** quantas palavras esconder no grid */
+  numWords: number;
   wordLengthMin: number;
   wordLengthMax: number;
+  /** tempo total do nível, em segundos */
+  timeSeconds: number;
+  /** permite palavras nas diagonais */
+  allowDiagonal: boolean;
+  /** permite palavras invertidas (de trás pra frente) */
+  allowReverse: boolean;
   label: string;
 }
 
-// ========== Constants ==========
+// ========== Curva de dificuldade recalibrada ==========
+// Só um fator sobe por vez entre níveis próximos, evitando saltos bruscos.
+// A cada 3 níveis há um "respiro" (levemente mais fácil que o anterior).
+// Toda a calibração vive AQUI — grid, nº de palavras, tempo, diagonal e
+// reverso — num único lugar, fácil de reajustar depois.
 export const LEVELS: GameLevel[] = [
-  { level: 1, gridSize: 8, wordLengthMin: 3, wordLengthMax: 5, label: 'Palavras curtas' },
-  { level: 2, gridSize: 9, wordLengthMin: 4, wordLengthMax: 6, label: 'Palavras médias' },
-  { level: 3, gridSize: 10, wordLengthMin: 5, wordLengthMax: 7, label: 'Palavras maiores' },
-  { level: 4, gridSize: 11, wordLengthMin: 4, wordLengthMax: 8, label: 'Desafio misto' },
-  { level: 5, gridSize: 12, wordLengthMin: 4, wordLengthMax: 10, label: 'Jornada bíblica' },
-  { level: 6, gridSize: 12, wordLengthMin: 5, wordLengthMax: 12, label: 'Desafio avançado' },
-  { level: 7, gridSize: 13, wordLengthMin: 4, wordLengthMax: 13, label: 'Mestre bíblico' },
-  { level: 8, gridSize: 14, wordLengthMin: 4, wordLengthMax: 15, label: 'Desafio supremo' },
+  { level: 1, gridSize: 6,  numWords: 3, wordLengthMin: 3, wordLengthMax: 4, timeSeconds: 180, allowDiagonal: false, allowReverse: false, label: 'Primeiros passos' },
+  { level: 2, gridSize: 7,  numWords: 4, wordLengthMin: 3, wordLengthMax: 5, timeSeconds: 175, allowDiagonal: false, allowReverse: false, label: 'Aprendiz da Palavra' },
+  { level: 3, gridSize: 7,  numWords: 4, wordLengthMin: 3, wordLengthMax: 5, timeSeconds: 200, allowDiagonal: false, allowReverse: false, label: 'Descanso do peregrino' }, // respiro
+  { level: 4, gridSize: 8,  numWords: 4, wordLengthMin: 4, wordLengthMax: 6, timeSeconds: 175, allowDiagonal: false, allowReverse: false, label: 'Caminhante fiel' },
+  { level: 5, gridSize: 9,  numWords: 5, wordLengthMin: 4, wordLengthMax: 6, timeSeconds: 170, allowDiagonal: true,  allowReverse: false, label: 'Diagonais reveladas' },
+  { level: 6, gridSize: 9,  numWords: 5, wordLengthMin: 4, wordLengthMax: 7, timeSeconds: 195, allowDiagonal: true,  allowReverse: false, label: 'Descanso do peregrino' }, // respiro
+  { level: 7, gridSize: 9,  numWords: 5, wordLengthMin: 5, wordLengthMax: 7, timeSeconds: 165, allowDiagonal: true,  allowReverse: false, label: 'Servo perseverante' },
+  { level: 8, gridSize: 10, numWords: 6, wordLengthMin: 5, wordLengthMax: 9, timeSeconds: 155, allowDiagonal: true,  allowReverse: true,  label: 'Palavras invertidas' },
 ];
 
 // Rótulos ciclantes para níveis além dos 8 iniciais (progressão infinita)
@@ -45,21 +57,29 @@ export const MAX_LEVEL = 500;
 
 /**
  * Config de nível para qualquer número de nível (1 a MAX_LEVEL).
- * Níveis 1-8 usam exatamente os tiers fixos originais (intocados).
- * A partir do nível 9, a mesma curva de dificuldade continua crescendo
- * gradualmente (grade maior, palavras mais longas) em vez de estagnar.
+ * Níveis 1-8 usam a tabela recalibrada acima.
+ * A partir do 9, a mesma curva continua crescendo gradualmente,
+ * mantendo o "respiro" a cada 3 níveis e a progressão infinita.
  */
 export const getLevelConfig = (level: number): GameLevel => {
   const clamped = Math.max(1, Math.min(level, MAX_LEVEL));
   if (clamped <= LEVELS.length) return LEVELS[clamped - 1];
 
   const tier = clamped - LEVELS.length; // 1, 2, 3...
-  const gridSize = Math.min(14 + Math.floor(tier / 8), 20);
-  const wordLengthMin = Math.min(4 + Math.floor(tier / 40), 6);
-  const wordLengthMax = Math.min(15 + Math.floor(tier / 20), 18);
-  const label = ENDLESS_LABELS[tier % ENDLESS_LABELS.length];
+  const isBreather = clamped % 3 === 0;
+  let gridSize = Math.min(10 + Math.floor(tier / 3), 20);
+  let numWords = Math.min(6 + Math.floor(tier / 3), 12);
+  const wordLengthMin = Math.min(5 + Math.floor(tier / 20), 7);
+  const wordLengthMax = Math.min(9 + Math.floor(tier / 5), 18);
+  let timeSeconds = gridSize * 14;
+  if (isBreather) {
+    gridSize = Math.max(gridSize - 1, 10);
+    numWords = Math.max(numWords - 1, 5);
+    timeSeconds += 45;
+  }
+  const label = isBreather ? 'Descanso do peregrino' : ENDLESS_LABELS[tier % ENDLESS_LABELS.length];
 
-  return { level: clamped, gridSize, wordLengthMin, wordLengthMax, label };
+  return { level: clamped, gridSize, numWords, wordLengthMin, wordLengthMax, timeSeconds, allowDiagonal: true, allowReverse: true, label };
 };
 
 // ========== Biblical words pool (fallback) ==========
@@ -90,16 +110,24 @@ const BIBLICAL_WORDS_POOL = [
 ];
 
 // ========== Directions for word placement ==========
-const DIRECTIONS: [number, number][] = [
-  [0, 1],   // horizontal right
-  [1, 0],   // vertical down
-  [1, 1],   // diagonal down-right
-  [-1, 1],  // diagonal up-right
-  [0, -1],  // horizontal left
-  [-1, 0],  // vertical up
-  [-1, -1], // diagonal up-left
-  [1, -1],  // diagonal down-left
-];
+// Agrupadas para permitir ligar/desligar diagonais e reverso por nível.
+const DIR_FORWARD: [number, number][] = [[0, 1], [1, 0]];     // → ↓
+const DIR_REVERSE: [number, number][] = [[0, -1], [-1, 0]];   // ← ↑
+const DIR_DIAG_FWD: [number, number][] = [[1, 1], [-1, 1]];   // ↘ ↗
+const DIR_DIAG_REV: [number, number][] = [[-1, -1], [1, -1]]; // ↖ ↙
+
+const ALL_DIRECTIONS: [number, number][] = [...DIR_FORWARD, ...DIR_REVERSE, ...DIR_DIAG_FWD, ...DIR_DIAG_REV];
+
+/** Monta as direções permitidas conforme os flags do nível. */
+export const buildDirections = (allowDiagonal: boolean, allowReverse: boolean): [number, number][] => {
+  let dirs = [...DIR_FORWARD];
+  if (allowReverse) dirs = [...dirs, ...DIR_REVERSE];
+  if (allowDiagonal) {
+    dirs = [...dirs, ...DIR_DIAG_FWD];
+    if (allowReverse) dirs = [...dirs, ...DIR_DIAG_REV];
+  }
+  return dirs;
+};
 
 // ========== Helper: normalize text for grid ==========
 const normalizeWord = (word: string): string => {
@@ -164,7 +192,8 @@ const placeWord = (
 
 export const generateGrid = (
   words: string[],
-  gridSize: number
+  gridSize: number,
+  directions: [number, number][] = ALL_DIRECTIONS
 ): { grid: string[][]; placements: WordPlacement[] } => {
   const grid: string[][] = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
   const placements: WordPlacement[] = [];
@@ -172,7 +201,7 @@ export const generateGrid = (
 
   for (const word of normalizedWords) {
     let placed = false;
-    const shuffledDirs = [...DIRECTIONS].sort(() => Math.random() - 0.5);
+    const shuffledDirs = [...directions].sort(() => Math.random() - 0.5);
 
     for (let attempt = 0; attempt < 100 && !placed; attempt++) {
       const dir = shuffledDirs[attempt % shuffledDirs.length];
@@ -221,8 +250,8 @@ const getWordsForLevel = (level: GameLevel, levelNumber: number, extraWords?: st
     });
   }
 
-  // Supplement from fallback pool
-  if (pool.length < 6) {
+  // Supplement from fallback pool (garante palavras suficientes p/ o nível)
+  if (pool.length < level.numWords + 3) {
     const fallback = BIBLICAL_WORDS_POOL.filter(w => {
       const norm = normalizeWord(w);
       return norm.length >= level.wordLengthMin && norm.length <= level.wordLengthMax && !pool.includes(w);
@@ -230,9 +259,8 @@ const getWordsForLevel = (level: GameLevel, levelNumber: number, extraWords?: st
     pool = [...pool, ...fallback];
   }
 
-  // Pick words based on level difficulty (5-10 words)
-  const wordCount = Math.min(5 + Math.floor(levelNumber / 10), 10);
-  return [...new Set(pool)].sort(() => rng() - 0.5).slice(0, wordCount);
+  // Nº de palavras vem da config do nível (recalibrada)
+  return [...new Set(pool)].sort(() => rng() - 0.5).slice(0, level.numWords);
 };
 
 // ========== Combo ==========
@@ -302,7 +330,8 @@ export const useWordSearchGame = () => {
   const startLevel = useCallback((level: number, extraWords?: string[]) => {
     const levelConfig = getLevelConfig(level);
     const words = getWordsForLevel(levelConfig, level, extraWords);
-    const { grid: newGrid, placements: newPlacements } = generateGrid(words, levelConfig.gridSize);
+    const directions = buildDirections(levelConfig.allowDiagonal, levelConfig.allowReverse);
+    const { grid: newGrid, placements: newPlacements } = generateGrid(words, levelConfig.gridSize, directions);
 
     setCurrentLevel(level);
     setGrid(newGrid);
@@ -312,7 +341,7 @@ export const useWordSearchGame = () => {
     setGameComplete(false);
     setHintsUsed(0);
     setRevealedCells(new Set());
-    setTimeLeft(levelConfig.gridSize * 15); // seconds based on grid size
+    setTimeLeft(levelConfig.timeSeconds); // tempo calibrado por nível
     setTimerFrozen(false);
     setScore(0);
     setCombo(0);

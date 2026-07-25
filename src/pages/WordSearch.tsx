@@ -11,7 +11,8 @@ import GameTools from '@/components/word-search/GameTools';
 import ThemeImage from '@/components/word-search/ThemeImage';
 import PauseMenu from '@/components/word-search/PauseMenu';
 import FloatingParticles from '@/components/word-search/FloatingParticles';
-import ResumeSessionModal from '@/components/word-search/ResumeSessionModal';
+import WordSearchHome from '@/components/word-search/WordSearchHome';
+import { AnimatePresence } from 'framer-motion';
 import ChestReveal from '@/components/word-search/ChestReveal';
 import FragmentModal from '@/components/word-search/FragmentModal';
 import SpiritualTrail from '@/components/word-search/SpiritualTrail';
@@ -38,7 +39,7 @@ const WordSearch = () => {
   const [currentTheme, setCurrentTheme] = useState<WordSearchTheme>(WORD_SEARCH_THEMES[0]);
   const [isPaused, setIsPaused] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
-  const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [view, setView] = useState<'home' | 'playing'>('home');
   const [savedSession, setSavedSession] = useState<SavedGameState | null>(null);
   const [chestOpen, setChestOpen] = useState(false);
   const [chestTier, setChestTier] = useState<ChestTier | null>(null);
@@ -107,27 +108,26 @@ const WordSearch = () => {
     if (isRestart) setIsPaused(false);
   }, [game, themeWordsFor, prefetchApiWords]);
 
-  // Carrega sessão salva (local primeiro, depois remoto) ou começa do zero
+  // Carrega sessão salva (local primeiro, depois remoto). NÃO inicia o jogo:
+  // a home é a primeira tela e mostra o card de continuar/começar.
   useEffect(() => {
     (async () => {
       const local = loadSessionLocal();
-      if (local) {
-        setSavedSession(local);
-        setResumeModalOpen(true);
-        return;
-      }
+      if (local) { setSavedSession(local); return; }
       if (user) {
         const remote = await loadSessionRemote(user.id);
-        if (remote) {
-          setSavedSession(remote);
-          setResumeModalOpen(true);
-          return;
-        }
+        if (remote) { setSavedSession(remote); return; }
       }
-      startLevelWithTheme(1);
+      // sem progresso → home mostra "Começar jornada"
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Home → jogo: começar do zero
+  const handleStartFresh = useCallback(() => {
+    startLevelWithTheme(1);
+    setView('playing');
+  }, [startLevelWithTheme]);
 
   const handleContinueSession = useCallback(() => {
     if (!savedSession) return;
@@ -136,21 +136,21 @@ const WordSearch = () => {
     game.setEndVerse(theme.verseText, theme.verseRef);
     game.restoreSession(savedSession);
     levelCompletedRef.current = false;
-    setResumeModalOpen(false);
+    setView('playing');
     toast.success('Progresso restaurado!');
   }, [savedSession, game]);
 
   const handleRestartFromResume = useCallback(() => {
     clearSessionLocal();
     if (user) clearSessionRemote(user.id);
-    setResumeModalOpen(false);
     startLevelWithTheme(savedSession?.level || 1, true);
+    setView('playing');
   }, [savedSession, startLevelWithTheme, user]);
 
   // Auto-save (local sempre; remoto se logado) — debounced
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
-    if (!game.grid.length || game.gameComplete || resumeModalOpen) return;
+    if (view !== 'playing' || !game.grid.length || game.gameComplete) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
@@ -173,7 +173,7 @@ const WordSearch = () => {
     }, 1500);
 
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [game.grid, game.foundWords, game.score, game.timeLeft, game.combo, game.currentLevel, game.gameComplete, currentTheme.key, user, resumeModalOpen, game.hintsUsed, game.placements, game.maxCombo, game.revealedCells]);
+  }, [view, game.grid, game.foundWords, game.score, game.timeLeft, game.combo, game.currentLevel, game.gameComplete, currentTheme.key, user, game.hintsUsed, game.placements, game.maxCombo, game.revealedCells]);
 
   // Efeitos ao encontrar palavra (som/partículas/combo)
   useEffect(() => {
@@ -319,6 +319,9 @@ const WordSearch = () => {
   }, [game]);
 
   const levelConfig = getLevelConfig(game.currentLevel);
+  const savedThemeLabel = savedSession
+    ? (WORD_SEARCH_THEMES.find(t => t.key === savedSession.themeKey)?.label || getThemeForLevel(savedSession.level).label)
+    : undefined;
 
   return (
     <div className="palavra-viva-wrapper" style={{ backgroundImage: `url(${wordSearchBg})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
@@ -330,7 +333,19 @@ const WordSearch = () => {
 
       <FloatingParticles />
 
-      <div className="palavra-viva-layout">
+      <AnimatePresence mode="wait">
+      {view === 'home' ? (
+        <WordSearchHome
+          key="home"
+          saved={savedSession}
+          savedThemeLabel={savedThemeLabel}
+          userId={user?.id}
+          onStart={handleStartFresh}
+          onContinue={handleContinueSession}
+          onRestart={handleRestartFromResume}
+        />
+      ) : (
+      <div className="palavra-viva-layout" key="game">
         <main className="palavra-viva-main pv-main-full">
           {/* Navigation */}
           <div className="pv-nav-strip">
@@ -403,17 +418,11 @@ const WordSearch = () => {
           </p>
         </main>
       </div>
+      )}
+      </AnimatePresence>
 
       {/* Pause menu */}
       <PauseMenu open={isPaused} onResume={handleResume} />
-
-      {/* Resume session */}
-      <ResumeSessionModal
-        open={resumeModalOpen}
-        saved={savedSession}
-        onContinue={handleContinueSession}
-        onRestart={handleRestartFromResume}
-      />
 
       {/* Complete modal */}
       <GameCompleteModal
