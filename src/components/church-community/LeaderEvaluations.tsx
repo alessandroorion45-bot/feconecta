@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Star, StarOff, Mic, MicOff, User, Loader2, Play, Pause } from "lucide-react";
+import { Star, StarOff, Mic, MicOff, User, Loader2, Play, Pause, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import CommunityReactions from "./CommunityReactions";
@@ -452,14 +452,35 @@ const LeaderEvaluations = ({ communityId, userId }: LeaderEvaluationsProps) => {
               </div>
             </div>
 
-            {/* Anonymous toggle */}
-            <div className="flex items-center justify-between">
-              <Label htmlFor="anonymous">Avaliação anônima</Label>
-              <Switch
-                id="anonymous"
-                checked={isAnonymous}
-                onCheckedChange={setIsAnonymous}
-              />
+            {/* Anonymous toggle + mensagem de estado */}
+            <div className="rounded-xl border border-border/70 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="anonymous" className="cursor-pointer">Avaliação anônima</Label>
+                <Switch
+                  id="anonymous"
+                  checked={isAnonymous}
+                  onCheckedChange={setIsAnonymous}
+                />
+              </div>
+              <div
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-300 ${
+                  isAnonymous
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25"
+                    : "bg-muted/60 text-muted-foreground border border-transparent"
+                }`}
+              >
+                {isAnonymous ? (
+                  <>
+                    <EyeOff className="h-4 w-4 shrink-0" />
+                    <span><strong>Modo anônimo ligado</strong> — seu nome não vai aparecer na avaliação.</span>
+                  </>
+                ) : (
+                  <>
+                    <User className="h-4 w-4 shrink-0" />
+                    <span><strong>Modo anônimo desligado</strong> — seu nome ficará visível para a liderança.</span>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
