@@ -98,6 +98,7 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [selected, setSelected] = useState<TreeMember | null>(null);
   const [extras, setExtras] = useState<MemberExtras | null>(null);
+  const [cellsByLeader, setCellsByLeader] = useState<Record<string, number>>({});
 
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number; active: boolean }>({
     startX: 0, startY: 0, panX: 0, panY: 0, active: false,
@@ -106,7 +107,7 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
   let firstMatchAssigned = false;
 
   const load = useCallback(async () => {
-    const [membersRes, campaignsRes] = await Promise.all([
+    const [membersRes, campaignsRes, cellsRes] = await Promise.all([
       supabase
         .from("church_community_members")
         .select("id, user_id, role, ministries, joined_at")
@@ -116,9 +117,21 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
         .select("id", { count: "exact", head: true })
         .eq("community_id", communityId)
         .eq("is_active", true),
+      // células lideradas por membro (dado real, para o card)
+      sb.from("community_cells")
+        .select("leader_user_id")
+        .eq("community_id", communityId)
+        .eq("is_active", true),
     ]);
 
     setCampaignCount(campaignsRes?.count || 0);
+
+    // mapa user_id -> nº de células que lidera
+    const cellsMap: Record<string, number> = {};
+    (cellsRes?.data || []).forEach((c: { leader_user_id: string | null }) => {
+      if (c.leader_user_id) cellsMap[c.leader_user_id] = (cellsMap[c.leader_user_id] || 0) + 1;
+    });
+    setCellsByLeader(cellsMap);
 
     const list = membersRes.data || [];
     if (list.length) {
@@ -546,10 +559,19 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                                 {member.profile?.full_name || "Membro"}
                               </span>
                               <span className="text-[10px] font-medium text-amber-300/90 leading-tight mt-0.5">{info.label}</span>
-                              {ministryCount > 0 && (
-                                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-400/25 px-2 py-0.5 text-[9px] text-emerald-200">
-                                  🌿 {ministryCount} ministério{ministryCount > 1 ? "s" : ""}
-                                </span>
+                              {(ministryCount > 0 || (cellsByLeader[member.user_id] || 0) > 0) && (
+                                <div className="flex flex-wrap justify-center gap-1 mt-1.5">
+                                  {ministryCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-400/25 px-2 py-0.5 text-[9px] text-emerald-200">
+                                      🌿 {ministryCount} min.
+                                    </span>
+                                  )}
+                                  {(cellsByLeader[member.user_id] || 0) > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 border border-sky-400/25 px-2 py-0.5 text-[9px] text-sky-200">
+                                      🏠 {cellsByLeader[member.user_id]} célula{cellsByLeader[member.user_id] > 1 ? "s" : ""}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </motion.button>
