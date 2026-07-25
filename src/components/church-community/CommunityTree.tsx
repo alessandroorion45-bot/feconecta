@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import UserAvatar from "@/components/UserAvatar";
+import { CommunityGraph } from "./CommunityGraph";
 import { COMMUNITY_ROLES, getRoleInfo } from "@/lib/communityRoles";
 import { MINISTRIES } from "./MinistriesSelector";
 import {
@@ -423,250 +424,23 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" onClick={() => setZoom(z => Math.max(0.6, +(z - 0.2).toFixed(1)))} aria-label="Diminuir zoom">
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => setZoom(z => Math.min(1.8, +(z + 0.2).toFixed(1)))} aria-label="Aumentar zoom">
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={recenter} aria-label="Voltar ao centro" title="Voltar ao centro">
-            <Crosshair className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
-      {/* A Árvore */}
-      <Card className="overflow-hidden border-white/10 shadow-2xl">
-        <CardContent className="p-0">
-          <div
-            className="relative overflow-hidden cursor-grab active:cursor-grabbing touch-none min-h-[420px]"
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            style={{
-              background:
-                "radial-gradient(120% 85% at 50% 100%, #10233f 0%, #0a1830 30%, #060f22 60%, #030812 100%)",
-            }}
-          >
-            {/* ===== Backdrop cinematográfico (parallax fixo, não arrasta) ===== */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-              {/* Nebulosas de profundidade */}
-              <div className="aura-breath absolute -top-10 left-[12%] w-72 h-72 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(56,120,220,0.42), transparent 70%)" }} />
-              <div className="aura-breath absolute top-24 right-[8%] w-80 h-80 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(79,157,255,0.30), transparent 70%)", animationDelay: "2s" }} />
-              <div className="aura-breath absolute bottom-0 left-1/2 -translate-x-1/2 w-[28rem] h-64 rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(255,200,120,0.20), transparent 70%)", animationDelay: "3s" }} />
-              <div className="absolute bottom-0 inset-x-0 h-40 blur-2xl" style={{ background: "radial-gradient(60% 100% at 50% 100%, rgba(255,200,87,0.18), transparent 70%)" }} />
-
-              {/* Luz divina descendo do topo (representa Deus — respira, não pisca) */}
-              <div
-                className="divine-light absolute left-1/2 top-0 h-[70%] w-40"
-                style={{ background: "linear-gradient(180deg, rgba(255,240,200,0.55) 0%, rgba(255,220,140,0.18) 35%, transparent 75%)", filter: "blur(6px)", clipPath: "polygon(38% 0, 62% 0, 100% 100%, 0% 100%)" }}
-              />
-              <div className="aura-breath absolute left-1/2 -translate-x-1/2 top-1 w-24 h-24 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(255,236,180,0.7), transparent 70%)" }} />
-
-              {/* Estrelas pequenas */}
-              {STARS.map((s, i) => (
-                <span key={i} className="tree-star" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.sz, height: s.sz, animationDuration: `${s.dur}s`, animationDelay: `${s.delay}s` }} />
-              ))}
-
-              {/* Poeira dourada / vagalumes subindo */}
-              {EMBERS.map((e, i) => (
-                <span
-                  key={i}
-                  className="tree-ember"
-                  style={{
-                    left: `${e.x}%`, bottom: `-8px`, width: e.sz, height: e.sz,
-                    background: e.gold ? "radial-gradient(circle, #ffd76a, rgba(255,215,106,0))" : "radial-gradient(circle, #7db8ff, rgba(125,184,255,0))",
-                    boxShadow: e.gold ? "0 0 6px rgba(255,215,106,0.8)" : "0 0 6px rgba(125,184,255,0.7)",
-                    animationDuration: `${e.dur}s`, animationDelay: `${e.delay}s`,
-                    ["--drift" as any]: `${e.drift}px`,
-                  }}
-                />
-              ))}
-            </div>
-
-            <div
-              className="relative mx-auto py-8 px-4 origin-top will-change-transform"
-              style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, maxWidth: 900 }}
-            >
-              {/* Copa frondosa (profundidade + glow vivo) */}
-              <div className="absolute left-1/2 -translate-x-1/2 top-2 w-[85%] h-64 -z-0 pointer-events-none" aria-hidden>
-                <div className="aura-breath absolute left-[8%] top-8 w-44 h-32 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(74,222,128,0.28), transparent 70%)" }} />
-                <div className="aura-breath absolute right-[8%] top-8 w-44 h-32 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(56,120,220,0.28), transparent 70%)", animationDelay: "2s" }} />
-                <div className="aura-breath absolute left-1/2 -translate-x-1/2 top-0 w-64 h-40 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(255,200,120,0.26), transparent 70%)", animationDelay: "1s" }} />
-              </div>
-
-              {/* Sol e copa */}
-              <div className="text-center mb-3 select-none relative z-10" aria-hidden>
-                <span className="tree-leaf inline-block text-2xl" style={{ animationDelay: "0.2s" }}>🌿</span>
-                <span className="inline-block text-3xl mx-2 drop-shadow-[0_0_16px_rgba(255,236,180,0.8)]">✨</span>
-                <span className="tree-leaf inline-block text-2xl" style={{ animationDelay: "1.1s" }}>🌿</span>
-              </div>
-
-              {/* Coluna central de luz — a vida que sobe de Cristo (a Raiz)
-                  até toda a hierarquia. Substitui o tronco desenhado. */}
-              <div
-                className="absolute left-1/2 -translate-x-1/2 top-16 bottom-24 w-[3px] -z-0 rounded-full"
-                style={{
-                  background: "linear-gradient(to bottom, rgba(255,215,106,0.12), rgba(255,215,106,0.8) 50%, rgba(255,215,106,0.12))",
-                  boxShadow: "0 0 16px rgba(255,215,106,0.5)",
-                }}
-                aria-hidden
-              >
-                <div className="spine-flow absolute inset-x-[-3px] h-16 rounded-full" style={{ background: "linear-gradient(to bottom, transparent, rgba(255,245,205,0.95), transparent)", filter: "blur(1px)" }} />
-              </div>
-
-              {/* Níveis da hierarquia — Mapa Vivo do Reino */}
-              <div className="relative z-10 space-y-9">
-                {tiers.map((tier, tierIndex) => (
-                  <div key={tier.label} className="relative pt-6">
-                    {/* Barra do nível: linha dourada luminosa + rótulo */}
-                    <div className="relative flex items-center justify-center mb-4 select-none" aria-hidden>
-                      <div
-                        className="absolute inset-x-[6%] h-[2px] rounded-full"
-                        style={{ background: "linear-gradient(90deg, transparent, rgba(255,215,106,0.55), rgba(255,215,106,0.85), rgba(255,215,106,0.55), transparent)", boxShadow: "0 0 10px rgba(255,215,106,0.45)" }}
-                      />
-                      <span
-                        className="relative rounded-full px-3.5 py-1 text-xs font-semibold text-amber-100 shadow-lg"
-                        style={{ background: "rgba(9,18,36,0.85)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,215,106,0.35)" }}
-                      >
-                        {tier.emoji} {tier.label}
-                      </span>
-                    </div>
-
-                    {/* Cards premium dos membros */}
-                    <div className="flex flex-wrap justify-center gap-3">
-                      {tier.members.map((member, i) => {
-                        const visible = matches(member);
-                        const highlight = isSearching && visible;
-                        const info = getRoleInfo(member.role);
-                        const isSelf = member.user_id === userId;
-                        const ministryCount = member.ministries?.length || 0;
-                        const featured = tierIndex === 0;
-                        const assignRef = highlight && !firstMatchAssigned
-                          ? (el: HTMLButtonElement | null) => { firstMatchRef.current = el; }
-                          : undefined;
-                        if (highlight && !firstMatchAssigned) firstMatchAssigned = true;
-                        return (
-                          <motion.button
-                            key={member.id}
-                            ref={assignRef}
-                            initial={{ scale: 0.7, opacity: 0, y: 12 }}
-                            animate={{ scale: visible ? 1 : 0.85, opacity: visible ? 1 : 0.25, y: 0 }}
-                            whileHover={visible ? { y: -4 } : undefined}
-                            transition={{ delay: Math.min(tierIndex * 0.1 + i * 0.04, 0.9), type: "spring", stiffness: 240, damping: 20 }}
-                            onClick={() => setSelected(member)}
-                            className={cn("group relative rounded-2xl p-[1.5px] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300", featured ? "w-[152px]" : "w-[132px]")}
-                            style={{
-                              background: highlight
-                                ? "linear-gradient(135deg, #facc15, #f59e0b)"
-                                : isSelf
-                                  ? "linear-gradient(135deg, rgba(168,120,255,0.85), rgba(168,120,255,0.3))"
-                                  : "linear-gradient(135deg, rgba(255,215,106,0.5), rgba(255,215,106,0.14))",
-                            }}
-                            title={`${member.profile?.full_name || "Membro"} — ${info.label}`}
-                            aria-label={`${member.profile?.full_name || "Membro"}, ${info.label}`}
-                          >
-                            {/* glow no hover */}
-                            <span className="absolute -inset-1.5 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity -z-10" style={{ background: "radial-gradient(circle, rgba(255,215,106,0.5), transparent 70%)" }} aria-hidden />
-                            <div
-                              className={cn("relative rounded-2xl flex flex-col items-center text-center overflow-hidden", featured ? "px-3 pt-4 pb-3" : "px-2.5 pt-3 pb-2.5")}
-                              style={{ background: "linear-gradient(160deg, rgba(16,26,48,0.94), rgba(8,15,30,0.96))", backdropFilter: "blur(6px)" }}
-                            >
-                              {/* brilho superior do card */}
-                              <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
-                              {/* avatar com halo */}
-                              <div className="relative">
-                                <span className="absolute -inset-1 rounded-full blur-md opacity-70" style={{ background: isSelf ? "radial-gradient(circle, rgba(168,120,255,0.55), transparent 70%)" : "radial-gradient(circle, rgba(255,215,106,0.4), transparent 70%)" }} aria-hidden />
-                                <div className={cn("relative rounded-full ring-2", isSelf ? "ring-purple-300/80" : highlight ? "ring-yellow-300 fruit-highlight" : "ring-amber-300/70")}>
-                                  <UserAvatar
-                                    src={member.profile?.avatar_url || undefined}
-                                    fallback={member.profile?.full_name || "?"}
-                                    size={featured ? "lg" : "md"}
-                                  />
-                                </div>
-                                <span className="absolute -bottom-1 -right-1 text-sm drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]" aria-hidden>{info.emoji}</span>
-                              </div>
-                              <span className={cn("font-bold mt-2 leading-tight text-white line-clamp-2", featured ? "text-[13px]" : "text-[12px]")}>
-                                {member.profile?.full_name || "Membro"}
-                              </span>
-                              <span className="text-[10px] font-medium text-amber-300/90 leading-tight mt-0.5">{info.label}</span>
-                              {(ministryCount > 0 || (cellsByLeader[member.user_id] || 0) > 0 || (discipleCounts[member.user_id] || 0) > 0) && (
-                                <div className="flex flex-wrap justify-center gap-1 mt-1.5">
-                                  {(discipleCounts[member.user_id] || 0) > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-400/30 px-2 py-0.5 text-[9px] text-amber-200">
-                                      👥 {discipleCounts[member.user_id]} discíp.
-                                    </span>
-                                  )}
-                                  {ministryCount > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-400/25 px-2 py-0.5 text-[9px] text-emerald-200">
-                                      🌿 {ministryCount} min.
-                                    </span>
-                                  )}
-                                  {(cellsByLeader[member.user_id] || 0) > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 border border-sky-400/25 px-2 py-0.5 text-[9px] text-sky-200">
-                                      🏠 {cellsByLeader[member.user_id]} célula{cellsByLeader[member.user_id] > 1 ? "s" : ""}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Raiz — sistema de raízes com veios dourados */}
-              <div className="relative z-10 mt-8 text-center">
-                {/* raízes desenhadas espalhando pelo solo (decorativo) */}
-                <div className="absolute left-1/2 -translate-x-1/2 -top-4 w-[90%] max-w-[520px] h-24 pointer-events-none" aria-hidden>
-                  <svg viewBox="0 0 400 90" className="w-full h-full" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="rootGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="rgb(146 94 42 / 0.9)" />
-                        <stop offset="100%" stopColor="rgb(60 34 14 / 0.15)" />
-                      </linearGradient>
-                      <linearGradient id="rootGold" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="rgba(255,215,106,0.9)" />
-                        <stop offset="100%" stopColor="rgba(255,215,106,0)" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M200,0 C180,25 120,30 60,70 M200,0 C160,30 110,45 30,58" fill="none" stroke="url(#rootGrad)" strokeWidth="5" strokeLinecap="round" />
-                    <path d="M200,0 C220,25 280,30 340,70 M200,0 C240,30 290,45 370,58" fill="none" stroke="url(#rootGrad)" strokeWidth="5" strokeLinecap="round" />
-                    <path d="M200,0 C195,35 190,55 175,85 M200,0 C205,35 210,55 225,85" fill="none" stroke="url(#rootGrad)" strokeWidth="4" strokeLinecap="round" />
-                    {/* veios dourados de luz por cima (respiram) */}
-                    <g className="root-glow">
-                      <path d="M200,0 C180,25 120,30 60,70 M200,0 C220,25 280,30 340,70 M200,0 C195,35 190,55 175,85" fill="none" stroke="url(#rootGold)" strokeWidth="1.2" strokeLinecap="round" />
-                    </g>
-                  </svg>
-                </div>
-
-                <div className="text-2xl select-none tree-leaf relative" aria-hidden>🌱</div>
-                {/* Caixa do versículo — glass sagrada */}
-                <div
-                  className="relative inline-block rounded-2xl px-5 py-3 mt-2 shadow-2xl"
-                  style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(18px)", border: "1px solid rgba(255,215,106,0.25)", boxShadow: "0 0 30px rgba(168,85,247,0.25)" }}
-                >
-                  <p className="text-sm font-semibold text-amber-200 flex items-center justify-center gap-1.5">
-                    <span className="drop-shadow-[0_0_8px_rgba(255,215,106,0.8)]">✝️</span> Cristo — a Raiz
-                  </p>
-                  <p className="text-xs text-white/75 italic mt-1 max-w-xs font-serif">
-                    "Eu sou a videira, vós as varas. Quem permanece em mim, e eu nele, esse dá muito fruto." — João 15:5
-                  </p>
-                </div>
-                <p className="text-[11px] text-white/50 mt-2">
-                  📖 Alimentada pela Palavra de Deus
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      <p className="text-xs text-muted-foreground text-center -mt-2">
-        Arraste a árvore para navegar · use os botões de zoom · 🎯 volta ao centro
+      {/* Grafo hierárquico do discipulado (React Flow + auto-layout) */}
+      <div className="rounded-lg border border-white/10 shadow-2xl overflow-hidden">
+        <CommunityGraph
+          members={members}
+          userId={userId}
+          discipleCounts={discipleCounts}
+          cellsByLeader={cellsByLeader}
+          matches={matches}
+          isSearching={isSearching}
+          onSelect={setSelected}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground text-center -mt-1">
+        🖱️ Arraste para navegar · roda do mouse ou botões pra zoom · clique num card pra ver o perfil
       </p>
 
       {/* Painel do membro */}
