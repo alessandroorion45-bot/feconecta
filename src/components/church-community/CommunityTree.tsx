@@ -27,12 +27,16 @@ interface TreeMember {
   role: string;
   ministries: string[] | null;
   joined_at: string;
+  discipler_user_id: string | null;
   profile?: {
     username: string;
     full_name: string;
     avatar_url: string | null;
   };
 }
+
+// Papéis de liderança que podem gerenciar o discipulado dos membros
+const LEADER_ROLES = new Set(["admin", "pastor", "pastora", "presbitero", "lider_geral", "secretario"]);
 
 interface MemberExtras {
   achievements: number;
@@ -110,7 +114,7 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
     const [membersRes, campaignsRes, cellsRes] = await Promise.all([
       supabase
         .from("church_community_members")
-        .select("id, user_id, role, ministries, joined_at")
+        .select("id, user_id, role, ministries, joined_at, discipler_user_id")
         .eq("community_id", communityId)
         .eq("is_active", true),
       sb.from("community_campaigns")
@@ -228,6 +232,34 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
     const newThisMonth = members.filter(m => new Date(m.joined_at) >= monthStart).length;
     return { total: members.length, ministries: ministrySet.size, leaders, newThisMonth };
   }, [members]);
+
+  // Discipulado real: quantos discípulos cada pessoa tem
+  const discipleCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    members.forEach(m => {
+      if (m.discipler_user_id) map[m.discipler_user_id] = (map[m.discipler_user_id] || 0) + 1;
+    });
+    return map;
+  }, [members]);
+
+  // O usuário atual pode gerenciar o discipulado? (é líder na comunidade)
+  const canManage = useMemo(
+    () => members.some(m => m.user_id === userId && LEADER_ROLES.has(m.role)),
+    [members, userId],
+  );
+
+  // Nome do discipulador (para exibir no painel)
+  const nameOf = useCallback(
+    (uid: string | null) => (uid ? members.find(m => m.user_id === uid)?.profile?.full_name || null : null),
+    [members],
+  );
+
+  // Define/atualiza o discipulador de um membro (líderes ou o próprio)
+  const setDiscipler = useCallback(async (memberRowId: string, disciplerUserId: string | null) => {
+    await sb.from("church_community_members").update({ discipler_user_id: disciplerUserId }).eq("id", memberRowId);
+    setSelected(prev => (prev && prev.id === memberRowId ? { ...prev, discipler_user_id: disciplerUserId } : prev));
+    load();
+  }, [load]);
 
   // Flores surgem conforme a comunidade cresce (1 a cada 3 membros)
 
@@ -559,8 +591,13 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                                 {member.profile?.full_name || "Membro"}
                               </span>
                               <span className="text-[10px] font-medium text-amber-300/90 leading-tight mt-0.5">{info.label}</span>
-                              {(ministryCount > 0 || (cellsByLeader[member.user_id] || 0) > 0) && (
+                              {(ministryCount > 0 || (cellsByLeader[member.user_id] || 0) > 0 || (discipleCounts[member.user_id] || 0) > 0) && (
                                 <div className="flex flex-wrap justify-center gap-1 mt-1.5">
+                                  {(discipleCounts[member.user_id] || 0) > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-400/30 px-2 py-0.5 text-[9px] text-amber-200">
+                                      👥 {discipleCounts[member.user_id]} discíp.
+                                    </span>
+                                  )}
                                   {ministryCount > 0 && (
                                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-400/25 px-2 py-0.5 text-[9px] text-emerald-200">
                                       🌿 {ministryCount} min.
@@ -687,6 +724,42 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                     <div className="text-sm font-bold">{extras?.campaigns ?? "…"}</div>
                     <div className="text-[10px] text-muted-foreground">Check-ins</div>
                   </div>
+                </div>
+
+                {/* Discipulado */}
+                <div className="w-full rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 text-left space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-semibold text-amber-600 dark:text-amber-300 flex items-center gap-1.5">
+                      <Users className="h-4 w-4" /> Discipulado
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {discipleCounts[selected.user_id] || 0} discípulo{(discipleCounts[selected.user_id] || 0) === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Discipulado por:{" "}
+                    <span className="font-medium text-foreground">{nameOf(selected.discipler_user_id) || "— ninguém definido"}</span>
+                  </p>
+                  {(canManage || selected.user_id === userId) && (
+                    <Select
+                      value={selected.discipler_user_id || "none"}
+                      onValueChange={(v) => setDiscipler(selected.id, v === "none" ? null : v)}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue placeholder="Definir discipulador" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value="none">— Sem discipulador</SelectItem>
+                        {members
+                          .filter(m => m.user_id !== selected.user_id)
+                          .map(m => (
+                            <SelectItem key={m.id} value={m.user_id}>
+                              {getRoleInfo(m.role).emoji} {m.profile?.full_name || "Membro"}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 <div className="text-xs text-muted-foreground space-y-0.5">
