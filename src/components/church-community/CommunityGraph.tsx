@@ -45,6 +45,8 @@ interface CommunityGraphProps {
   matches: (m: GraphMember) => boolean;
   isSearching: boolean;
   onSelect: (m: GraphMember) => void;
+  /** id (linha) do membro em foco — acende só o ramo dele, esmaece o resto */
+  focusId?: string | null;
 }
 
 // Cor própria por cargo (nobreza cresce com a hierarquia)
@@ -76,8 +78,8 @@ const NODE_W = 194;
 const NODE_H = 122;
 
 // -------- Nó da Raiz (Cristo — altar de luz) --------
-const RootNode = memo(() => (
-  <div className="relative" style={{ width: NODE_W }}>
+const RootNode = memo(({ data }: NodeProps) => (
+  <div className="relative transition-opacity duration-300" style={{ width: NODE_W, opacity: (data as any)?.dim ? 0.45 : 1 }}>
     <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     {/* halo giratório + feixe de luz vindo do céu */}
     <div className="cg-halo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full pointer-events-none" aria-hidden
@@ -120,10 +122,10 @@ const MemberNode = memo(({ data }: NodeProps) => {
   return (
     <div
       onClick={d.onOpen}
-      className="cg-card group relative rounded-2xl p-[1.5px] cursor-pointer transition-transform duration-300 hover:-translate-y-1.5 hover:scale-[1.03]"
+      className="cg-card group relative rounded-2xl p-[1.5px] cursor-pointer transition-[transform,opacity] duration-300 hover:-translate-y-1.5 hover:scale-[1.03]"
       style={{
         width: NODE_W,
-        opacity: d.dim ? 0.25 : 1,
+        opacity: d.dim ? 0.42 : 1,
         background: d.highlight
           ? "linear-gradient(135deg,#facc15,#f59e0b)"
           : `linear-gradient(135deg, rgba(${c},0.9), rgba(${c},0.2))`,
@@ -168,17 +170,20 @@ const MemberNode = memo(({ data }: NodeProps) => {
 MemberNode.displayName = "MemberNode";
 
 // -------- Aresta de luz (galho dourado com partículas caminhando) --------
-const GoldEdge = memo(({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition }: EdgeProps) => {
+const GoldEdge = memo(({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data }: EdgeProps) => {
   const [path] = getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition });
+  const dim = (data as any)?.dim;
+  const lit = (data as any)?.lit; // aresta no ramo em foco — mais intensa
+  const o = dim ? 0.22 : 1;
   return (
-    <>
+    <g style={{ opacity: o, transition: "opacity .35s ease" }}>
       {/* brilho difuso */}
-      <BaseEdge path={path} style={{ stroke: "rgba(255,215,106,0.3)", strokeWidth: 6, filter: "blur(2px)" }} />
+      <BaseEdge path={path} style={{ stroke: `rgba(255,215,106,${lit ? 0.5 : 0.3})`, strokeWidth: lit ? 8 : 6, filter: "blur(2px)" }} />
       {/* fio central */}
-      <BaseEdge path={path} style={{ stroke: "rgba(255,229,160,0.85)", strokeWidth: 1.6 }} />
+      <BaseEdge path={path} style={{ stroke: `rgba(255,229,160,${lit ? 1 : 0.85})`, strokeWidth: lit ? 2.2 : 1.6 }} />
       {/* partículas caminhando em direção ao discípulo */}
-      <path d={path} fill="none" stroke="#fff6d8" strokeWidth={2.4} strokeLinecap="round" strokeDasharray="1 22" className="cg-flow" style={{ filter: "drop-shadow(0 0 4px rgba(255,215,106,0.95))" }} />
-    </>
+      <path d={path} fill="none" stroke="#fff6d8" strokeWidth={lit ? 3 : 2.4} strokeLinecap="round" strokeDasharray="1 22" className="cg-flow" style={{ filter: "drop-shadow(0 0 4px rgba(255,215,106,0.95))" }} />
+    </g>
   );
 });
 GoldEdge.displayName = "GoldEdge";
@@ -205,13 +210,51 @@ const ROOT_ID = "__root__";
 // Estrelas/poeira do fundo (posições estáveis)
 const STARS = Array.from({ length: 40 }, (_, i) => ({ x: (i * 47.3) % 100, y: (i * 71.9) % 100, sz: 1 + (i % 3), dur: 3 + (i % 5), delay: (i % 8) * 0.5 }));
 
-const CommunityGraphInner = ({ members, userId, discipleCounts, cellsByLeader, matches, isSearching, onSelect }: CommunityGraphProps) => {
+const CommunityGraphInner = ({ members, userId, discipleCounts, cellsByLeader, matches, isSearching, onSelect, focusId }: CommunityGraphProps) => {
   const { rawNodes, rawEdges } = useMemo(() => {
     const ids = new Set(members.map((m) => m.user_id));
-    const rn: Node[] = [{ id: ROOT_ID, type: "root", position: { x: 0, y: 0 }, data: {} }];
+    const byUser = new Map(members.map((m) => [m.user_id, m]));
+    const childrenByUser = new Map<string, GraphMember[]>();
+    members.forEach((m) => {
+      const p = m.discipler_user_id && ids.has(m.discipler_user_id) ? m.discipler_user_id : null;
+      if (p) childrenByUser.set(p, [...(childrenByUser.get(p) || []), m]);
+    });
+
+    // Conjunto do ramo em foco: o membro + caminho até Cristo + descendentes.
+    // Nunca esconde a árvore — só acende o ramo e esmaece o resto.
+    const focusMember = focusId ? members.find((m) => m.id === focusId) : null;
+    const focusSet = new Set<string>();
+    if (focusMember) {
+      focusSet.add(focusMember.id);
+      // sobe até a Raiz
+      let cur: GraphMember | undefined = focusMember;
+      const guard = new Set<string>();
+      while (cur && !guard.has(cur.user_id)) {
+        guard.add(cur.user_id);
+        const disc = cur.discipler_user_id && ids.has(cur.discipler_user_id) ? byUser.get(cur.discipler_user_id) : undefined;
+        if (disc) { focusSet.add(disc.id); cur = disc; } else { focusSet.add(ROOT_ID); cur = undefined; }
+      }
+      // desce por todos os discípulos
+      const stack = [...(childrenByUser.get(focusMember.user_id) || [])];
+      const seen = new Set<string>();
+      while (stack.length) {
+        const c = stack.pop()!;
+        if (seen.has(c.id)) continue;
+        seen.add(c.id);
+        focusSet.add(c.id);
+        (childrenByUser.get(c.user_id) || []).forEach((g) => stack.push(g));
+      }
+    }
+    const focusActive = focusSet.size > 0;
+
+    const rn: Node[] = [{
+      id: ROOT_ID, type: "root", position: { x: 0, y: 0 },
+      data: { dim: focusActive && !focusSet.has(ROOT_ID) },
+    }];
     const re: Edge[] = [];
     members.forEach((m) => {
       const visible = matches(m);
+      const inFocus = focusSet.has(m.id);
       rn.push({
         id: m.id,
         type: "member",
@@ -222,17 +265,22 @@ const CommunityGraphInner = ({ members, userId, discipleCounts, cellsByLeader, m
           ministries: m.ministries?.length || 0,
           cells: cellsByLeader[m.user_id] || 0,
           isSelf: m.user_id === userId,
-          dim: isSearching && !visible,
-          highlight: isSearching && visible,
+          dim: (isSearching && !visible) || (focusActive && !inFocus),
+          highlight: (isSearching && visible) || m.id === focusId,
           onOpen: () => onSelect(m),
         },
       });
       const parentUser = m.discipler_user_id && ids.has(m.discipler_user_id) ? m.discipler_user_id : null;
       const parentNode = parentUser ? members.find((x) => x.user_id === parentUser)?.id : ROOT_ID;
-      re.push({ id: `e-${parentNode}-${m.id}`, source: parentNode || ROOT_ID, target: m.id, type: "gold" });
+      const pid = parentNode || ROOT_ID;
+      const lit = focusActive && focusSet.has(m.id) && focusSet.has(pid);
+      re.push({
+        id: `e-${pid}-${m.id}`, source: pid, target: m.id, type: "gold",
+        data: { dim: focusActive && !lit, lit },
+      });
     });
     return { rawNodes: rn, rawEdges: re };
-  }, [members, userId, discipleCounts, cellsByLeader, matches, isSearching, onSelect]);
+  }, [members, userId, discipleCounts, cellsByLeader, matches, isSearching, onSelect, focusId]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);

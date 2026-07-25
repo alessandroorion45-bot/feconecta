@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import UserAvatar from "@/components/UserAvatar";
 import { CommunityGraph } from "./CommunityGraph";
 import { COMMUNITY_ROLES, getRoleInfo } from "@/lib/communityRoles";
@@ -17,7 +16,8 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sb = supabase as any;
@@ -262,6 +262,12 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
     load();
   }, [load]);
 
+  // Navegação contínua: re-seleciona outro membro sem fechar o painel
+  const selectByUser = useCallback(
+    (uid: string | null) => { if (uid) setSelected(members.find(m => m.user_id === uid) || null); },
+    [members],
+  );
+
   // Flores surgem conforme a comunidade cresce (1 a cada 3 membros)
 
   // Arrastar a árvore (mouse e toque, via pointer events)
@@ -427,8 +433,10 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
         </div>
       </div>
 
-      {/* Grafo hierárquico do discipulado (React Flow + auto-layout) */}
-      <div className="rounded-lg border border-white/10 shadow-2xl overflow-hidden">
+      {/* Grafo hierárquico + painel lateral — a árvore NUNCA some ao navegar.
+          Selecionar acende o ramo (Cristo → membro → discípulos) e o painel
+          desliza da direita sem overlay escuro, mantendo o Reino à vista. */}
+      <div className="relative rounded-lg border border-white/10 shadow-2xl overflow-hidden">
         <CommunityGraph
           members={members}
           userId={userId}
@@ -437,39 +445,46 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
           matches={matches}
           isSearching={isSearching}
           onSelect={setSelected}
+          focusId={selected?.id ?? null}
         />
-      </div>
-      <p className="text-xs text-muted-foreground text-center -mt-1">
-        🖱️ Arraste para navegar · roda do mouse ou botões pra zoom · clique num card pra ver o perfil
-      </p>
 
-      {/* Painel do membro */}
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-sm">
+        <AnimatePresence>
           {selected && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <span>{getRoleInfo(selected.role).emoji}</span>
-                  Fruto da Comunidade
-                </DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col items-center text-center space-y-3">
-                <UserAvatar
-                  src={selected.profile?.avatar_url || undefined}
-                  fallback={selected.profile?.full_name || "?"}
-                  size="xl"
-                />
-                <div>
-                  <p className="font-semibold text-lg">
-                    {selected.profile?.full_name || "Membro"}
-                    {selected.user_id === userId && <span className="text-primary text-sm ml-1">(você)</span>}
-                  </p>
+            <motion.aside
+              key="member-panel"
+              initial={{ x: "100%", opacity: 0.4 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 34 }}
+              className="absolute inset-y-0 right-0 z-20 w-[88%] sm:w-[350px] overflow-y-auto border-l border-amber-300/25 shadow-[0_0_40px_rgba(0,0,0,0.6)]"
+              style={{ background: "linear-gradient(165deg, rgba(16,26,48,0.94), rgba(6,12,26,0.97))", backdropFilter: "blur(14px)" }}
+            >
+              <button
+                onClick={() => setSelected(null)}
+                className="absolute top-2.5 right-2.5 z-10 rounded-full bg-white/8 hover:bg-white/16 p-1.5 text-amber-100/80 transition-colors"
+                aria-label="Fechar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="flex flex-col items-center text-center gap-3 p-4 pt-6">
+                {/* avatar com anel dourado + halo */}
+                <div className="relative">
+                  <span className="absolute -inset-3 rounded-full blur-lg" style={{ background: "radial-gradient(circle, rgba(255,215,106,0.35), transparent 70%)" }} aria-hidden />
+                  <div className="relative rounded-full ring-2 ring-amber-300/70 shadow-[0_0_18px_rgba(255,215,106,0.5)]">
+                    <UserAvatar src={selected.profile?.avatar_url || undefined} fallback={selected.profile?.full_name || "?"} size="xl" />
+                  </div>
                 </div>
 
-                <Badge className="gap-1">
-                  {getRoleInfo(selected.role).emoji} {getRoleInfo(selected.role).label}
-                </Badge>
+                <div>
+                  <p className="font-bold text-lg text-white leading-tight">
+                    {selected.profile?.full_name || "Membro"}
+                    {selected.user_id === userId && <span className="text-amber-300 text-sm ml-1">(você)</span>}
+                  </p>
+                  <Badge className="gap-1 mt-1.5 bg-amber-500/15 text-amber-200 border border-amber-400/30 hover:bg-amber-500/20">
+                    {getRoleInfo(selected.role).emoji} {getRoleInfo(selected.role).label}
+                  </Badge>
+                </div>
 
                 {(selected.ministries?.length || 0) > 0 && (
                   <div className="flex flex-wrap justify-center gap-1">
@@ -481,39 +496,74 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                   </div>
                 )}
 
-                {/* Participação na plataforma */}
+                {/* Participação na plataforma (dados reais) */}
                 <div className="grid grid-cols-3 gap-2 w-full">
-                  <div className="rounded-lg bg-muted/60 py-2">
+                  <div className="rounded-lg bg-white/5 border border-white/10 py-2">
                     <Trophy className="h-4 w-4 mx-auto text-yellow-500 mb-0.5" />
-                    <div className="text-sm font-bold">{extras?.achievements ?? "…"}</div>
+                    <div className="text-sm font-bold text-white">{extras?.achievements ?? "…"}</div>
                     <div className="text-[10px] text-muted-foreground">Conquistas</div>
                   </div>
-                  <div className="rounded-lg bg-muted/60 py-2">
+                  <div className="rounded-lg bg-white/5 border border-white/10 py-2">
                     <BookOpen className="h-4 w-4 mx-auto text-emerald-500 mb-0.5" />
-                    <div className="text-sm font-bold">{extras?.chapters ?? "…"}</div>
+                    <div className="text-sm font-bold text-white">{extras?.chapters ?? "…"}</div>
                     <div className="text-[10px] text-muted-foreground">Capítulos</div>
                   </div>
-                  <div className="rounded-lg bg-muted/60 py-2">
+                  <div className="rounded-lg bg-white/5 border border-white/10 py-2">
                     <Flame className="h-4 w-4 mx-auto text-orange-500 mb-0.5" />
-                    <div className="text-sm font-bold">{extras?.campaigns ?? "…"}</div>
+                    <div className="text-sm font-bold text-white">{extras?.campaigns ?? "…"}</div>
                     <div className="text-[10px] text-muted-foreground">Check-ins</div>
                   </div>
                 </div>
 
-                {/* Discipulado */}
+                {/* Discipulado — com navegação contínua */}
                 <div className="w-full rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 text-left space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-amber-600 dark:text-amber-300 flex items-center gap-1.5">
+                    <span className="font-semibold text-amber-300 flex items-center gap-1.5">
                       <Users className="h-4 w-4" /> Discipulado
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {discipleCounts[selected.user_id] || 0} discípulo{(discipleCounts[selected.user_id] || 0) === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
                     Discipulado por:{" "}
-                    <span className="font-medium text-foreground">{nameOf(selected.discipler_user_id) || "— ninguém definido"}</span>
+                    {selected.discipler_user_id ? (
+                      <button
+                        onClick={() => selectByUser(selected.discipler_user_id)}
+                        className="font-medium text-amber-200 hover:text-amber-100 underline decoration-amber-400/40 underline-offset-2 inline-flex items-center gap-0.5"
+                      >
+                        {nameOf(selected.discipler_user_id)} <ChevronRight className="h-3 w-3" />
+                      </button>
+                    ) : (
+                      <span className="text-foreground">— ninguém definido</span>
+                    )}
                   </p>
+
+                  {/* Lista de discípulos clicáveis (aprofundar o ramo sem sair) */}
+                  {(() => {
+                    const disciples = members.filter(m => m.discipler_user_id === selected.user_id);
+                    if (!disciples.length) return null;
+                    return (
+                      <div className="space-y-1 pt-1">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Discípulos diretos</p>
+                        <div className="flex flex-col gap-1">
+                          {disciples.map(m => (
+                            <button
+                              key={m.id}
+                              onClick={() => setSelected(m)}
+                              className="flex items-center gap-2 rounded-lg bg-white/5 hover:bg-amber-500/10 border border-white/10 px-2 py-1.5 text-left transition-colors"
+                            >
+                              <UserAvatar src={m.profile?.avatar_url || undefined} fallback={m.profile?.full_name || "?"} size="sm" />
+                              <span className="text-xs text-white truncate flex-1">{m.profile?.full_name || "Membro"}</span>
+                              <span className="text-[10px] text-amber-200/80">{getRoleInfo(m.role).emoji}</span>
+                              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {(canManage || selected.user_id === userId) && (
                     <Select
                       value={selected.discipler_user_id || "none"}
@@ -541,18 +591,18 @@ const CommunityTree = ({ communityId, userId }: CommunityTreeProps) => {
                   <p>Entrou em {format(new Date(selected.joined_at), "dd/MM/yyyy", { locale: ptBR })}</p>
                 </div>
 
-                <Button
-                  className="w-full gap-2"
-                  onClick={() => navigate(`/profile/${selected.user_id}`)}
-                >
+                <Button className="w-full gap-2" onClick={() => navigate(`/profile/${selected.user_id}`)}>
                   <UserIcon className="h-4 w-4" />
                   Ver Perfil Completo
                 </Button>
               </div>
-            </>
+            </motion.aside>
           )}
-        </DialogContent>
-      </Dialog>
+        </AnimatePresence>
+      </div>
+      <p className="text-xs text-muted-foreground text-center -mt-1">
+        🖱️ Arraste para navegar · clique num card pra acender o ramo e abrir o painel · a comunidade nunca sai da tela
+      </p>
     </div>
   );
 };
