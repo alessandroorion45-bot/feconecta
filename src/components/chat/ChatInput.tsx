@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMediaUpload } from './ChatMediaUpload';
 import { EmojiPicker } from './EmojiPicker';
+import { useSignedChatMedia } from '@/hooks/useSignedChatMedia';
 
 interface ChatInputProps {
   onSend: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => void;
@@ -26,6 +27,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<{ url: string; type: 'image' | 'audio' } | null>(null);
+  // Prévia da imagem anexada: o bucket é privado, então assina a URL pra exibir
+  const signedPending = useSignedChatMedia(pendingMedia?.type === 'image' ? pendingMedia.url : undefined);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -106,9 +109,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             {pendingMedia.type === 'image' ? (
               <div className="relative">
                 <img
-                  src={pendingMedia.url}
+                  src={signedPending}
                   alt="Preview"
-                  className="h-16 w-16 rounded-lg object-cover"
+                  className="max-h-32 max-w-[170px] rounded-xl object-contain bg-muted border border-border/60"
                 />
                 <button
                   onClick={() => setPendingMedia(null)}
