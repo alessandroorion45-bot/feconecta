@@ -19,23 +19,47 @@ const onDarkBg = (w, h, logoBuf) =>
     .composite([{ input: logoBuf, gravity: 'center' }])
     .png();
 
+// Fundo "vivo": degradê radial navy com profundidade + halo dourado luminoso
+// atrás do logo. Deixa o ícone instalado com cara de medalha premium.
+const richBgSvg = (N) => Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}" viewBox="0 0 ${N} ${N}">
+    <defs>
+      <radialGradient id="bg" cx="50%" cy="40%" r="82%">
+        <stop offset="0%" stop-color="#20437b"/>
+        <stop offset="42%" stop-color="#0e2044"/>
+        <stop offset="100%" stop-color="#050a16"/>
+      </radialGradient>
+      <radialGradient id="glow" cx="50%" cy="46%" r="42%">
+        <stop offset="0%" stop-color="#ffd678" stop-opacity="0.55"/>
+        <stop offset="55%" stop-color="#ffcf6e" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#ffcf6e" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="${N}" height="${N}" fill="url(#bg)"/>
+    <rect width="${N}" height="${N}" fill="url(#glow)"/>
+  </svg>`
+);
+
+const onRichBg = async (N, logoScale, out) => {
+  const bg = await sharp(richBgSvg(N)).png().toBuffer();
+  const logo = await resizedLogo(Math.round(N * logoScale));
+  await sharp(bg).composite([{ input: logo, gravity: 'center' }]).png().toFile(out);
+};
+
 // 1) Ícones "any" (transparentes) — 192 e 512
 for (const size of [192, 512]) {
   await sharp(SRC).resize(size, size, { fit: 'contain', background: TRANSPARENT })
     .png().toFile(`public/icons/icon-${size}.png`);
 }
 
-// 2) Ícones maskable (logo ~72% centralizada sobre fundo escuro → safe zone)
+// 2) Ícones maskable — fundo vivo (degradê + halo). Logo ~66% (safe zone do
+//    recorte circular do Android).
 for (const size of [192, 512]) {
-  const logo = await resizedLogo(Math.round(size * 0.72));
-  await onDarkBg(size, size, logo).toFile(`public/icons/maskable-${size}.png`);
+  await onRichBg(size, 0.66, `public/icons/maskable-${size}.png`);
 }
 
-// 3) apple-touch-icon (180, opaco — iOS não gosta de transparência)
-{
-  const logo = await resizedLogo(Math.round(180 * 0.78));
-  await onDarkBg(180, 180, logo).toFile('public/icons/apple-touch-icon.png');
-}
+// 3) apple-touch-icon (180) — mesmo fundo vivo; iOS arredonda os cantos.
+await onRichBg(180, 0.72, 'public/icons/apple-touch-icon.png');
 
 // 4) Splash screens iOS (logo centralizada sobre fundo escuro)
 const splashes = [
