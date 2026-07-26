@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
+import InstallPrompt from "@/components/InstallPrompt";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { LinkBlockProvider } from "@/components/anti-link/LinkBlockModal";
@@ -165,6 +166,9 @@ const router = createBrowserRouter(routes, {
 
 const App = () => (
   <ErrorBoundary>
+    {/* A splash de abertura é HTML estático em index.html (fora do #root),
+        para ficar acima de qualquer camada de efeito/tema. */}
+    <InstallPrompt />
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>

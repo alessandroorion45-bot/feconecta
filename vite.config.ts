@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 // import { componentTagger } from "lovable-tagger"; // REMOVIDO - causava lentidão
 import viteCompression from 'vite-plugin-compression';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -12,6 +13,22 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    // PWA: SW próprio (injectManifest) mantendo os handlers de push +
+    // precache versionado a cada deploy. Manifest fica em public/manifest.json.
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      manifest: false,
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,svg,woff,woff2}', 'icons/icon-*.png', 'icons/maskable-*.png'],
+        globIgnores: ['**/splash/**', 'alianca-logo.png', 'placeholder.svg'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+      },
+      devOptions: { enabled: false },
+    }),
     // Gzip compression
     mode === "production" && viteCompression({
       algorithm: 'gzip',

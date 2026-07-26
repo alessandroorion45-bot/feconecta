@@ -1695,3 +1695,36 @@ All colors MUST be HSL.
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* === PWA: banner de instalação === */
+.pwa-install-banner {
+  position: fixed; z-index: 9998;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  width: min(440px, calc(100vw - 24px));
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 1rem;
+  background: linear-gradient(160deg, rgba(18, 28, 52, 0.97), rgba(8, 13, 26, 0.98));
+  border: 1px solid rgba(255, 215, 106, 0.28);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 215, 106, 0.08);
+  backdrop-filter: blur(10px);
+}
+.pwa-install-logo { border-radius: 0.6rem; flex-shrink: 0; }
+.pwa-install-text { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
+.pwa-install-text strong { color: #fff; font-size: 0.9rem; }
+.pwa-install-text span { color: rgba(203, 213, 225, 0.8); font-size: 0.75rem; }
+.pwa-install-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.5rem 0.9rem; border-radius: 999px;
+  font-size: 0.82rem; font-weight: 700; white-space: nowrap;
+  color: #1a1206; cursor: pointer; border: none;
+  background: linear-gradient(135deg, #facc15, #f59e0b);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+}
+.pwa-install-close {
+  display: inline-flex; padding: 0.4rem; border-radius: 999px;
+  color: rgba(203, 213, 225, 0.7); background: transparent; border: none; cursor: pointer;
+  flex-shrink: 0;
+}
+.pwa-install-close:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
