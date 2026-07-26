@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Image, Mic, X, Loader2, Play, Pause, Square } from 'lucide-react';
+import { Image, Mic, X, Loader2, Play, Pause, Square, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,6 +24,9 @@ export const ChatMediaUpload: React.FC<ChatMediaUploadProps> = ({
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  // Prévia da imagem antes de enviar (só sobe ao confirmar)
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -53,17 +56,30 @@ export const ChatMediaUpload: React.FC<ChatMediaUploadProps> = ({
       return;
     }
 
-    setIsUploading(true);
+    // Mostra a prévia; o envio (upload) só acontece ao confirmar.
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
+  const cancelImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const sendImage = async () => {
+    if (!imageFile) return;
+    setIsUploading(true);
     try {
       // Nome seguro: o Supabase Storage rejeita chave com acento/espaço/
-      // parênteses etc. Usamos só a extensão sanitizada + id aleatório
-      // (o nome original do arquivo não importa pra mídia de chat).
-      const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+      // parênteses etc. Usamos só a extensão sanitizada + id aleatório.
+      const ext = (imageFile.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
       const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('chat-media')
-        .upload(fileName, file);
+        .upload(fileName, imageFile);
 
       if (uploadError) throw uploadError;
 
@@ -72,24 +88,18 @@ export const ChatMediaUpload: React.FC<ChatMediaUploadProps> = ({
         .getPublicUrl(fileName);
 
       onMediaUpload(publicUrl, 'image');
-      toast({
-        title: 'Imagem enviada!',
-        description: 'Sua imagem foi anexada à mensagem'
-      });
+      cancelImage();
+      toast({ title: 'Imagem enviada!', description: 'Sua imagem foi anexada à mensagem' });
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast({
-        title: 'Erro ao enviar',
-        description: 'Tente novamente',
-        variant: 'destructive'
-      });
+      toast({ title: 'Erro ao enviar', description: 'Tente novamente', variant: 'destructive' });
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   };
+
+  // Limpa o object URL da prévia ao desmontar (evita vazamento)
+  useEffect(() => () => { if (imagePreview) URL.revokeObjectURL(imagePreview); }, [imagePreview]);
 
   const startRecording = async () => {
     try {
@@ -198,7 +208,42 @@ export const ChatMediaUpload: React.FC<ChatMediaUploadProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="relative flex items-center gap-1">
+      {/* Prévia da imagem antes de enviar */}
+      <AnimatePresence>
+        {imagePreview && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            className="absolute bottom-full left-0 mb-3 z-30 w-64 rounded-2xl border border-border/70 bg-popover shadow-2xl overflow-hidden"
+          >
+            <div className="relative bg-muted/60">
+              <img src={imagePreview} alt="Prévia da imagem" className="w-full max-h-60 object-contain" />
+              <button
+                onClick={cancelImage}
+                aria-label="Descartar imagem"
+                className="absolute top-2 right-2 rounded-full bg-black/60 text-white p-1.5 hover:bg-black/80 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex items-center justify-between gap-2 p-2.5">
+              <span className="text-xs text-muted-foreground pl-1">Enviar esta imagem?</span>
+              <div className="flex items-center gap-1.5">
+                <Button variant="ghost" size="sm" onClick={cancelImage} disabled={isUploading} className="h-8">
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={sendImage} disabled={isUploading} className="h-8 px-3 gap-1.5">
+                  {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4" /> Enviar</>}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Image upload */}
       <input
         ref={fileInputRef}
