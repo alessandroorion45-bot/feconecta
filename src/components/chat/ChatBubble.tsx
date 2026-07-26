@@ -8,6 +8,7 @@ import { ChatAudioPlayer } from './ChatAudioPlayer';
 import { SharedContentCard, type SharedMessageType } from './SharedContentCard';
 import UserAvatar from '@/components/UserAvatar';
 import { useToast } from '@/hooks/use-toast';
+import { useSignedChatMedia } from '@/hooks/useSignedChatMedia';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +74,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   const [showReactions, setShowReactions] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  // URL assinada temporária (bucket chat-media é privado); fallback à original
+  const signedMedia = useSignedChatMedia(mediaUrl);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message);
@@ -201,7 +204,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
           {mediaUrl && mediaType === 'image' && (
             <div className="mb-2 -mx-2 -mt-1">
               <motion.img
-                src={mediaUrl}
+                src={signedMedia}
                 alt="Shared image"
                 className={cn(
                   'rounded-xl max-w-[280px] w-full object-cover cursor-pointer',
@@ -210,7 +213,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
                 onLoad={() => setImageLoaded(true)}
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.open(mediaUrl, '_blank');
+                  window.open(signedMedia, '_blank');
                 }}
                 whileHover={{ scale: 1.02 }}
               />
@@ -219,7 +222,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
           
           {mediaUrl && mediaType === 'audio' && (
             <div className="mb-2 -mx-1">
-              <ChatAudioPlayer src={mediaUrl} />
+              <ChatAudioPlayer src={signedMedia} />
             </div>
           )}
 
