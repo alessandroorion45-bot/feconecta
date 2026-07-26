@@ -175,20 +175,20 @@ const GiftStorePreviewModal = ({ product, onClose, onPresentear }: GiftStorePrev
             </p>
 
             {product.descricao && (
-              <p className="mt-3 text-sm text-white/80 max-w-sm leading-relaxed">{product.descricao}</p>
+              <p className="mt-3 text-base text-white/95 max-w-sm leading-relaxed">{product.descricao}</p>
             )}
 
             {!verseLoading && verse && (
               <motion.div
-                className="mt-5 max-w-sm"
+                className="mt-5 max-w-sm w-full rounded-2xl bg-black/30 border border-white/15 px-4 py-3.5 text-left"
                 initial={reduced ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <p className="text-[11px] tracking-widest uppercase mb-1.5" style={{ color: `rgba(${theme.rgb},0.9)` }}>
+                <p className="text-xs tracking-widest uppercase mb-2 font-semibold" style={{ color: `rgb(${theme.rgb})` }}>
                   📖 {verse.reference}
                 </p>
-                <p className="text-sm italic text-white/90 leading-relaxed font-serif">
+                <p className="text-base text-white leading-relaxed font-serif">
                   "
                   {verse.text.split(" ").map((word, i) => (
                     <motion.span

@@ -373,7 +373,7 @@ const GiftPremiumExperience = ({
         {/* Mensagem com typewriter */}
         {giftMessage && (
           <motion.p
-            className="mt-4 text-sm italic text-white/90 max-w-sm min-h-[1.5em]"
+            className="mt-4 text-base italic text-white max-w-sm min-h-[1.5em] leading-relaxed"
             initial={reduced ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -382,16 +382,17 @@ const GiftPremiumExperience = ({
           </motion.p>
         )}
 
-        {/* Versículo — sempre buscado da Bíblia real */}
+        {/* Versículo — sempre buscado da Bíblia real. Painel legível pra leitura. */}
         {!verseLoading && verse && (
           <motion.div
-            className="mt-4 max-w-sm"
+            className="mt-5 max-w-sm w-full rounded-2xl bg-black/30 border border-white/15 px-4 py-3.5"
             initial={reduced ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: messageDone ? 0.2 : 0, duration: 0.5 }}
           >
-            <p className="text-[11px] tracking-widest uppercase text-amber-200/80 mb-1.5">📖 Palavra de Deus</p>
-            <p className="text-sm italic text-white/90 leading-relaxed font-serif">
+            <p className="text-[11px] tracking-widest uppercase text-amber-200 mb-2">📖 Palavra de Deus</p>
+            <p className="text-base text-white leading-relaxed font-serif">
+              "
               {verse.text.split(" ").map((word, i) => (
                 <motion.span
                   key={i}
@@ -403,8 +404,9 @@ const GiftPremiumExperience = ({
                   {word}
                 </motion.span>
               ))}
+              "
             </p>
-            <p className="text-xs font-semibold text-amber-300 mt-1.5">— {verse.reference}</p>
+            <p className="text-sm font-bold text-amber-300 mt-2">— {verse.reference}</p>
           </motion.div>
         )}
 
