@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider, RouteObject } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, RouteObject, Outlet, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -157,7 +158,26 @@ const routes: RouteObject[] = [
   { path: "*", element: <NotFound /> },
 ];
 
-const router = createBrowserRouter(routes, {
+// Layout raiz: fade leve entre rotas (só opacity → sem layout shift/CLS).
+const RootLayout = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        style={{ minHeight: "100%" }}
+      >
+        <Outlet />
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+const router = createBrowserRouter([{ element: <RootLayout />, children: routes }], {
   future: {
     v7_startTransition: true,
     v7_relativeSplatPath: true,

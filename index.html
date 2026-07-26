@@ -109,7 +109,7 @@
          o React substitui tudo isso ao montar o app -->
     <div id="root">
       <main style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:Inter,system-ui,sans-serif;text-align:center">
-        <img src="/alianca-logo.png" alt="Aliança Kingdom" width="120" height="120" style="margin:0 auto" />
+        <img src="/icons/icon-192.png" alt="Aliança Kingdom" width="120" height="120" style="margin:0 auto" />
         <h1>Aliança Kingdom</h1>
         <p>
           O <strong>Aliança Kingdom</strong> é uma comunidade cristã online gratuita: uma plataforma para
@@ -144,8 +144,9 @@
       })();
     </script>
 
-    <!-- Mercado Pago: gera o device session id usado na prevenção de fraude dos pagamentos -->
-    <script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
+    <!-- Mercado Pago: gera o device session id (fraude). async pra não bloquear
+         o carregamento — só é lido no checkout, bem depois. -->
+    <script src="https://www.mercadopago.com/v2/security.js" view="checkout" async></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

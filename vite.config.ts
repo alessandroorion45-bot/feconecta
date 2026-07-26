@@ -79,7 +79,17 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        // Fatia o vendor pesado: cada lib grande vira um chunk próprio, cacheável
+        // e baixado em paralelo. Libs só usadas em rotas lazy (charts/flow) já
+        // ficam fora do carregamento inicial.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          // Só react/react-dom/scheduler num chunk próprio (folha estável,
+          // muito cacheável). Não fatiar o resto: evita chunks circulares e
+          // deixa o Rollup agrupar por grafo de imports.
+          if (/[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react-vendor';
+          return undefined;
+        },
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
