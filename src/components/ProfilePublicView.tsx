@@ -348,6 +348,17 @@ export const ProfilePublicView = ({
 
       {/* Content Sections */}
       <CardContent className="space-y-4 pt-6">
+        {profile.is_private && !isOwner ? (
+          /* Perfil privado: quem não é o dono vê só o aviso, não os detalhes */
+          <div className="py-12 text-center space-y-3">
+            <Lock className="h-10 w-10 mx-auto text-muted-foreground/70" />
+            <p className="font-semibold text-lg">Este perfil é privado</p>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              {profile.full_name || "Esta pessoa"} mantém o perfil reservado.
+            </p>
+          </div>
+        ) : (
+        <>
         {/* Resumo do Perfil + barra de evolução */}
         <ProfileStats userId={userId} onTitleLoaded={(title, level) => setKingdomTitle({ title, level })} />
 
@@ -503,6 +514,8 @@ export const ProfilePublicView = ({
             <Pencil className="h-4 w-4" />
             Editar Perfil
           </Button>
+        )}
+        </>
         )}
       </CardContent>
 
