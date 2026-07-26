@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import UserAvatar from "@/components/UserAvatar";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
 import SeloPremiumModal, { SeloPremiumBadge } from "@/components/kingdom-badges/SeloPremiumModal";
 import GiftStorePreviewModal from "@/components/gifts/GiftStorePreviewModal";
@@ -75,7 +76,7 @@ interface StoreCategory {
 interface UserSearchResult {
   id: string;
   full_name: string;
-  email: string;
+  avatar_url?: string | null;
 }
 
 type PurchaseStep = "config" | "payment" | "qr" | "done";
@@ -315,13 +316,13 @@ const KingdomStore = () => {
       setUserResults([]);
       return;
     }
-    const { data } = await supabase
-      .from("users")
-      .select("id, email, full_name")
-      .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
-      .neq("id", user?.id || "")
-      .limit(8);
-    setUserResults((data || []).map((u) => ({ id: u.id, full_name: u.full_name || "Sem nome", email: u.email || "" })));
+    // Busca no servidor (edge function): acha por nome ou e-mail, mas não
+    // recebe e-mail de volta — o cliente não lê mais a tabela users direto.
+    const { data, error } = await supabase.functions.invoke("search-gift-recipient", { body: { query } });
+    if (error) { setUserResults([]); return; }
+    setUserResults(((data?.results as any[]) || []).map((u) => ({
+      id: u.id, full_name: u.full_name || "Sem nome", avatar_url: u.avatar_url || null,
+    })));
   };
 
   const handleBrickSubmit = async ({ formData }: { formData: any }) => {
@@ -673,10 +674,10 @@ const KingdomStore = () => {
                           <button
                             key={u.id}
                             onClick={() => addGiftRecipient(u)}
-                            className="w-full p-2.5 hover:bg-accent text-left flex flex-col transition-colors"
+                            className="w-full p-2.5 hover:bg-accent text-left flex items-center gap-2 transition-colors"
                           >
+                            <UserAvatar src={u.avatar_url || undefined} fallback={u.full_name} size="sm" />
                             <span className="font-medium text-sm">{u.full_name}</span>
-                            <span className="text-xs text-muted-foreground">{u.email}</span>
                           </button>
                         ))}
                     </div>
