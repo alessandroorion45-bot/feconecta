@@ -56,7 +56,11 @@ export const ChatMediaUpload: React.FC<ChatMediaUploadProps> = ({
     setIsUploading(true);
 
     try {
-      const fileName = `${userId}/${Date.now()}-${file.name}`;
+      // Nome seguro: o Supabase Storage rejeita chave com acento/espaço/
+      // parênteses etc. Usamos só a extensão sanitizada + id aleatório
+      // (o nome original do arquivo não importa pra mídia de chat).
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('chat-media')
         .upload(fileName, file);
