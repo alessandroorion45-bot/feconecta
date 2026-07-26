@@ -240,7 +240,12 @@ const Header = () => {
                 </Link>
               </div>
 
-              {/* Mobile: Perfil isolado (Notificações/Push ficam no menu lateral) */}
+              {/* Mobile: sino de notificações (real-time, vibra + toca) ao lado do perfil */}
+              <div className="md:hidden">
+                <NotificationPanel triggerClassName="h-10 w-10 px-0 rounded-full hover:scale-105 transition-transform" />
+              </div>
+
+              {/* Mobile: Perfil isolado */}
               <Link to="/profile" className="md:hidden">
                 <Button variant="ghost" size="sm" className="gap-2 px-2 h-10 hover:scale-105 transition-transform" aria-label="Ir para Perfil">
                   <UserIcon className="h-4 w-4 shrink-0" />

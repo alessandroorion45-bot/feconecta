@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { playNotificationChime, vibrateNotification } from "@/lib/notificationSound";
 
 interface Notification {
   id: string;
@@ -16,6 +17,11 @@ interface Notification {
     avatar_url: string;
   } | null;
 }
+
+// Dedupe de efeitos (som/vibração/toast) entre múltiplas instâncias do hook
+// montadas ao mesmo tempo (ex.: sino do header desktop + do header mobile),
+// pra não tocar/vibrar/mostrar toast em duplicidade pela mesma notificação.
+const notifiedIds = new Set<string>();
 
 export const useNotifications = () => {
   const { user } = useAuth();
@@ -86,13 +92,21 @@ export const useNotifications = () => {
           },
           (payload) => {
             const newNotif = payload.new as Notification;
-            setNotifications((prev) => [newNotif, ...prev]);
+            setNotifications((prev) => (prev.some((n) => n.id === newNotif.id) ? prev : [newNotif, ...prev]));
             setUnreadCount((prev) => prev + 1);
-            
-            toastRef.current({
-              title: "Nova notificação",
-              description: newNotif.content,
-            });
+
+            // Efeitos só uma vez por notificação (dedupe entre instâncias):
+            // vibra (Android) + toca um sino suave + toast.
+            if (!notifiedIds.has(newNotif.id)) {
+              notifiedIds.add(newNotif.id);
+              setTimeout(() => notifiedIds.delete(newNotif.id), 8000);
+              vibrateNotification();
+              playNotificationChime();
+              toastRef.current({
+                title: "Nova notificação",
+                description: newNotif.content,
+              });
+            }
           }
         )
         .subscribe();
