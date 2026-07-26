@@ -14,8 +14,9 @@ import {
   giftAnimationFor,
 } from "@/lib/giftPresentation";
 import { startGiftAmbient, stopGiftAmbient } from "@/lib/giftAmbient";
-import { Heart, Share2, Bookmark, BookmarkCheck, Volume2, VolumeX, Sparkles } from "lucide-react";
+import { Heart, Share2, Bookmark, BookmarkCheck, Volume2, VolumeX, Sparkles, ZoomIn } from "lucide-react";
 import GiftRevealAnimation from "./GiftRevealAnimation";
+import { ImageZoomModal } from "@/components/ui/ImageZoomModal";
 
 const sb = supabase as any;
 
@@ -84,6 +85,7 @@ const GiftPremiumExperience = ({
 
   const [verse, setVerse] = useState<FetchedVerse | null>(null);
   const [verseLoading, setVerseLoading] = useState(true);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const [typedMessage, setTypedMessage] = useState("");
   const [messageDone, setMessageDone] = useState(!giftMessage || reduced);
   const [showClosing, setShowClosing] = useState(false);
@@ -330,10 +332,22 @@ const GiftPremiumExperience = ({
 
             <div className="relative rounded-xl overflow-hidden bg-black/20 p-2">
               {imageUrl ? (
-                <img src={imageUrl} alt={productName} className="h-40 w-40 sm:h-48 sm:w-48 object-contain" />
+                <button
+                  type="button"
+                  onClick={() => setZoomOpen(true)}
+                  className="group relative block cursor-zoom-in"
+                  aria-label="Ampliar imagem"
+                >
+                  <img src={imageUrl} alt={productName} className="h-40 w-40 sm:h-48 sm:w-48 object-contain" />
+                  <span className="absolute bottom-1 right-1 flex items-center gap-1 rounded-full bg-black/55 text-white text-[10px] px-2 py-1 opacity-90 group-hover:opacity-100">
+                    <ZoomIn className="h-3 w-3" /> Ampliar
+                  </span>
+                </button>
               ) : (
                 <div className="h-40 w-40 sm:h-48 sm:w-48 flex items-center justify-center text-7xl">{icone || "🎁"}</div>
               )}
+
+              <ImageZoomModal src={imageUrl || undefined} alt={productName} open={zoomOpen} onClose={() => setZoomOpen(false)} />
 
               {/* shine — reflexo de vidro cruzando a cada 6s */}
               {!reduced && (

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { fetchGiftVerse, FetchedVerse, giftAnimationFor, giftColorFor } from "@/lib/giftPresentation";
 import { useCardTilt } from "@/hooks/useCardTilt";
 import GiftRevealAnimation from "./GiftRevealAnimation";
-import { Gift, BookOpen } from "lucide-react";
+import { Gift, BookOpen, ZoomIn } from "lucide-react";
+import { ImageZoomModal } from "@/components/ui/ImageZoomModal";
 
 export interface GiftStorePreviewProduct {
   id: string;
@@ -44,6 +45,7 @@ const GiftStorePreviewModal = ({ product, onClose, onPresentear }: GiftStorePrev
   const { ref: tiltRef, tilt, onMouseMove, onMouseLeave } = useCardTilt(9);
   const [verse, setVerse] = useState<FetchedVerse | null>(null);
   const [verseLoading, setVerseLoading] = useState(true);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   const animationKind = product ? giftAnimationFor(product.slug) : null;
   const theme = product ? giftColorFor(product.slug) : giftColorFor(null);
@@ -120,7 +122,17 @@ const GiftStorePreviewModal = ({ product, onClose, onPresentear }: GiftStorePrev
                   transition={{ type: "spring", stiffness: 280, damping: 22 }}
                 >
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.nome} className="h-full w-full object-cover" draggable={false} />
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setZoomOpen(true); }}
+                      className="group block h-full w-full cursor-zoom-in"
+                      aria-label="Ampliar imagem"
+                    >
+                      <img src={product.image_url} alt={product.nome} className="h-full w-full object-cover" draggable={false} />
+                      <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/55 text-white text-[10px] px-2 py-1 opacity-90 group-hover:opacity-100">
+                        <ZoomIn className="h-3 w-3" /> Ampliar
+                      </span>
+                    </button>
                   ) : (
                     <div
                       className="h-full w-full flex items-center justify-center text-8xl"
@@ -132,6 +144,9 @@ const GiftStorePreviewModal = ({ product, onClose, onPresentear }: GiftStorePrev
 
                   {/* animação de revelação exclusiva do presente, por cima da arte */}
                   {animationKind && <GiftRevealAnimation kind={animationKind} />}
+
+                  <ImageZoomModal src={product.image_url || undefined} alt={product.nome} open={zoomOpen} onClose={() => setZoomOpen(false)} />
+
 
                   {/* varredura de brilho ambiente (idle) */}
                   {!reduced && (
