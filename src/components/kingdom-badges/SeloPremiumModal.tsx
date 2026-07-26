@@ -153,7 +153,7 @@ const SeloPremiumModal = ({ badge, onClose }: SeloPremiumModalProps) => {
                     animate={{ scale: [0.8, 1.08, 1], filter: ["drop-shadow(0 0 8px rgba(251,191,36,0.2))", "drop-shadow(0 0 30px rgba(251,191,36,0.6))", "drop-shadow(0 0 20px rgba(251,191,36,0.4))"] }}
                     transition={{ duration: 1.4, ease: "easeOut" }}
                   >
-                    <KingdomBadge rarity={badge.rarity} rarityColors={badge.rarityColors} imageUrl={badge.imageUrl} icon={badge.icon} emoji={badge.emoji} size="lg" />
+                    <KingdomBadge rarity={badge.rarity} rarityColors={badge.rarityColors} imageUrl={badge.imageUrl} icon={badge.icon} emoji={badge.emoji} size="lg" zoomable />
                   </motion.div>
                   <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }} className="text-sm text-amber-200/90">
                     Que Deus continue fortalecendo sua caminhada.
@@ -164,7 +164,7 @@ const SeloPremiumModal = ({ badge, onClose }: SeloPremiumModalProps) => {
                 <motion.div key="content" className="w-full flex flex-col items-center" initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                   {/* Cabeçalho: selo com glow/halo/partículas (já embutido no KingdomBadge) */}
                   <motion.div initial={reduced ? false : { scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }}>
-                    <KingdomBadge rarity={badge.rarity} rarityColors={badge.rarityColors} imageUrl={badge.imageUrl} icon={badge.icon} emoji={badge.emoji} size="lg" />
+                    <KingdomBadge rarity={badge.rarity} rarityColors={badge.rarityColors} imageUrl={badge.imageUrl} icon={badge.icon} emoji={badge.emoji} size="lg" zoomable />
                   </motion.div>
 
                   <h2 className="mt-4 text-2xl font-bold text-white" style={{ textShadow: `0 0 18px ${style.glow}` }}>

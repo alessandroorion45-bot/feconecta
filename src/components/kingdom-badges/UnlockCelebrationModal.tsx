@@ -77,7 +77,7 @@ const UnlockCelebrationModal = ({ badge, onClose }: UnlockCelebrationModalProps)
             </motion.p>
 
             <div className="flex justify-center mb-5">
-              <KingdomBadge rarity={badge.rarity} rarityColors={badge.rarityColors} icon={badge.icon} imageUrl={badge.imageUrl} emoji={badge.emoji} size="lg" />
+              <KingdomBadge rarity={badge.rarity} rarityColors={badge.rarityColors} icon={badge.icon} imageUrl={badge.imageUrl} emoji={badge.emoji} size="lg" zoomable />
             </div>
 
             <h2 className="text-xl font-bold text-white mb-1">{badge.name}</h2>

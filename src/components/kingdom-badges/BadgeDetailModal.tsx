@@ -53,6 +53,7 @@ const BadgeDetailModal = ({ badge, onClose }: BadgeDetailModalProps) => {
                 emoji={badge.emoji}
                 locked={!badge.unlocked}
                 size="lg"
+                zoomable
               />
             </div>
 

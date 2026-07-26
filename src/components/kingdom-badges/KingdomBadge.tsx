@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
-import { Lock } from "lucide-react";
+import { Lock, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageZoomModal } from "@/components/ui/ImageZoomModal";
 
 export type BadgeRarity =
   | "common"
@@ -85,9 +86,13 @@ interface KingdomBadgeProps {
   equipped?: boolean;
   size?: keyof typeof SIZE_MAP;
   className?: string;
+  /** Permite clicar/tocar no selo pra ampliar a arte completa (zoom/pinça) */
+  zoomable?: boolean;
 }
 
-const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equipped, size = "md", className }: KingdomBadgeProps) => {
+const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equipped, size = "md", className, zoomable }: KingdomBadgeProps) => {
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const canZoom = !!(zoomable && imageUrl && !locked);
   const baseStyle = RARITY_STYLES[rarity as BadgeRarity] ?? RARITY_STYLES.common;
   const style = rarityColors
     ? {
@@ -124,8 +129,9 @@ const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equ
       ref={ref}
       onMouseMove={handleMouseMove}
       onMouseLeave={resetTilt}
+      onClick={canZoom ? () => setZoomOpen(true) : undefined}
       style={{ width: dims.box, height: dims.box, rotateX, rotateY, perspective: 600 }}
-      className={cn("relative select-none", className)}
+      className={cn("relative select-none", canZoom && "cursor-zoom-in", className)}
     >
       {/* brilho pulsante por trás */}
       {!locked && (
@@ -214,6 +220,16 @@ const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equ
       {/* anel de "equipado" */}
       {equipped && (
         <div className="absolute -inset-1 rounded-full ring-2 ring-amber-400 ring-offset-2 ring-offset-background pointer-events-none" />
+      )}
+
+      {/* indicador de "ampliar" + visualizador com zoom (arte completa) */}
+      {canZoom && (
+        <>
+          <span className="absolute bottom-0 right-0 flex items-center justify-center rounded-full bg-black/60 text-white p-1.5 shadow-md pointer-events-none">
+            <ZoomIn className="h-3.5 w-3.5" />
+          </span>
+          <ImageZoomModal src={imageUrl || undefined} alt="Selo" open={zoomOpen} onClose={() => setZoomOpen(false)} />
+        </>
       )}
     </motion.div>
   );
