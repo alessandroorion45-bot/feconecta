@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 
@@ -7,14 +7,22 @@ interface ImageZoomModalProps {
   alt?: string;
   open: boolean;
   onClose: () => void;
+  /** Fundo temático opaco atrás da imagem (evita o xadrez de transparência). */
+  backdropStyle?: CSSProperties;
 }
+
+// Fundo padrão: azul-marinho profundo opaco (imagens transparentes ficam
+// bonitas em cima, sem o xadrez de transparência).
+const DEFAULT_BACKDROP: CSSProperties = {
+  background: "radial-gradient(120% 100% at 50% 40%, #16223f 0%, #0a0f1e 55%, #05070f 100%)",
+};
 
 /**
  * Visualizador de imagem em tela cheia com zoom pra ler detalhes.
  * - Celular: pinça (2 dedos) pra zoom, arrasta pra mover, toque duplo alterna.
  * - Desktop: roda do mouse, +/−, duplo clique, arrastar.
  */
-export function ImageZoomModal({ src, alt, open, onClose }: ImageZoomModalProps) {
+export function ImageZoomModal({ src, alt, open, onClose, backdropStyle }: ImageZoomModalProps) {
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -74,7 +82,8 @@ export function ImageZoomModal({ src, alt, open, onClose }: ImageZoomModalProps)
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] bg-black/92 backdrop-blur-sm flex items-center justify-center touch-none select-none"
+      className="fixed inset-0 z-[100] flex items-center justify-center touch-none select-none"
+      style={backdropStyle || DEFAULT_BACKDROP}
       onClick={onClose}
     >
       <div className="absolute top-3 right-3 flex gap-2 z-10" onClick={(e) => e.stopPropagation()}>

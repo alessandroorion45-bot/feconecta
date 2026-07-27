@@ -228,7 +228,13 @@ const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equ
           <span className="absolute bottom-0 right-0 flex items-center justify-center rounded-full bg-black/60 text-white p-1.5 shadow-md pointer-events-none">
             <ZoomIn className="h-3.5 w-3.5" />
           </span>
-          <ImageZoomModal src={imageUrl || undefined} alt="Selo" open={zoomOpen} onClose={() => setZoomOpen(false)} />
+          <ImageZoomModal
+            src={imageUrl || undefined}
+            alt="Selo"
+            open={zoomOpen}
+            onClose={() => setZoomOpen(false)}
+            backdropStyle={{ background: `radial-gradient(120% 100% at 50% 38%, ${style.glow}, #0b0f1c 55%, #05070f 100%)` }}
+          />
         </>
       )}
     </motion.div>
