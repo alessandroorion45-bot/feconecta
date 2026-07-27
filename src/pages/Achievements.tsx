@@ -8,6 +8,13 @@ import { AchievementBadge } from "@/components/AchievementBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Trophy, TrendingUp, Flame, Target } from "lucide-react";
+import { motion, type Variants } from "framer-motion";
+
+// Container que dispara a entrada em sequência dos filhos
+const gridContainer: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+};
 
 interface Achievement {
   id: string;
@@ -204,8 +211,10 @@ const Achievements = () => {
         <Card className="shadow-divine">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-primary" />
-              Suas Conquistas
+              <Trophy className="h-5 w-5 text-amber-400 drop-shadow-[0_0_8px_rgba(255,215,106,0.6)]" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 drop-shadow-[0_0_14px_rgba(255,215,106,0.25)]">
+                Suas Conquistas
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -220,7 +229,13 @@ const Achievements = () => {
               </TabsList>
 
               <TabsContent value={selectedCategory}>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <motion.div
+                  key={selectedCategory}
+                  variants={gridContainer}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+                >
                   {filteredAchievements.map((achievement) => (
                     <AchievementBadge
                       key={achievement.id}
@@ -233,7 +248,7 @@ const Achievements = () => {
                       size="md"
                     />
                   ))}
-                </div>
+                </motion.div>
               </TabsContent>
             </Tabs>
           </CardContent>
