@@ -1,24 +1,41 @@
-import { useState } from "react";
-import { UserPlus, Check, Share2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { UserPlus, Check, Share2, Gift } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InviteButtonProps {
   className?: string;
 }
 
+// Recompensas (espelha a migration 20260727010000_referral_rewards.sql)
+const REWARDS = [
+  { threshold: 3, name: "Tema Clássico" },
+  { threshold: 7, name: "Tema Reino Celestial" },
+  { threshold: 15, name: "Tema Trono da Glória" },
+];
+
 /**
  * "Convide um irmão": gera um link de convite com ?ref=<userId>. Quem se
- * cadastrar por esse link fica registrado como indicado (profiles.referred_by),
- * via metadata no cadastro. Usa o compartilhamento nativo do celular quando
- * disponível; senão copia o link.
+ * cadastrar por esse link fica registrado como indicado (profiles.referred_by).
+ * Mostra o progresso de convites e a próxima recompensa (tema grátis).
  */
 export const InviteButton = ({ className }: InviteButtonProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .rpc("get_my_referral_count")
+      .then(({ data }) => {
+        if (typeof data === "number") setCount(data);
+      });
+  }, [user]);
 
   if (!user) return null;
 
@@ -26,14 +43,16 @@ export const InviteButton = ({ className }: InviteButtonProps) => {
   const shareText =
     "Vem caminhar comigo na Aliança Kingdom — uma comunidade cristã pra ler a Bíblia, orar e crescer na fé. 🙏";
 
+  const nextReward = count !== null ? REWARDS.find((r) => count < r.threshold) : undefined;
+  const remaining = nextReward ? nextReward.threshold - (count ?? 0) : 0;
+
   const handleInvite = async () => {
-    // Compartilhamento nativo (celular)
     if (navigator.share) {
       try {
         await navigator.share({ title: "Aliança Kingdom", text: shareText, url: inviteUrl });
         return;
       } catch {
-        // usuário cancelou ou não suportado — cai pro copiar
+        // cancelou / não suportado — cai pro copiar
       }
     }
     try {
@@ -56,9 +75,22 @@ export const InviteButton = ({ className }: InviteButtonProps) => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm text-foreground leading-tight">Convide um irmão</p>
-          <p className="text-xs text-muted-foreground leading-tight">
-            Chame alguém pra caminhar com você na fé.
-          </p>
+          {nextReward ? (
+            <p className="text-xs text-muted-foreground leading-tight flex items-center gap-1">
+              <Gift className="h-3 w-3 text-amber-500 shrink-0" />
+              <span className="truncate">
+                Falta{remaining > 1 ? "m" : ""} {remaining} pra ganhar o {nextReward.name}
+              </span>
+            </p>
+          ) : count !== null && count > 0 ? (
+            <p className="text-xs text-muted-foreground leading-tight">
+              {count} convidados · todos os prêmios desbloqueados 🎉
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground leading-tight">
+              Chame alguém e ganhe temas de presente.
+            </p>
+          )}
         </div>
         <Button
           size="sm"

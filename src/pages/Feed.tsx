@@ -16,6 +16,7 @@ import { containsExternalLink } from "@/lib/antiLink";
 import { useLinkBlock } from "@/components/anti-link/LinkBlockModal";
 import WelcomeOnboardingModal from "@/components/onboarding/WelcomeOnboardingModal";
 import { InviteButton } from "@/components/invite/InviteButton";
+import { DailyHookCard } from "@/components/feed/DailyHookCard";
 
 const Feed = () => {
   const { toast } = useToast();
@@ -138,7 +139,8 @@ const Feed = () => {
       <Header />
       <WelcomeOnboardingModal userId={user?.id} />
       <main className="flex-1 w-full max-w-2xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 md:py-8">
-        <InviteButton className="mb-4" />
+        <DailyHookCard />
+        <InviteButton className="mt-4 mb-4" />
         {/* Composer */}
         <Card className="shadow-divine mb-4">
           <CardHeader>
