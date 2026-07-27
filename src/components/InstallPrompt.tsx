@@ -7,8 +7,9 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-const DISMISS_KEY = 'pwa-install-dismissed';
-const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000; // não incomodar por 14 dias após dispensar
+// v2: ignora a flag antiga (que grudava mesmo apos desinstalar o app)
+const DISMISS_KEY = 'pwa-install-dismissed-v2';
+const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000; // não incomodar por 7 dias após DISPENSAR (não após instalar)
 
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = () =>
@@ -38,8 +39,9 @@ const InstallPrompt = () => {
       setVisible(true);
     };
     const onInstalled = () => {
+      // Só esconde. NÃO grava flag de dispensa — senão, se o usuário
+      // desinstalar depois, o banner ficaria bloqueado sem motivo.
       setVisible(false);
-      localStorage.setItem(DISMISS_KEY, String(Date.now()));
     };
     window.addEventListener('beforeinstallprompt', onBIP);
     window.addEventListener('appinstalled', onInstalled);
