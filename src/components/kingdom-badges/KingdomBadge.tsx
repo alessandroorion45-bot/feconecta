@@ -233,6 +233,8 @@ const KingdomBadge = ({ rarity, icon, emoji, imageUrl, rarityColors, locked, equ
             alt="Selo"
             open={zoomOpen}
             onClose={() => setZoomOpen(false)}
+            circular
+            ringColor={style.particleColor}
             backdropStyle={{ background: `radial-gradient(120% 100% at 50% 38%, ${style.glow}, #0b0f1c 55%, #05070f 100%)` }}
           />
         </>
