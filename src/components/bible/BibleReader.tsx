@@ -9,6 +9,7 @@ import { Book, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, BookOpenChec
 import { useToast } from '@/hooks/use-toast'
 import { useGamification } from '@/hooks/useGamification'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 import { VerseActions } from './VerseActions'
 import { ReadingModeSettings, type ReadingModeConfig } from './ReadingModeSettings'
 import {
@@ -55,6 +56,19 @@ export function BibleReader({ initialBook, initialChapter }: BibleReaderProps = 
       console.log('Capítulos atuais:', totalCapitulos)
     }
   }, [livros, livroIndex, capituloIndex, livroAtual, totalCapitulos])
+
+  // Carrega o progresso de leitura salvo (persistente entre sessões) — também
+  // é o que alimenta os selos/conquistas de leitura bíblica.
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('bible_reading_progress')
+      .select('book_abbrev, chapter')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        if (data) setCompletedChapters(new Set(data.map((r: { book_abbrev: string; chapter: number }) => `${r.book_abbrev}-${r.chapter}`)))
+      })
+  }, [user])
 
   // Deep-link: aplica o livro/capítulo pedido assim que a Bíblia carrega
   useEffect(() => {
@@ -125,8 +139,15 @@ export function BibleReader({ initialBook, initialChapter }: BibleReaderProps = 
 
     setCompletedChapters(new Set(completedChapters).add(chapterKey))
 
-    // Conceder XP por leitura bíblica
-    if (user) {
+    // Conceder XP + registrar o capítulo lido (alimenta selos/conquistas de
+    // leitura bíblica; upsert idempotente pela constraint única).
+    if (user && livroAtual) {
+      await supabase
+        .from('bible_reading_progress')
+        .upsert(
+          { user_id: user.id, book_abbrev: livroAtual.abbrev, chapter: capituloIndex + 1, completed_at: new Date().toISOString() },
+          { onConflict: 'user_id,book_abbrev,chapter', ignoreDuplicates: true },
+        )
       await awardXP('bible_reading') // ✅ GameAction válido (15 XP)
     }
 
