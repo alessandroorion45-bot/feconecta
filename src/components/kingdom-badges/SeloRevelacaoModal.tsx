@@ -347,7 +347,6 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
                       icon={badge.icon}
                       emoji={badge.emoji}
                       size="lg"
-                      zoomable
                     />
                   </motion.div>
                   <motion.p
@@ -383,6 +382,7 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
                       icon={badge.icon}
                       emoji={badge.emoji}
                       size="md"
+                      zoomable
                     />
                   </motion.div>
 
