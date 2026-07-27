@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { CountrySelectionModal } from "@/components/CountrySelectionModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -136,7 +137,26 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [birthDate, setBirthDate] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [referredBy, setReferredBy] = useState<string>("");
   const [showCountryModal, setShowCountryModal] = useState(false);
+
+  // Convite: captura ?ref=<uuid> da URL (link "Convide um irmão").
+  // Guarda também em localStorage pra sobreviver ao redirect do Google.
+  useEffect(() => {
+    const isUuid = (v: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref && isUuid(ref)) {
+      setReferredBy(ref);
+      try { localStorage.setItem("pending-referral", ref); } catch { /* ignore */ }
+    } else {
+      try {
+        const stored = localStorage.getItem("pending-referral");
+        if (stored && isUuid(stored)) setReferredBy(stored);
+      } catch { /* ignore */ }
+    }
+  }, []);
 
   // Network status detection
   const isOnline = useNetworkStatus();
@@ -364,6 +384,14 @@ const Auth = () => {
       validationErrors.fullName = fullNameValidation.error!;
     }
 
+    // Aceite obrigatório de Termos + Privacidade (LGPD)
+    if (!acceptedTerms) {
+      validationErrors.terms = language === 'pt' ? 'Você precisa aceitar os Termos de Uso e a Política de Privacidade.' :
+                               language === 'es' ? 'Debes aceptar los Términos de Uso y la Política de Privacidad.' :
+                               language === 'nl' ? 'Je moet de Gebruiksvoorwaarden en het Privacybeleid accepteren.' :
+                               'You must accept the Terms of Use and Privacy Policy.';
+    }
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       setLoading(false);
@@ -413,6 +441,8 @@ const Auth = () => {
             country: selectedCountry,
             preferred_language: preferredLanguage,
             birth_date: birthDate,
+            terms_accepted: 'true',
+            referred_by: referredBy || undefined,
           },
         },
       });
@@ -439,6 +469,9 @@ const Auth = () => {
           });
         }
       } else {
+        // Cadastro OK: convite já foi consumido, limpa pra não colar em outro cadastro no mesmo aparelho
+        try { localStorage.removeItem('pending-referral'); } catch { /* ignore */ }
+
         const signedInSession = signUpData?.session;
 
         if (!signedInSession) {
@@ -1046,6 +1079,43 @@ const Auth = () => {
                     {t('auth.passwordHint')}
                   </p>
                 </div>
+
+                {/* Aceite de Termos + Privacidade (LGPD) */}
+                <div className="space-y-1">
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      id="accept-terms"
+                      checked={acceptedTerms}
+                      onCheckedChange={(v) => {
+                        setAcceptedTerms(v === true);
+                        clearError("terms");
+                      }}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="accept-terms" className="text-xs font-normal leading-snug text-muted-foreground cursor-pointer">
+                      {language === 'pt' ? 'Li e aceito os ' :
+                       language === 'es' ? 'Leí y acepto los ' :
+                       language === 'nl' ? 'Ik heb de ' :
+                       'I have read and accept the '}
+                      <Link to="/termos" target="_blank" className="text-amber-600 hover:underline font-medium">
+                        {language === 'pt' ? 'Termos de Uso' :
+                         language === 'es' ? 'Términos de Uso' :
+                         language === 'nl' ? 'Gebruiksvoorwaarden' :
+                         'Terms of Use'}
+                      </Link>
+                      {language === 'pt' ? ' e a ' : language === 'es' ? ' y la ' : language === 'nl' ? ' en het ' : ' and '}
+                      <Link to="/privacidade" target="_blank" className="text-amber-600 hover:underline font-medium">
+                        {language === 'pt' ? 'Política de Privacidade' :
+                         language === 'es' ? 'Política de Privacidad' :
+                         language === 'nl' ? 'Privacybeleid' :
+                         'Privacy Policy'}
+                      </Link>
+                      {language === 'nl' ? ' gelezen en geaccepteerd.' : '.'}
+                    </Label>
+                  </div>
+                  <ErrorMessage error={errors.terms} />
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full !bg-gradient-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white shadow-md"
@@ -1074,7 +1144,17 @@ const Auth = () => {
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={handleGoogleSignIn}
+                  onClick={() => {
+                    if (!acceptedTerms) {
+                      setErrors((prev) => ({ ...prev, terms: language === 'pt' ? 'Aceite os Termos e a Política de Privacidade para continuar.' :
+                        language === 'es' ? 'Acepta los Términos y la Política de Privacidad para continuar.' :
+                        language === 'nl' ? 'Accepteer de voorwaarden en het privacybeleid om door te gaan.' :
+                        'Accept the Terms and Privacy Policy to continue.' }));
+                      return;
+                    }
+                    try { localStorage.setItem('pending-terms-accept', 'true'); } catch { /* ignore */ }
+                    handleGoogleSignIn();
+                  }}
                   disabled={loading}
                 >
                   <FcGoogle className="mr-2 h-5 w-5" />

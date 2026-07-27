@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -29,10 +31,14 @@ interface CountrySelectionModalProps {
 export function CountrySelectionModal({ open, onComplete }: CountrySelectionModalProps) {
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [birthDate, setBirthDate] = useState<string>("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { language, setLanguage } = useLanguage();
   const { toast } = useToast();
+
+  const isUuid = (v: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
   const calculateAge = (birthDateStr: string): number => {
     const today = new Date();
@@ -62,6 +68,7 @@ export function CountrySelectionModal({ open, onComplete }: CountrySelectionModa
                                   "Please select your country.";
     }
 
+    let underage = false;
     if (!birthDate) {
       validationErrors.birthDate = language === 'pt' ? "Data de nascimento é obrigatória." :
                                     language === 'es' ? "Fecha de nacimiento es requerida." :
@@ -70,11 +77,34 @@ export function CountrySelectionModal({ open, onComplete }: CountrySelectionModa
     } else if (selectedCountry) {
       const ageValidation = validateAge(birthDate, selectedCountry);
       if (!ageValidation.valid) {
+        underage = true;
         validationErrors.birthDate = language === 'pt' ? `Você deve ter pelo menos ${ageValidation.minAge} anos.` :
                                       language === 'es' ? `Debes tener al menos ${ageValidation.minAge} años.` :
                                       language === 'nl' ? `Je moet minstens ${ageValidation.minAge} jaar oud zijn.` :
                                       `You must be at least ${ageValidation.minAge} years old.`;
       }
+    }
+
+    // Aceite obrigatório de Termos + Privacidade (LGPD)
+    if (!acceptedTerms) {
+      validationErrors.terms = language === 'pt' ? "Você precisa aceitar os Termos e a Política de Privacidade." :
+                               language === 'es' ? "Debes aceptar los Términos y la Política de Privacidad." :
+                               language === 'nl' ? "Je moet de voorwaarden en het privacybeleid accepteren." :
+                               "You must accept the Terms and Privacy Policy.";
+    }
+
+    // Menor de idade no login Google: encerra a sessão (a conta não pode
+    // prosseguir). Fecha a brecha de navegar direto sem completar o modal.
+    if (underage) {
+      setErrors(validationErrors);
+      toast({
+        title: language === 'pt' ? "Cadastro não permitido" : language === 'es' ? "Registro no permitido" : language === 'nl' ? "Registratie niet toegestaan" : "Sign up not allowed",
+        description: validationErrors.birthDate,
+        variant: "destructive",
+      });
+      try { await supabase.auth.signOut(); } catch { /* ignore */ }
+      window.location.href = "/auth";
+      return;
     }
 
     if (Object.keys(validationErrors).length > 0) {
@@ -95,6 +125,15 @@ export function CountrySelectionModal({ open, onComplete }: CountrySelectionModa
       const newLanguage = getLanguageByCountry(selectedCountry);
       setLanguage(newLanguage);
 
+      // Convite pendente (guardado antes do redirect do Google) + aceite de termos
+      let pendingRef: string | null = null;
+      let acceptedViaGoogle = false;
+      try {
+        const r = localStorage.getItem("pending-referral");
+        if (r && isUuid(r) && r !== user.id) pendingRef = r;
+        acceptedViaGoogle = localStorage.getItem("pending-terms-accept") === "true";
+      } catch { /* ignore */ }
+
       // Atualizar perfil do usuário
       const { error } = await supabase
         .from("profiles")
@@ -102,10 +141,18 @@ export function CountrySelectionModal({ open, onComplete }: CountrySelectionModa
           country: selectedCountry,
           preferred_language: newLanguage,
           birth_date: birthDate,
+          terms_accepted_at: new Date().toISOString(),
+          ...(pendingRef ? { referred_by: pendingRef } : {}),
         })
         .eq("id", user.id);
 
       if (error) throw error;
+
+      try {
+        localStorage.removeItem("pending-referral");
+        localStorage.removeItem("pending-terms-accept");
+      } catch { /* ignore */ }
+      void acceptedViaGoogle;
 
       toast({
         title: language === 'pt' ? "Configuração completa!" :
@@ -233,11 +280,43 @@ export function CountrySelectionModal({ open, onComplete }: CountrySelectionModa
               </p>
             )}
           </div>
+
+          {/* Aceite de Termos + Privacidade (LGPD) */}
+          <div className="space-y-1">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="accept-terms-google"
+                checked={acceptedTerms}
+                onCheckedChange={(v) => {
+                  setAcceptedTerms(v === true);
+                  setErrors((prev) => ({ ...prev, terms: '' }));
+                }}
+                className="mt-0.5"
+              />
+              <Label htmlFor="accept-terms-google" className="text-xs font-normal leading-snug text-muted-foreground cursor-pointer">
+                {language === 'pt' ? 'Li e aceito os ' : language === 'es' ? 'Leí y acepto los ' : language === 'nl' ? 'Ik accepteer de ' : 'I accept the '}
+                <Link to="/termos" target="_blank" className="text-primary hover:underline font-medium">
+                  {language === 'pt' ? 'Termos de Uso' : language === 'es' ? 'Términos de Uso' : language === 'nl' ? 'Gebruiksvoorwaarden' : 'Terms of Use'}
+                </Link>
+                {language === 'pt' ? ' e a ' : language === 'es' ? ' y la ' : language === 'nl' ? ' en het ' : ' and '}
+                <Link to="/privacidade" target="_blank" className="text-primary hover:underline font-medium">
+                  {language === 'pt' ? 'Política de Privacidade' : language === 'es' ? 'Política de Privacidad' : language === 'nl' ? 'Privacybeleid' : 'Privacy Policy'}
+                </Link>
+                .
+              </Label>
+            </div>
+            {errors.terms && (
+              <div className="flex items-center gap-1 text-sm text-destructive mt-1">
+                <AlertCircle className="h-3 w-3" />
+                <span>{errors.terms}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <Button
           onClick={handleComplete}
-          disabled={loading || !selectedCountry || !birthDate}
+          disabled={loading || !selectedCountry || !birthDate || !acceptedTerms}
           className="w-full"
         >
           {loading
