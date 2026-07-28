@@ -6,8 +6,15 @@ import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst, StaleWhileRevalidate, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
+import { clientsClaim } from 'workbox-core';
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: Array<{ url: string; revision: string | null }> };
+
+// ── Atualização IMEDIATA: a versão nova assume na hora, sem ficar "esperando"
+// abas fecharem. (Antes, uma correção só aparecia depois de fechar tudo — o
+// usuário via a versão velha em cache.)
+self.skipWaiting();
+clientsClaim();
 
 // ── Precache dos assets com hash (injetado no build, versionado a cada deploy)
 cleanupOutdatedCaches();
