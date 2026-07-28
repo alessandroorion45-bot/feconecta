@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Church, Users, LogIn, LogOut, Crown, MapPin, Hash, RefreshCw } from "lucide-react";
 import LocationFilter, { LocationFilters } from "./LocationFilter";
 import CommunityWelcomeModal from "./CommunityWelcomeModal";
+import "./community-card.css";
 
 interface Community {
   id: string;
@@ -176,13 +177,22 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
     return filtered;
   };
 
+  const handleCardMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+  };
+
   const CommunityCard = ({ community, showJoin = false }: { community: Community; showJoin?: boolean }) => (
     <Card
-      className="community-card relative overflow-hidden cursor-pointer group border-border/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/50"
+      className="community-card relative overflow-hidden cursor-pointer group border-border/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/25 hover:border-primary/50"
+      onMouseMove={handleCardMove}
       onClick={() => (community.is_member ? onSelectCommunity(community.id) : handleJoin(community.id))}
     >
       {/* Brilho que atravessa o card no hover */}
-      <div className="card-shine pointer-events-none absolute inset-0 z-20" aria-hidden />
+      <div className="card-shine pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden />
+      {/* Spotlight magnético que segue o cursor */}
+      <div className="card-spotlight" aria-hidden />
 
       {/* Capa */}
       <div className="relative h-28 overflow-hidden">
@@ -194,8 +204,8 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-600 to-indigo-700 transition-transform duration-500 group-hover:scale-110">
-            <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-30 select-none">⛪</span>
+          <div className="card-aurora card-stars absolute inset-0 overflow-hidden bg-gradient-to-br from-primary via-purple-600 to-indigo-700 transition-transform duration-500 group-hover:scale-110">
+            <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-25 select-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.4)]">⛪</span>
           </div>
         )}
         {/* Overlay escuro tingido de roxo Kingdom — dá personalidade e
@@ -218,11 +228,13 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
       </div>
 
       {/* Identidade — avatar totalmente abaixo da capa (sem sobreposição) */}
-      <CardContent className="relative pt-4 pb-4">
+      <CardContent className="relative pt-4 pb-4 bg-gradient-to-b from-transparent to-primary/[0.04]">
         <div className="flex items-center gap-3">
           {/* Avatar 9:16 premium — glass + glow + sombra + zoom no hover */}
           <div className="relative w-[60px] shrink-0" style={{ aspectRatio: "9 / 16" }}>
             <div className="absolute -inset-1 rounded-[22px] bg-gradient-to-br from-primary/60 via-purple-500/40 to-sky-400/40 blur-md opacity-70 group-hover:opacity-100 transition-opacity duration-300" aria-hidden />
+            {/* Halo giratório premium (revela no hover) */}
+            <div className="avatar-halo" aria-hidden />
             <div
               className="relative h-full w-full rounded-[20px] overflow-hidden border border-white/20 shadow-2xl transition-transform duration-300 group-hover:scale-[1.05]"
               style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(4px)" }}
