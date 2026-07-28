@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { celebrate } from "@/lib/celebrate";
 
 interface InviteButtonProps {
   className?: string;
@@ -33,9 +34,25 @@ export const InviteButton = ({ className }: InviteButtonProps) => {
     supabase
       .rpc("get_my_referral_count")
       .then(({ data }) => {
-        if (typeof data === "number") setCount(data);
+        if (typeof data !== "number") return;
+        setCount(data);
+        // 🎉 Convite aceito: se entrou gente nova desde a última visita, celebra
+        const key = `referral-count-seen-${user.id}`;
+        let seen = -1;
+        try {
+          const s = localStorage.getItem(key);
+          if (s !== null) seen = parseInt(s, 10);
+        } catch { /* ignore */ }
+        if (seen >= 0 && data > seen) {
+          celebrate({ emojis: ["🎉", "🙌", "💛", "✨"] });
+          toast({
+            title: "Alguém entrou pelo seu convite! 🎉",
+            description: `Você já trouxe ${data} ${data === 1 ? "pessoa" : "pessoas"}. Que Deus multiplique! 🙏`,
+          });
+        }
+        try { localStorage.setItem(key, String(data)); } catch { /* ignore */ }
       });
-  }, [user]);
+  }, [user, toast]);
 
   if (!user) return null;
 

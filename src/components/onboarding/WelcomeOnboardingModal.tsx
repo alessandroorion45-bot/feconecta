@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Users, Trophy, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { celebrate } from "@/lib/celebrate";
 
 interface WelcomeOnboardingModalProps {
   userId?: string;
@@ -54,6 +55,7 @@ export const WelcomeOnboardingModal = ({ userId }: WelcomeOnboardingModalProps) 
 
   const finish = (goToBible: boolean) => {
     try { localStorage.setItem(doneKey(userId), "1"); } catch { /* ignore */ }
+    celebrate({ emojis: ["🙏", "🎉", "✨", "💛", "🕊️"], count: 100 });
     setOpen(false);
     if (goToBible) setTimeout(() => navigate("/bible"), 250);
   };

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
+import { celebrate, floatEmojis } from "@/lib/celebrate";
+import "@/styles/live-fx.css";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -374,7 +376,7 @@ const Prayers = () => {
     }
   };
 
-  const handleIntercede = async (prayerId: string) => {
+  const handleIntercede = async (prayerId: string, e?: React.MouseEvent) => {
     if (!user) {
       toast({
         title: "Faça login",
@@ -425,6 +427,9 @@ const Prayers = () => {
           .eq("id", prayerId);
 
         trackActivity("prayer_interceded");
+
+        // 🙏 mãozinhas de oração sobem a partir do botão
+        if (e) floatEmojis(e.clientX, e.clientY, ["🙏", "💛", "🕊️"], 8);
 
         // Conceder XP por interceder
         await awardXP('prayer_interceded');
@@ -855,7 +860,7 @@ const Prayers = () => {
                             "gap-2 flex-1 transition-all",
                             isPraying && "bg-gradient-primary text-primary-foreground"
                           )}
-                          onClick={() => handleIntercede(prayer.id)}
+                          onClick={(e) => handleIntercede(prayer.id, e)}
                           disabled={loadingIntercede.has(prayer.id) || prayer.is_answered}
                         >
                           <motion.div
@@ -999,6 +1004,8 @@ const Prayers = () => {
             prayerId={selectedPrayerForAnswer.id}
             prayerTitle={selectedPrayerForAnswer.title}
             onSuccess={() => {
+              // 🎉 oração respondida — testemunho da fidelidade de Deus!
+              celebrate({ emojis: ["🙏", "🎉", "🕊️", "✨", "💛"] });
               loadPrayers();
               setSelectedPrayerForAnswer(null);
             }}

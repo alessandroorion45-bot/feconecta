@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import KingdomBadge from "@/components/kingdom-badges/KingdomBadge";
 import { themeForCategory, drawVerseRef, fetchVerseText, RevealedVerse } from "@/lib/revealVerses";
 import { useToast } from "@/hooks/use-toast";
+import { celebrate } from "@/lib/celebrate";
 import { ImageIcon, Share2, Download, Loader2, BookOpen, ChevronLeft } from "lucide-react";
 
 const sb = supabase as any;
@@ -51,10 +52,20 @@ const SeloRevelacaoModal = ({ badge, onClose, onShowDetails }: SeloRevelacaoModa
   // prévia local instantânea (o storage remoto pode demorar a propagar)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const runId = useRef(0);
+  const celebrated = useRef(false);
+
+  // ✨ confete no momento em que a palavra é revelada (uma vez por abertura)
+  useEffect(() => {
+    if (phase === "reveal" && !celebrated.current) {
+      celebrated.current = true;
+      celebrate({ emojis: ["✨", "🕊️", "📖", "⭐", "🙏"], count: 110 });
+    }
+  }, [phase]);
 
   useEffect(() => {
     if (!badge) return;
     const id = ++runId.current;
+    celebrated.current = false;
     setPhase(reduced ? "reveal" : "ritual");
     setVerse(null);
     setWeeklyCount(null);
