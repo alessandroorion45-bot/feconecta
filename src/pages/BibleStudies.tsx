@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   Search, Video, Headphones, FileText, Clock, CheckCircle, Eye,
-  Heart, Share2, BookOpen
+  Heart, Share2, BookOpen, Check, Sparkles, ListChecks
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGamification } from "@/hooks/useGamification";
@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
 import BibleReferenceModal from "@/components/BibleReferenceModal";
+import "./bible-studies.css";
 
 /** Versículo do dia (determinístico pela data — igual para todos) */
 const DAILY_VERSES = [
@@ -65,6 +66,117 @@ const CATEGORIES = [
   "Sabedoria", "Esperança", "Amor", "Personagens"
 ];
 
+// Destaca trechos em MAIÚSCULAS (2+ palavras) como palavra-chave rica
+const KEY_RE = /([A-ZÀ-Ÿ]{2,}(?:\s+[A-ZÀ-Ÿ]{1,}){1,})/g;
+function highlight(text: string): (string | JSX.Element)[] {
+  const parts: (string | JSX.Element)[] = [];
+  const re = new RegExp(KEY_RE);
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    parts.push(<span key={m.index} className="study-key">{m[0]}</span>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
+// Parágrafo que aparece com fade+slide ao entrar na viewport (uma vez)
+const RevealParagraph = ({ children }: { children: React.ReactNode }) => {
+  const ref = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            el.classList.add("is-in");
+            io.disconnect();
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <p ref={ref} className="reveal-p mb-4 leading-relaxed whitespace-pre-line">
+      {children}
+    </p>
+  );
+};
+
+// Conteúdo do estudo: parágrafos com reveal + palavras-chave destacadas
+const StudyContent = ({ text }: { text: string }) => {
+  const paras = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  return (
+    <div className="text-muted-foreground text-[15px] sm:text-base">
+      {paras.map((p, i) => (
+        <RevealParagraph key={i}>{highlight(p)}</RevealParagraph>
+      ))}
+    </div>
+  );
+};
+
+// Detecta passos numerados na Aplicação Prática (1. / 2) / ...)
+function parseChecklist(application: string): string[] | null {
+  const lines = application.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  const steps = lines.filter((l) => /^\d+[.)]\s+/.test(l));
+  if (steps.length >= 2) return steps.map((l) => l.replace(/^\d+[.)]\s+/, ""));
+  return null;
+}
+
+// Checklist interativo — progresso salvo no aparelho (localStorage)
+const ApplicationChecklist = ({ studyId, steps }: { studyId: string; steps: string[] }) => {
+  const key = `study-checklist-${studyId}`;
+  const [done, setDone] = useState<boolean[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(key) || "[]");
+      return steps.map((_, i) => !!saved[i]);
+    } catch {
+      return steps.map(() => false);
+    }
+  });
+
+  const toggle = (i: number) => {
+    setDone((prev) => {
+      const next = prev.slice();
+      next[i] = !next[i];
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  const completed = done.filter(Boolean).length;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-sm font-medium text-orange-700 dark:text-orange-300 mb-1">
+        <ListChecks className="h-4 w-4" />
+        <span>{completed}/{steps.length} passos concluídos</span>
+      </div>
+      {steps.map((step, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => toggle(i)}
+          className={`study-check ${done[i] ? "done" : ""}`}
+        >
+          <span className="study-check-box">
+            {done[i] && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+          </span>
+          <span className="study-check-text text-orange-900 dark:text-orange-100 text-sm leading-snug">
+            {step}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const BibleStudies = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -80,6 +192,7 @@ const BibleStudies = () => {
   const [completedStudies, setCompletedStudies] = useState<Set<string>>(new Set());
   const [likedStudies, setLikedStudies] = useState<Set<string>>(new Set());
   const [refModal, setRefModal] = useState<string | null>(null);
+  const [readProgress, setReadProgress] = useState(0);
 
   // Carregar estudos do banco
   useEffect(() => {
@@ -88,6 +201,19 @@ const BibleStudies = () => {
       loadUserProgress();
     }
   }, [selectedCategory, selectedType, user]);
+
+  // Barra de progresso de leitura (só quando um estudo está aberto)
+  useEffect(() => {
+    if (!selectedStudy) return;
+    const onScroll = () => {
+      const el = document.documentElement;
+      const max = el.scrollHeight - el.clientHeight;
+      setReadProgress(max > 0 ? Math.min(100, (el.scrollTop / max) * 100) : 0);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [selectedStudy]);
 
   const loadStudies = async () => {
     setLoading(true);
@@ -252,8 +378,12 @@ const BibleStudies = () => {
     const TypeIcon = typeIcons[selectedStudy.type];
     const isCompleted = completedStudies.has(selectedStudy.id);
 
+    const checklistSteps = selectedStudy.application ? parseChecklist(selectedStudy.application) : null;
+
     return (
       <div className="min-h-screen bg-gradient-hero">
+        {/* Barra de progresso de leitura */}
+        <div className="study-progress" style={{ width: `${readProgress}%` }} aria-hidden />
         <Header />
         <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <Button variant="ghost" className="mb-4" onClick={() => setSelectedStudy(null)}>
@@ -296,7 +426,7 @@ const BibleStudies = () => {
                       <button
                         key={idx}
                         onClick={() => setRefModal(verse)}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-3 py-1.5 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/70 hover:scale-105 transition-all"
+                        className="verse-chip inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-3 py-1.5 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/70"
                         title="Clique para ler na Bíblia"
                       >
                         📖 {verse}
@@ -316,21 +446,23 @@ const BibleStudies = () => {
                   📚 Conteúdo do Estudo
                 </h3>
                 <div className="prose prose-lg max-w-none dark:prose-invert">
-                  <div className="leading-relaxed whitespace-pre-line text-muted-foreground">
-                    {selectedStudy.content}
-                  </div>
+                  <StudyContent text={selectedStudy.content} />
                 </div>
               </div>
 
-              {/* Aplicação Prática */}
+              {/* Aplicação Prática — checklist se tiver passos numerados */}
               {selectedStudy.application && (
                 <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 rounded-lg p-6 border-l-4 border-orange-500">
                   <h3 className="font-bold text-lg mb-3 text-orange-700 dark:text-orange-300">
                     🎯 Aplicação Prática
                   </h3>
-                  <div className="text-orange-900 dark:text-orange-100 whitespace-pre-line leading-relaxed">
-                    {selectedStudy.application}
-                  </div>
+                  {checklistSteps ? (
+                    <ApplicationChecklist studyId={selectedStudy.id} steps={checklistSteps} />
+                  ) : (
+                    <div className="text-orange-900 dark:text-orange-100 whitespace-pre-line leading-relaxed">
+                      {selectedStudy.application}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -386,6 +518,28 @@ const BibleStudies = () => {
                 <p className="text-sm text-muted-foreground">
                   {completedStudies.size} estudos completados
                 </p>
+              </div>
+
+              {/* Compartilhe a Palavra */}
+              <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/[0.07] to-accent/[0.04] p-5 text-center">
+                <Sparkles className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <h3 className="font-bold text-lg mb-1">Leve essa Palavra com você</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Compartilhe este estudo e abençoe alguém hoje. 🙏
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {selectedStudy.verses?.[0] && (
+                    <Button variant="outline" onClick={() => setRefModal(selectedStudy.verses[0])}>
+                      <BookOpen className="h-4 w-4 mr-2" /> Reler {selectedStudy.verses[0]}
+                    </Button>
+                  )}
+                  <Button
+                    className="!bg-gradient-to-r !from-primary !to-purple-600 text-white"
+                    onClick={() => shareStudy(selectedStudy)}
+                  >
+                    <Share2 className="h-4 w-4 mr-2" /> Compartilhar
+                  </Button>
+                </div>
               </div>
 
               {/* Você também pode gostar */}
@@ -542,11 +696,25 @@ const BibleStudies = () => {
 
         {/* Lista de Estudos */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-              <p className="text-muted-foreground">Carregando estudos...</p>
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex gap-2">
+                    <div className="study-skeleton h-5 w-16 rounded-full" />
+                    <div className="study-skeleton h-5 w-20 rounded-full" />
+                  </div>
+                  <div className="study-skeleton h-6 w-3/4 rounded" />
+                  <div className="study-skeleton h-4 w-1/3 rounded" />
+                  <div className="study-skeleton h-4 w-full rounded" />
+                  <div className="study-skeleton h-4 w-5/6 rounded" />
+                  <div className="flex justify-between pt-1">
+                    <div className="study-skeleton h-3 w-14 rounded" />
+                    <div className="study-skeleton h-3 w-10 rounded" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : filteredStudies.length === 0 ? (
           <div className="text-center py-20">
@@ -558,7 +726,7 @@ const BibleStudies = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div key={selectedCategory + selectedType} className="cards-fade grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredStudies.map(study => {
               const TypeIcon = typeIcons[study.type];
               const isCompleted = completedStudies.has(study.id);
@@ -566,7 +734,7 @@ const BibleStudies = () => {
               return (
                 <Card
                   key={study.id}
-                  className="cursor-pointer hover:shadow-divine transition-all hover:scale-[1.02]"
+                  className="study-card cursor-pointer border"
                   onClick={() => {
                     setSelectedStudy(study);
                     incrementViews(study.id);
