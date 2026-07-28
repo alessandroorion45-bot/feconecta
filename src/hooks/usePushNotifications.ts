@@ -9,9 +9,10 @@ declare global {
   }
 }
 
-// VAPID public key for push notifications
-// This is a publishable key that can be safely stored in the codebase
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+// VAPID public key for push notifications.
+// Chave PÚBLICA real deste projeto — pode ficar no bundle. A privada
+// correspondente vive só no servidor (secret VAPID_PRIVATE_KEY da edge fn).
+const VAPID_PUBLIC_KEY = 'BLOCiSDVnOwBJdVjvXtMCEVqhnWDaOBMSjGQ5P8OoKvrZzz0jf_nJIVOmD4kHcbeI2Ljiy6FP7_1FeBJVMgOW24';
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);

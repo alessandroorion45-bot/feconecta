@@ -1,15 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-secret",
 };
 
-// VAPID keys for Web Push
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
-const VAPID_SUBJECT = 'mailto:contato@rededafe.com';
+// VAPID: chaves REAIS deste projeto (a pública também vive no front em
+// usePushNotifications.ts — precisam ser o mesmo par).
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY") || "";
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") || "";
+const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "https://www.aliancakingdom.com.br";
+// Segredo compartilhado com o trigger do banco (modo interno: pode enviar
+// push pra qualquer usuário, pois é o servidor notificando sobre um evento).
+const PUSH_HOOK_SECRET = Deno.env.get("PUSH_HOOK_SECRET") || "";
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
 
 interface PushPayload {
   user_id: string;
@@ -20,137 +29,134 @@ interface PushPayload {
   data?: Record<string, unknown>;
 }
 
-async function sendWebPush(subscription: { endpoint: string; p256dh: string; auth: string }, payload: object) {
-  console.log('Sending push to endpoint:', subscription.endpoint);
-  
-  // For now, we'll use a simple approach that works without external libraries
-  // In production, you'd want to use web-push library or a service like OneSignal
-  
-  try {
-    // Create the push message payload
-    const pushPayload = JSON.stringify(payload);
-    
-    // Note: Full Web Push implementation requires complex cryptography
-    // This is a placeholder that logs the attempt
-    // For production, consider using a push notification service
-    console.log('Push payload prepared:', pushPayload);
-    console.log('Subscription endpoint:', subscription.endpoint);
-    
-    return { success: true, message: 'Push notification queued' };
-  } catch (error) {
-    console.error('Error sending push:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
-
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    // Authenticate the caller
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "VAPID keys não configuradas no servidor." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const authClient = createClient(supabaseUrl, supabaseServiceKey);
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const callerUserId = (claimsData.claims as Record<string, unknown>).sub as string;
-
-    // Use service role client for DB operations
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const payload: PushPayload = await req.json();
-    console.log('Received push request:', payload);
-
     const { user_id, title, body, icon, tag, data } = payload;
-
-    // Prevent authenticated users from sending push notifications to arbitrary users
-    if (user_id !== callerUserId) {
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: cannot send notifications to other users' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     if (!user_id || !title || !body) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: user_id, title, body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Campos obrigatórios: user_id, title, body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Get user's push subscriptions
+    // --- Autorização em dois modos ---
+    const internalSecret = req.headers.get("x-internal-secret");
+    const isInternal = !!PUSH_HOOK_SECRET && internalSecret === PUSH_HOOK_SECRET;
+
+    if (!isInternal) {
+      // Modo usuário: precisa de token válido e só pode notificar a si mesmo.
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(
+        authHeader.replace("Bearer ", ""),
+      );
+      const callerUserId = (claimsData?.claims as Record<string, unknown> | undefined)?.sub as string | undefined;
+      if (claimsError || !callerUserId) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (user_id !== callerUserId) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: não é possível notificar outro usuário" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    // Inscrições push do destinatário
     const { data: subscriptions, error: subError } = await supabase
-      .from('push_subscriptions')
-      .select('*')
-      .eq('user_id', user_id);
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("user_id", user_id);
 
     if (subError) {
-      console.error('Error fetching subscriptions:', subError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch subscriptions' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Falha ao buscar inscrições" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      console.log('No push subscriptions found for user:', user_id);
       return new Response(
-        JSON.stringify({ message: 'No subscriptions found', sent: 0 }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ message: "Sem inscrições", sent: 0 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    console.log(`Found ${subscriptions.length} subscription(s) for user`);
-
-    // Send to all subscriptions
-    const pushPayload = {
+    const pushBody = JSON.stringify({
       title,
       body,
-      icon: icon || '/favicon.ico',
-      tag: tag || 'notification',
-      data: data || { url: '/' }
-    };
+      icon: icon || "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: tag || "notification",
+      data: data || { url: "/" },
+    });
 
-    const results = await Promise.all(
-      subscriptions.map(sub => sendWebPush(sub, pushPayload))
-    );
+    let sent = 0;
+    const expiredEndpoints: string[] = [];
 
-    const successCount = results.filter(r => r.success).length;
-    console.log(`Push notifications sent: ${successCount}/${subscriptions.length}`);
-
-    return new Response(
-      JSON.stringify({ 
-        message: 'Push notifications processed', 
-        sent: successCount,
-        total: subscriptions.length 
+    await Promise.all(
+      subscriptions.map(async (sub) => {
+        try {
+          await webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            pushBody,
+          );
+          sent++;
+        } catch (err: unknown) {
+          const status = (err as { statusCode?: number })?.statusCode;
+          // 404/410 = inscrição morta (app desinstalado / permissão revogada)
+          if (status === 404 || status === 410) {
+            expiredEndpoints.push(sub.endpoint);
+          } else {
+            console.error("Erro ao enviar push:", status, (err as Error)?.message);
+          }
+        }
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error('Error in send-push-notification:', error);
+    // Limpa inscrições mortas pra não tentar de novo
+    if (expiredEndpoints.length > 0) {
+      await supabase
+        .from("push_subscriptions")
+        .delete()
+        .eq("user_id", user_id)
+        .in("endpoint", expiredEndpoints);
+    }
+
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ message: "ok", sent, total: subscriptions.length, cleaned: expiredEndpoints.length }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (error) {
+    console.error("Erro em send-push-notification:", error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
