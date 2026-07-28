@@ -226,6 +226,19 @@ function genOddWord(verses: Verse[]): QuizQuestion[] {
   }];
 }
 
+// Versículos de ânimo sobre a Palavra — sempre apropriados como apoio ao
+// final de qualquer pergunta (não são afirmação temática, e sim incentivo).
+const SUPPORT_VERSES = [
+  'A tua palavra é lâmpada para os meus pés e luz para o meu caminho. (Salmos 119:105)',
+  'Bem-aventurado aquele que lê as palavras desta profecia. (Apocalipse 1:3)',
+  'Toda a Escritura é divinamente inspirada e proveitosa para ensinar. (2 Timóteo 3:16)',
+  'O céu e a terra passarão, mas as minhas palavras não hão de passar. (Mateus 24:35)',
+  'Nem só de pão viverá o homem, mas de toda palavra que sai da boca de Deus. (Mateus 4:4)',
+  'A palavra de Cristo habite em vós abundantemente. (Colossenses 3:16)',
+  'Como meninos recém-nascidos, desejai o leite da palavra. (1 Pedro 2:2)',
+  'Escondi a tua palavra no meu coração, para eu não pecar contra ti. (Salmos 119:11)',
+];
+
 export function generateLocalQuiz(verses: Verse[], bookName: string, chapter: number): QuizQuestion[] {
   const usable = verses.filter(v => v.verse.split(/\s+/).length >= 8);
 
@@ -262,5 +275,12 @@ export function generateLocalQuiz(verses: Verse[], bookName: string, chapter: nu
     });
   }
 
-  return questions.slice(0, 5);
+  // Anexa um versículo de ânimo (variado) à explicação de cada pergunta
+  const support = shuffle(SUPPORT_VERSES);
+  const final = questions.slice(0, 5);
+  final.forEach((q, i) => {
+    q.explanation = `${q.explanation}\n\n📖 ${support[i % support.length]}`;
+  });
+
+  return final;
 }

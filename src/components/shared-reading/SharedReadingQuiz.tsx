@@ -9,6 +9,22 @@ import { Timer, Check, X, HelpCircle, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReactionBar } from './ReactionBar';
 
+// Comentários curtos de incentivo (variam por pergunta, estáveis)
+const CORRECT_NOTES = [
+  'Muito bem! Você está guardando a Palavra no coração. 🙌',
+  'Isso! Continue firme na leitura. 🔥',
+  'Perfeito! A Palavra ilumina quem a busca. ✨',
+  'Acertou! Que bom te ver crescendo na fé. 🌱',
+  'Excelente! Deus se alegra com quem ama a Sua Palavra. 💛',
+];
+const WRONG_NOTES = [
+  'Sem problema — errar faz parte de aprender. Releia com calma. 🙏',
+  'Tudo bem! Volte ao versículo e siga em frente, você consegue. 💪',
+  'Não desanime — cada leitura te aproxima mais da Palavra. 🌱',
+  'Faz parte! O importante é continuar buscando. ✨',
+  'Calma, respira. A Palavra é um tesouro que se descobre aos poucos. 💛',
+];
+
 interface SharedReadingQuizProps {
   room: Room;
   participants: Participant[];
@@ -281,7 +297,12 @@ export const SharedReadingQuiz = ({
                       </>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm font-medium mb-2">
+                    {currentAnswer.is_correct
+                      ? CORRECT_NOTES[currentQuestionIndex % CORRECT_NOTES.length]
+                      : WRONG_NOTES[currentQuestionIndex % WRONG_NOTES.length]}
+                  </p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
                     {currentQuestion.explanation}
                   </p>
                 </motion.div>
