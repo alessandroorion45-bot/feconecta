@@ -59,12 +59,9 @@ export const VerseActions = ({
   const [showShare, setShowShare] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Se houver comentários, mostrar automaticamente
-  useEffect(() => {
-    if (stats.comments > 0 && !showComments) {
-      setShowComments(true);
-    }
-  }, [stats.comments]);
+  // Os comentários NÃO abrem sozinhos — só quando o usuário toca no ícone
+  // de comentários. (Antes um efeito abria o modal ao entrar no versículo,
+  // tampando o texto bíblico.)
 
   // Carregar stats e estado de favorito
   useEffect(() => {
