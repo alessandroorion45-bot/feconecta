@@ -15,7 +15,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
 import BibleReferenceModal from "@/components/BibleReferenceModal";
+import { celebrate, floatEmojis } from "@/lib/celebrate";
 import "./bible-studies.css";
+import "@/styles/live-fx.css";
 
 /** Versículo do dia (determinístico pela data — igual para todos) */
 const DAILY_VERSES = [
@@ -146,6 +148,11 @@ const ApplicationChecklist = ({ studyId, steps }: { studyId: string; steps: stri
       const next = prev.slice();
       next[i] = !next[i];
       try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* ignore */ }
+      // 🎉 completou todos os passos agora
+      const wasAll = prev.every(Boolean);
+      if (!wasAll && next.every(Boolean)) {
+        celebrate({ emojis: ["✅", "🎉", "🙌", "✨"] });
+      }
       return next;
     });
   };
@@ -303,6 +310,9 @@ const BibleStudies = () => {
     // XP da gamificação (ação bible_study já existente)
     void awardXP('bible_study');
 
+    // 🎉 Marco: celebra a conclusão
+    celebrate({ emojis: ["🎉", "✨", "📖", "⭐", "🙏"] });
+
     toast({
       title: "✅ Estudo completado!",
       description: "Continue aprofundando seu conhecimento da Palavra! 📖 +XP",
@@ -332,13 +342,15 @@ const BibleStudies = () => {
     }
   };
 
-  const toggleLike = (studyId: string) => {
+  const toggleLike = (studyId: string, e?: React.MouseEvent) => {
     const newLikes = new Set(likedStudies);
     if (newLikes.has(studyId)) {
       newLikes.delete(studyId);
       toast({ title: "Removido dos favoritos" });
     } else {
       newLikes.add(studyId);
+      // 💛 corações sobem a partir do botão
+      if (e) floatEmojis(e.clientX, e.clientY, ["❤️", "💛", "✨"], 9);
       toast({
         title: "⭐ Adicionado aos favoritos",
         description: "Estudo salvo na sua coleção.",
@@ -419,7 +431,7 @@ const BibleStudies = () => {
               {selectedStudy.verses && selectedStudy.verses.length > 0 && (
                 <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-6 border-l-4 border-blue-500">
                   <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                    📖 Versículos Base
+                    <span className="emoji-live">📖</span> Versículos Base
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedStudy.verses.map((verse, idx) => (
@@ -454,7 +466,7 @@ const BibleStudies = () => {
               {selectedStudy.application && (
                 <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 rounded-lg p-6 border-l-4 border-orange-500">
                   <h3 className="font-bold text-lg mb-3 text-orange-700 dark:text-orange-300">
-                    🎯 Aplicação Prática
+                    <span className="emoji-live">🎯</span> Aplicação Prática
                   </h3>
                   {checklistSteps ? (
                     <ApplicationChecklist studyId={selectedStudy.id} steps={checklistSteps} />
@@ -499,11 +511,11 @@ const BibleStudies = () => {
 
                   <Button
                     variant="outline"
-                    onClick={() => toggleLike(selectedStudy.id)}
+                    onClick={(e) => toggleLike(selectedStudy.id, e)}
                   >
                     <Heart
                       className={`h-4 w-4 mr-2 ${
-                        likedStudies.has(selectedStudy.id) ? "fill-red-500 text-red-500" : ""
+                        likedStudies.has(selectedStudy.id) ? "fill-red-500 text-red-500 heartbeat" : ""
                       }`}
                     />
                     Favoritar
@@ -602,7 +614,7 @@ const BibleStudies = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-divine bg-clip-text text-transparent mb-2">
-            📚 Estudos Bíblicos
+            <span className="emoji-live">📚</span> Estudos Bíblicos
           </h1>
           <p className="text-muted-foreground">
             {studies.length} estudos profundos para crescimento espiritual

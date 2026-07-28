@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import "@/styles/live-fx.css";
 
 interface Verse {
   book_name: string;
@@ -62,7 +63,7 @@ export const DailyHookCard = () => {
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-amber-50/90 capitalize">{hoje}</span>
           <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-2.5 py-1 backdrop-blur-sm">
-            <Flame className={`h-4 w-4 ${streak > 0 ? "text-yellow-200" : "text-white/70"}`} />
+            <Flame className={`h-4 w-4 ${streak > 0 ? "text-yellow-200 icon-glow" : "text-white/70"}`} />
             <span className="text-xs font-bold">
               {streak > 0 ? `${streak} ${streak === 1 ? "dia" : "dias"} seguidos` : "Comece sua sequência"}
             </span>

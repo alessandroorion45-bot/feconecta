@@ -26,6 +26,8 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { floatEmojis } from "@/lib/celebrate";
+import "@/styles/live-fx.css";
 
 // Tabela/coluna real por trás de cada tipo editável/exclúivel pelo dono —
 // só esses 4 tipos são conteúdo de fato autorado pelo usuário no feed
@@ -67,13 +69,14 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
 
   // --- Ações ---
 
-  const toggleLike = async () => {
+  const toggleLike = async (e?: React.MouseEvent) => {
     if (!userId || !isPost) return;
     const wasLiked = item.liked_by_me;
     onPatch(item.key, (i) => ({
       liked_by_me: !wasLiked,
       likes_count: (i.likes_count || 0) + (wasLiked ? -1 : 1),
     }));
+    if (!wasLiked && e) floatEmojis(e.clientX, e.clientY, ["❤️", "💛", "✨"], 8);
     if (wasLiked) {
       await supabase.from('post_likes').delete().eq('post_id', item.id).eq('user_id', userId);
     } else {
@@ -330,10 +333,10 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
             <Button
               variant="ghost"
               size="sm"
-              onClick={toggleLike}
+              onClick={(e) => toggleLike(e)}
               className={cn("gap-1.5", item.liked_by_me && "text-red-500")}
             >
-              <Heart className={cn("h-4 w-4", item.liked_by_me && "fill-current")} />
+              <Heart className={cn("h-4 w-4", item.liked_by_me && "fill-current heartbeat")} />
               {item.likes_count || 0}
             </Button>
           ) : (
