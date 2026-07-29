@@ -321,25 +321,9 @@ const BibleStudies = () => {
   };
 
   const incrementViews = async (studyId: string) => {
-    // Incrementar visualizações (o builder do Supabase não tem .catch
-    // antes do await — usar try/await)
-    try {
-      const { error } = await (supabase.rpc as any)('increment', {
-        row_id: studyId,
-        table_name: 'bible_studies',
-        column_name: 'views_count',
-      });
-      if (error) throw error;
-    } catch {
-      // Fallback se a RPC não existir no banco
-      const study = studies.find(s => s.id === studyId);
-      if (study) {
-        await supabase
-          .from('bible_studies' as any)
-          .update({ views_count: study.views_count + 1 } as any)
-          .eq('id', studyId);
-      }
-    }
+    // Contador via função segura (bible_studies não é mais editável por
+    // usuário comum — só admin edita conteúdo; a função só soma +1 em views).
+    await (supabase.rpc as any)('increment_study_views', { p_id: studyId });
   };
 
   const toggleLike = (studyId: string, e?: React.MouseEvent) => {

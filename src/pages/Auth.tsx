@@ -407,16 +407,13 @@ const Auth = () => {
         setTimeout(() => reject(new Error('TIMEOUT')), 15000)
       );
 
-      // Check if username already exists (case-insensitive)
-      const usernameCheck = supabase
-        .from("profiles")
-        .select("username")
-        .ilike("username", sanitizedUsername)
-        .maybeSingle();
+      // Check if username already exists (case-insensitive).
+      // Via RPC segura: profiles não é mais legível por anônimo (privacidade).
+      const usernameCheck = supabase.rpc("username_available", { p_username: sanitizedUsername });
 
-      const { data: existingProfile } = await Promise.race([usernameCheck, timeoutPromise]) as { data: any };
+      const { data: available } = await Promise.race([usernameCheck, timeoutPromise]) as { data: any };
 
-      if (existingProfile) {
+      if (available === false) {
         setErrors({ username: language === 'pt' ? "Este nome de usuário já está em uso. Escolha outro." :
                               language === 'es' ? "Este nombre de usuario ya está en uso. Elige otro." :
                               language === 'nl' ? "Deze gebruikersnaam is al in gebruik. Kies een andere." :
