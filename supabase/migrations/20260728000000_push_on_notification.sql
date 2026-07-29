@@ -25,9 +25,12 @@ CREATE TABLE IF NOT EXISTS private.app_secrets (
 REVOKE ALL ON private.app_secrets FROM anon, authenticated, public;
 
 INSERT INTO private.app_secrets (key, value) VALUES
-  ('push_hook_secret', '99474c857148fa93251627f219dbdc494affc4c4f919aed8cdd2e05a1d1a9951'),
+  -- NÃO commitar o segredo real. O valor de produção é definido/rotacionado
+  -- direto no banco (private.app_secrets) e deve casar com o env PUSH_HOOK_SECRET
+  -- da edge function. Este placeholder só cria a linha se ela ainda não existir.
+  ('push_hook_secret', 'SET-VIA-DB-NAO-COMMITAR'),
   ('project_url', 'https://kfetvofrwtuduwmpvdlz.supabase.co')
-ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+ON CONFLICT (key) DO NOTHING;
 
 -- 3) Trigger: notificação criada -> push
 CREATE OR REPLACE FUNCTION public.notify_push_on_notification()
