@@ -13,6 +13,7 @@ import { FriendTestimonials } from "@/components/FriendTestimonials";
 import { ProfileVideos } from "@/components/ProfileVideos";
 import { ProfilePhotos } from "@/components/ProfilePhotos";
 import { ReportUserModal } from "@/components/ReportUserModal";
+import { PublicProfileVitrine, PublicVitrineData } from "@/components/profile/PublicProfileVitrine";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,14 +97,27 @@ const UserProfile = () => {
   const [isContentVisible, setIsContentVisible] = useState(false);
   const [mutualFriends, setMutualFriends] = useState<MutualFriend[]>([]);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [isAnon, setIsAnon] = useState(false);
+  const [publicVitrine, setPublicVitrine] = useState<PublicVitrineData | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
     setIsContentVisible(false);
-    
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        navigate("/auth");
+        // Deslogado: em vez de mandar pro login, mostra a VITRINE pública
+        // segura (só dados não-sensíveis) e convida a criar conta.
+        setIsAnon(true);
+        if (userId) {
+          supabase.rpc("get_public_profile", { p_user_id: userId }).then(({ data }) => {
+            const row = Array.isArray(data) ? data[0] : data;
+            setPublicVitrine((row as PublicVitrineData) || null);
+            setIsLoading(false);
+          });
+        } else {
+          setIsLoading(false);
+        }
         return;
       }
       setCurrentUserId(session.user.id);
@@ -367,6 +381,18 @@ const UserProfile = () => {
       if (userId) loadProfile(currentUserId, userId);
     }
   };
+
+  // Visitante deslogado → vitrine pública segura (sem redirecionar pro login)
+  if (isAnon) {
+    if (isLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 via-white to-amber-50 dark:from-zinc-950 dark:to-zinc-900">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+        </div>
+      );
+    }
+    return <PublicProfileVitrine data={publicVitrine} />;
+  }
 
   if (isLoading || !profile) {
     return (
