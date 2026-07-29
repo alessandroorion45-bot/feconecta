@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useAdminIdleTimeout } from "@/hooks/useAdminIdleTimeout";
 import { AdminAccessDenied } from "@/components/AdminAccessDenied";
+import { AdminPinGate } from "@/components/admin/AdminPinGate";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AdminRouteProps {
@@ -68,5 +69,6 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     return <AdminAccessDenied />;
   }
 
-  return <>{children}</>;
+  // Segundo cadeado: PIN do cofre (além do login + papel de admin)
+  return <AdminPinGate>{children}</AdminPinGate>;
 };
