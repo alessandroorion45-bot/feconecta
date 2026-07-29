@@ -104,66 +104,34 @@ const Ranking = () => {
   const loadRanking = async () => {
     setLoading(true);
 
-    // Buscar todos os perfis e depois enriquecer com stats
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, username, full_name, avatar_url");
+    // Vitrine pública: view com nome/@/avatar + stats de gamificação
+    // (sem dados sensíveis). Funciona até para visitantes deslogados,
+    // já que profiles em si é privado (só logados).
+    const { data: rows, error: lbError } = await supabase
+      .from("public_leaderboard")
+      .select("*");
 
-    if (profilesError) {
-      console.error("Error loading profiles:", profilesError);
+    if (lbError) {
+      console.error("Error loading leaderboard:", lbError);
       setLoading(false);
       return;
     }
 
-    // Buscar stats de todos usuários
-    const { data: stats } = await supabase
-      .from("user_stats")
-      .select("*");
-
-    // Buscar pontos do quiz
-    const { data: quizScores } = await supabase
-      .from("quiz_scores")
-      .select("user_id, total_points");
-
-    // Buscar completudes de desafios diários
-    const { data: challengeCompletions } = await supabase
-      .from("daily_challenge_completions")
-      .select("user_id, points_earned");
-
-    // Criar mapa de stats por usuário
-    const statsMap = new Map(stats?.map(s => [s.user_id, s]) || []);
-    
-    // Criar mapa de pontos do quiz por usuário
-    const quizPointsMap = new Map(quizScores?.map(q => [q.user_id, q.total_points]) || []);
-    
-    // Agregar pontos de desafios diários por usuário
-    const challengePointsMap = new Map<string, number>();
-    challengeCompletions?.forEach(c => {
-      const current = challengePointsMap.get(c.user_id) || 0;
-      challengePointsMap.set(c.user_id, current + c.points_earned);
-    });
-
-    // Combinar todos os dados para cada perfil
-    const rankedUsers: RankedUser[] = (profiles || []).map(profile => {
-      const userStats = statsMap.get(profile.id);
-      const statsPoints = userStats?.total_points || 0;
-      
-      return {
-        user_id: profile.id,
-        total_points: statsPoints, // user_stats já agrega todos os pontos
-        level: userStats?.level || 1,
-        current_streak: userStats?.current_streak || 0,
-        bible_chapters_read: userStats?.bible_chapters_read || 0,
-        testimonies_shared: userStats?.testimonies_shared || 0,
-        prayers_created: userStats?.prayers_created || 0,
-        profiles: {
-          username: profile.username,
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url
-        },
-        badges: []
-      };
-    });
+    const rankedUsers: RankedUser[] = (rows || []).map((r: any) => ({
+      user_id: r.user_id,
+      total_points: r.total_points || 0,
+      level: r.level || 1,
+      current_streak: r.current_streak || 0,
+      bible_chapters_read: r.bible_chapters_read || 0,
+      testimonies_shared: r.testimonies_shared || 0,
+      prayers_created: r.prayers_created || 0,
+      profiles: {
+        username: r.username,
+        full_name: r.full_name,
+        avatar_url: r.avatar_url,
+      },
+      badges: [],
+    }));
 
     // Ordenar por pontos (decrescente)
     rankedUsers.sort((a, b) => b.total_points - a.total_points);
