@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfilePublicView } from "@/components/ProfilePublicView";
+import { ShareProfileButton } from "@/components/profile/ShareProfileButton";
 import { ProfileEditSheet } from "@/components/ProfileEditSheet";
 import { ProfileSettingsSheet } from "@/components/ProfileSettingsSheet";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -310,6 +311,13 @@ const Profile = () => {
           onAvatarUpdate={handleAvatarUpdate}
           onCoverUpdate={handleCoverUpdate}
         />
+
+        {/* Compartilhar perfil (link viral) */}
+        {user && !loading && (
+          <div className="mt-4 px-4 sm:px-0">
+            <ShareProfileButton userId={user.id} fullName={profile.full_name} />
+          </div>
+        )}
 
         {/* Photos Section - Lazy loaded with Suspense */}
         {user && !loading && (
