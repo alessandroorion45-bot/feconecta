@@ -33,6 +33,13 @@ export const AdminPinGate = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [locked, setLocked] = useState(false);
+  // Etapa 2FA (só quando há um fator TOTP verificado)
+  const [mfaNeeded, setMfaNeeded] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState("");
+  const [mfaBusy, setMfaBusy] = useState(false);
 
   useEffect(() => {
     if (unlocked) { setLoading(false); return; }
@@ -50,6 +57,51 @@ export const AdminPinGate = ({ children }: { children: ReactNode }) => {
     setUnlocked(true);
   };
 
+  // Após o PIN: se houver 2FA (TOTP) verificado e a sessão ainda não estiver
+  // em aal2, exige o código do app. Se não houver 2FA, destranca direto.
+  const afterPin = async () => {
+    try {
+      const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (error || !data) { doUnlock(); return; } // sem como checar → não trava (PIN já passou)
+      if (data.nextLevel === "aal2" && data.currentLevel === "aal1") {
+        const { data: list } = await supabase.auth.mfa.listFactors();
+        const totp = (list?.totp || []).find((f) => f.status === "verified");
+        if (!totp) { doUnlock(); return; }
+        const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: totp.id });
+        if (chErr || !ch) { setMfaNeeded(true); setMfaError("Não foi possível iniciar o 2FA. Toque em Tentar novamente."); setMfaFactorId(totp.id); return; }
+        setMfaFactorId(totp.id);
+        setMfaChallengeId(ch.id);
+        setMfaNeeded(true);
+        return;
+      }
+      doUnlock();
+    } catch {
+      doUnlock();
+    }
+  };
+
+  const handleMfaVerify = async () => {
+    if (!mfaFactorId) return;
+    setMfaError(""); setMfaBusy(true);
+    let challengeId = mfaChallengeId;
+    if (!challengeId) {
+      const { data: ch } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+      challengeId = ch?.id ?? null;
+      setMfaChallengeId(challengeId);
+    }
+    if (!challengeId) { setMfaBusy(false); setMfaError("Erro ao gerar o desafio. Tente de novo."); return; }
+    const { error } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId, code: mfaCode.trim() });
+    setMfaBusy(false);
+    if (error) {
+      setMfaError("Código incorreto. Confira no app e tente de novo.");
+      setMfaCode("");
+      const { data: ch } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId }); // desafio é de uso único
+      setMfaChallengeId(ch?.id ?? null);
+      return;
+    }
+    doUnlock();
+  };
+
   const handleCreate = async () => {
     setError("");
     if (pin.length < 4) { setError("O PIN precisa de pelo menos 4 dígitos."); return; }
@@ -59,7 +111,7 @@ export const AdminPinGate = ({ children }: { children: ReactNode }) => {
     setBusy(false);
     const d = data as { ok?: boolean; error?: string };
     if (error || !d?.ok) { setError(d?.error || "Não foi possível criar o PIN."); return; }
-    doUnlock();
+    await afterPin();
   };
 
   const handleEnter = async () => {
@@ -69,7 +121,7 @@ export const AdminPinGate = ({ children }: { children: ReactNode }) => {
     setBusy(false);
     const d = data as { ok?: boolean; locked?: boolean; remaining?: number };
     if (error) { setError("Erro ao verificar o PIN."); return; }
-    if (d?.ok) { doUnlock(); return; }
+    if (d?.ok) { await afterPin(); return; }
     if (d?.locked) { setLocked(true); setError("Muitas tentativas erradas. Cofre bloqueado por 15 minutos."); return; }
     setError(`PIN incorreto. ${d?.remaining ?? 0} tentativa(s) restante(s).`);
     setPin("");
@@ -84,7 +136,19 @@ export const AdminPinGate = ({ children }: { children: ReactNode }) => {
           {locked ? <Lock className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
         </div>
 
-        {loading ? (
+        {mfaNeeded ? (
+          <>
+            <h1 className="text-xl font-bold mb-1">Verificação em 2 etapas</h1>
+            <p className="text-sm text-muted-foreground mb-5">Digite o código de 6 dígitos do seu app autenticador.</p>
+            <Input type="text" inputMode="numeric" autoFocus placeholder="Código de 6 dígitos"
+              value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))} maxLength={6}
+              onKeyDown={(e) => e.key === "Enter" && handleMfaVerify()} className="text-center tracking-[0.4em] text-lg" />
+            {mfaError && <p className="text-sm text-destructive mt-2">{mfaError}</p>}
+            <Button className="w-full mt-4 !bg-gradient-to-r !from-amber-500 !to-orange-600 !text-white" onClick={handleMfaVerify} disabled={mfaBusy || mfaCode.length < 6}>
+              {mfaBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><ShieldCheck className="h-4 w-4 mr-1.5" /> Confirmar</>}
+            </Button>
+          </>
+        ) : loading ? (
           <div className="py-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-amber-500" /></div>
         ) : locked ? (
           <>

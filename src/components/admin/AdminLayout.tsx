@@ -26,6 +26,7 @@ import {
   Eye,
   BarChart2,
   ImagePlus,
+  ShieldCheck,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -34,6 +35,7 @@ interface AdminLayoutProps {
 
 const navItems = [
   { path: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+  { path: "/admin/security", icon: ShieldCheck, label: "Segurança (2FA)" },
   { path: "/admin/users", icon: Users, label: "Usuários" },
   { path: "/admin/themes", icon: Palette, label: "Temas VIP" },
   { path: "/admin/badges", icon: Award, label: "Selos Kingdom" },

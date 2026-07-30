@@ -77,6 +77,7 @@ const AdminVigilancia = lazy(() => import("./pages/admin/Vigilancia"));
 const AdminStoreStats = lazy(() => import("./pages/admin/StoreStats"));
 const AdminVerseBackgrounds = lazy(() => import("./pages/admin/VerseBackgrounds"));
 const AdminSystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
+const AdminSecurity = lazy(() => import("./pages/admin/Security"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -152,6 +153,7 @@ const routes: RouteObject[] = [
   { path: "/admin/link-violations", element: <ProtectedRoute><AdminRoute><AdminLinkViolations /></AdminRoute></ProtectedRoute> },
   { path: "/admin/vigilancia", element: <ProtectedRoute><AdminRoute><AdminVigilancia /></AdminRoute></ProtectedRoute> },
   { path: "/admin/system", element: <ProtectedRoute><AdminRoute><AdminSystemHealth /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/security", element: <ProtectedRoute><AdminRoute><AdminSecurity /></AdminRoute></ProtectedRoute> },
 
   { path: "/user/:userId", element: <UserProfile /> },
   { path: "/friend/:friendId", element: <FriendDetails /> },
