@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Search, Eye, ChevronLeft, ChevronRight, ShieldAlert, MapPin, Server, Check } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { CommunityWatch } from "@/components/admin/CommunityWatch";
 
 interface Intrusion {
   id: string;
@@ -114,8 +115,17 @@ export default function Vigilancia() {
     <AdminLayout>
       <AdminPageHeader
         title="Olho da Vigilância"
-        description="Tentativas de acesso não autorizado a contas — IP, localização aproximada e conta-alvo"
+        description="Visão viva da comunidade + tentativas de acesso não autorizado"
       />
+
+      {/* Termômetro + Mural ao vivo da comunidade (novo) */}
+      <CommunityWatch />
+
+      {/* Segurança: tentativas de invasão (o que já existia) */}
+      <div className="flex items-center gap-2 mb-3">
+        <ShieldAlert className="h-4 w-4 text-red-600" />
+        <h2 className="font-bold">Tentativas de Invasão</h2>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
