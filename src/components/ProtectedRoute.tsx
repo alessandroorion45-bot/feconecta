@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { AccessGuard } from '@/components/AccessGuard';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -19,7 +20,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (isAuthenticated) {
-    return <>{children}</>;
+    return <AccessGuard>{children}</AccessGuard>;
   }
 
   return <Navigate to="/auth" state={{ from: location }} replace />;

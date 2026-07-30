@@ -15,6 +15,7 @@ import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useChatWebSocket } from '@/hooks/useChatWebSocket';
 import { containsExternalLink } from '@/lib/antiLink';
 import { useLinkBlock } from '@/components/anti-link/LinkBlockModal';
+import { useModeration } from '@/contexts/ModerationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePresence } from '@/contexts/PresenceContext';
 import { ChatStatusPicker } from '@/components/chat/ChatStatusPicker';
@@ -78,6 +79,7 @@ const Chat = () => {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const { blockLink } = useLinkBlock();
+  const { check: moderate } = useModeration();
   const location = useLocation();
   const { preferences, playSound, updatePreferences } = useChatSounds();
   const { theme: dynamicTheme, timeOfDay } = useDynamicBackground();
@@ -469,6 +471,12 @@ const Chat = () => {
       return;
     }
 
+    // Escudo anti-ódio: bloqueia + pune xingamento/ódio antes de enviar
+    if (content && content.trim()) {
+      const ok = await moderate(content, "mensagem");
+      if (!ok) return;
+    }
+
     stopTyping();
 
     const { error } = await supabase
@@ -495,7 +503,7 @@ const Chat = () => {
     }
 
     playSound('send');
-  }, [user, selectedConversation, stopTyping, playSound, toast, blockLink]);
+  }, [user, selectedConversation, stopTyping, playSound, toast, blockLink, moderate]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

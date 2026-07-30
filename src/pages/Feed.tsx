@@ -13,6 +13,7 @@ import { FeedItemCard } from "@/components/feed/FeedItemCard";
 import { Upload, Image as ImageIcon, Video, Search, Loader2, RefreshCw } from "lucide-react";
 import { pageCache } from "@/lib/pageCache";
 import { containsExternalLink } from "@/lib/antiLink";
+import { useModeration } from "@/contexts/ModerationContext";
 import { useLinkBlock } from "@/components/anti-link/LinkBlockModal";
 import WelcomeOnboardingModal from "@/components/onboarding/WelcomeOnboardingModal";
 import { InviteButton } from "@/components/invite/InviteButton";
@@ -21,6 +22,7 @@ import { DailyHookCard } from "@/components/feed/DailyHookCard";
 const Feed = () => {
   const { toast } = useToast();
   const { blockLink } = useLinkBlock();
+  const { check: moderate } = useModeration();
   const { user } = useAuth();
   const {
     items, loading, loadingMore, hasMore,
@@ -81,6 +83,12 @@ const Feed = () => {
     if (containsExternalLink(newPost)) {
       blockLink(newPost, "post");
       return;
+    }
+
+    // Escudo anti-ódio: bloqueia + pune linguagem imprópria antes de publicar
+    if (newPost.trim()) {
+      const ok = await moderate(newPost, "publicação");
+      if (!ok) return;
     }
 
     try {

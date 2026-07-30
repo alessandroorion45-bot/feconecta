@@ -17,6 +17,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { LinkBlockProvider } from "@/components/anti-link/LinkBlockModal";
+import { ModerationProvider } from "@/contexts/ModerationContext";
 import LoadingFallback from "@/components/LoadingFallback";
 import { DailyLoginTracker } from "@/components/gamification/DailyLoginTracker";
 import { PremiumEffectsWrapper } from "@/components/effects/PremiumEffectsWrapper";
@@ -202,12 +203,14 @@ const App = () => (
                   <LanguageProvider>
                     <TooltipProvider>
                       <LinkBlockProvider>
-                        <Toaster />
-                        <Sonner />
-                        <NetworkStatusIndicator />
-                        <Suspense fallback={<LoadingFallback />}>
-                          <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
-                        </Suspense>
+                        <ModerationProvider>
+                          <Toaster />
+                          <Sonner />
+                          <NetworkStatusIndicator />
+                          <Suspense fallback={<LoadingFallback />}>
+                            <RouterProvider router={router} fallbackElement={<LoadingFallback />} />
+                          </Suspense>
+                        </ModerationProvider>
                       </LinkBlockProvider>
                     </TooltipProvider>
                   </LanguageProvider>
