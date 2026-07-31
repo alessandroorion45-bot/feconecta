@@ -192,13 +192,13 @@ export default function AffiliateProducts() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Produtos Recomendados"
+        title="Achados da Aliança"
         description="Cole um link de afiliado — o app gera uma apresentação magnética. Só administradores cadastram. Todo produto mostra que é link de parceiro."
       />
 
       <div className="flex justify-end mb-3">
         <Button onClick={openCreate} className="bg-gradient-to-r from-amber-500 to-fuchsia-600 text-white">
-          <Plus className="h-4 w-4 mr-2" /> Novo Recomendado
+          <Plus className="h-4 w-4 mr-2" /> Novo Achado
         </Button>
       </div>
 
@@ -207,7 +207,7 @@ export default function AffiliateProducts() {
       ) : rows.length === 0 ? (
         <Card><CardContent className="py-16 text-center text-muted-foreground">
           <Handshake className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          Nenhum produto recomendado ainda. Clique em "Novo Recomendado".
+          Nenhum achado ainda. Clique em "Novo Achado".
         </CardContent></Card>
       ) : (
         <div className="space-y-3">
@@ -253,7 +253,7 @@ export default function AffiliateProducts() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Editar Recomendado" : "Novo Recomendado"}</DialogTitle>
+            <DialogTitle>{editingId ? "Editar Achado" : "Novo Achado"}</DialogTitle>
             <DialogDescription>Preencha o essencial e deixe a IA montar a apresentação. Você revisa antes de publicar.</DialogDescription>
           </DialogHeader>
 

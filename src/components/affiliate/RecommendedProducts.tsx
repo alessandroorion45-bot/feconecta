@@ -142,12 +142,12 @@ export default function RecommendedProducts() {
     <section className="my-10 rounded-3xl border border-amber-400/20 bg-gradient-to-b from-amber-500/5 to-transparent p-5 sm:p-7">
       <div className="mb-5 text-center">
         <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
-          <Handshake className="h-3.5 w-3.5" /> Recomendados pela Aliança
+          <Handshake className="h-3.5 w-3.5" /> Achados da Aliança
         </div>
-        <h2 className="mt-2 text-2xl font-bold text-foreground">Parceiros que apoiam a missão</h2>
+        <h2 className="mt-2 text-2xl font-bold text-foreground">Achados que separamos pra você</h2>
         <p className="mx-auto mt-1 max-w-xl text-sm text-muted-foreground">
-          Produtos que escolhemos com carinho. São <strong>links de parceiro</strong> — ao comprar por eles, você
-          ajuda a manter o app, <strong>sem custo adicional</strong> pra você.
+          Boas descobertas de parceiros, escolhidas com carinho. São <strong>links de parceiro</strong> — ao comprar
+          por eles, você ajuda a manter o app, <strong>sem custo adicional</strong> pra você.
         </p>
       </div>
 
