@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Handshake, Plus, Pencil, Eye, EyeOff, Archive, Loader2, Sparkles, ExternalLink, Upload, MousePointerClick,
+  Trash2, Copy, Search, ArchiveRestore,
 } from "lucide-react";
 
 interface AffiliateRow {
@@ -49,6 +50,8 @@ export default function AffiliateProducts() {
   const { toast } = useToast();
   const [rows, setRows] = useState<AffiliateRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "hidden" | "archived">("all");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -189,6 +192,40 @@ export default function AffiliateProducts() {
     load();
   };
 
+  const duplicate = async (r: AffiliateRow) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await supabase.from("affiliate_products").insert({
+      nome: `${r.nome} (cópia)`,
+      affiliate_url: r.affiliate_url,
+      recommend_reason: r.recommend_reason,
+      image_url: r.image_url,
+      categoria: r.categoria,
+      headline: r.headline,
+      descricao: r.descricao,
+      cta_text: r.cta_text,
+      badge_label: r.badge_label,
+      status: "hidden",
+      created_by: userData.user?.id,
+    });
+    if (error) { toast({ title: "Erro ao duplicar", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Achado duplicado", description: "Criado como oculto — edite e publique." });
+    load();
+  };
+
+  const remove = async (r: AffiliateRow) => {
+    if (!window.confirm(`Excluir DEFINITIVAMENTE "${r.headline || r.nome}"? Esta ação não pode ser desfeita.`)) return;
+    const { error } = await supabase.from("affiliate_products").delete().eq("id", r.id);
+    if (error) { toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "🗑️ Achado excluído" });
+    load();
+  };
+
+  const filtered = rows.filter(
+    (r) =>
+      (statusFilter === "all" || r.status === statusFilter) &&
+      (!search || (r.nome + " " + (r.headline || "")).toLowerCase().includes(search.toLowerCase())),
+  );
+
   return (
     <AdminLayout>
       <AdminPageHeader
@@ -196,7 +233,35 @@ export default function AffiliateProducts() {
         description="Cole um link de afiliado — o app gera uma apresentação magnética. Só administradores cadastram. Todo produto mostra que é link de parceiro."
       />
 
-      <div className="flex justify-end mb-3">
+      {/* Resumo */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <Card><CardContent className="py-3 text-center">
+          <div className="text-2xl font-bold">{rows.length}</div>
+          <div className="text-xs text-muted-foreground">Total</div>
+        </CardContent></Card>
+        <Card><CardContent className="py-3 text-center">
+          <div className="text-2xl font-bold text-emerald-600">{rows.filter((r) => r.status === "active").length}</div>
+          <div className="text-xs text-muted-foreground">Publicados</div>
+        </CardContent></Card>
+        <Card><CardContent className="py-3 text-center">
+          <div className="text-2xl font-bold text-amber-600">{rows.reduce((s, r) => s + r.click_count, 0)}</div>
+          <div className="text-xs text-muted-foreground">Cliques totais</div>
+        </CardContent></Card>
+      </div>
+
+      {/* Barra de ferramentas */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar achado..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <select className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
+          <option value="all">Todos os status</option>
+          <option value="active">Publicados</option>
+          <option value="hidden">Ocultos</option>
+          <option value="archived">Arquivados</option>
+        </select>
         <Button onClick={openCreate} className="bg-gradient-to-r from-amber-500 to-fuchsia-600 text-white">
           <Plus className="h-4 w-4 mr-2" /> Novo Achado
         </Button>
@@ -204,14 +269,14 @@ export default function AffiliateProducts() {
 
       {loading ? (
         <div className="py-16 flex justify-center"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
-      ) : rows.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <Card><CardContent className="py-16 text-center text-muted-foreground">
           <Handshake className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          Nenhum achado ainda. Clique em "Novo Achado".
+          {rows.length === 0 ? 'Nenhum achado ainda. Clique em "Novo Achado".' : "Nenhum achado com esse filtro."}
         </CardContent></Card>
       ) : (
         <div className="space-y-3">
-          {rows.map((r) => (
+          {filtered.map((r) => (
             <Card key={r.id} className={r.status !== "active" ? "opacity-70" : ""}>
               <CardContent className="p-4 flex flex-wrap items-center gap-4">
                 <div className="h-16 w-16 shrink-0 rounded-xl overflow-hidden bg-muted flex items-center justify-center">
@@ -234,14 +299,20 @@ export default function AffiliateProducts() {
                   </a>
                   {r.descricao && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.descricao}</p>}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                   <Button size="icon" variant="ghost" onClick={() => openEdit(r)} title="Editar"><Pencil className="h-4 w-4" /></Button>
                   {r.status === "active" ? (
                     <Button size="icon" variant="ghost" onClick={() => setStatus(r, "hidden")} title="Ocultar"><EyeOff className="h-4 w-4" /></Button>
                   ) : (
-                    <Button size="icon" variant="ghost" onClick={() => setStatus(r, "active")} title="Publicar"><Eye className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => setStatus(r, "active")} title="Publicar"><Eye className="h-4 w-4 text-emerald-600" /></Button>
                   )}
-                  <Button size="icon" variant="ghost" onClick={() => setStatus(r, "archived")} title="Arquivar"><Archive className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => duplicate(r)} title="Duplicar"><Copy className="h-4 w-4" /></Button>
+                  {r.status === "archived" ? (
+                    <Button size="icon" variant="ghost" onClick={() => setStatus(r, "hidden")} title="Restaurar"><ArchiveRestore className="h-4 w-4" /></Button>
+                  ) : (
+                    <Button size="icon" variant="ghost" onClick={() => setStatus(r, "archived")} title="Arquivar"><Archive className="h-4 w-4" /></Button>
+                  )}
+                  <Button size="icon" variant="ghost" onClick={() => remove(r)} title="Excluir de vez"><Trash2 className="h-4 w-4 text-red-600" /></Button>
                 </div>
               </CardContent>
             </Card>
