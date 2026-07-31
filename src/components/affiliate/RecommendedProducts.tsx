@@ -3,7 +3,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Handshake, ExternalLink, Eye, Info } from "lucide-react";
 
-interface AffiliateProduct {
+export interface AffiliateProduct {
   id: string;
   nome: string;
   affiliate_url: string;
@@ -16,8 +16,11 @@ interface AffiliateProduct {
   click_count: number;
 }
 
+export const AFFILIATE_SELECT =
+  "id, nome, affiliate_url, image_url, categoria, headline, descricao, cta_text, badge_label, click_count";
+
 /** Card com leve inclinação 3D seguindo o mouse (magnético, discreto). */
-function TiltCard({ product }: { product: AffiliateProduct }) {
+export function TiltCard({ product }: { product: AffiliateProduct }) {
   const ref = useRef<HTMLDivElement>(null);
   const [clicks, setClicks] = useState(product.click_count);
   const mx = useMotionValue(0);
@@ -127,7 +130,7 @@ export default function RecommendedProducts() {
   useEffect(() => {
     supabase
       .from("affiliate_products")
-      .select("id, nome, affiliate_url, image_url, categoria, headline, descricao, cta_text, badge_label, click_count")
+      .select(AFFILIATE_SELECT)
       .eq("status", "active")
       .order("ordem", { ascending: true })
       .then(({ data }) => {

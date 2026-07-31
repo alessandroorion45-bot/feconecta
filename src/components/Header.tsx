@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
-import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, HelpCircle, Search as SearchIcon, Star, BookMarked, HandHeart, Crown, ShoppingBag, Gift } from "lucide-react";
+import { Book, Heart, Church, User as UserIcon, LogOut, Trophy, Target, TrendingUp, Share2, Users, Brain, Menu, Video, BookOpen, MessageSquare, Sparkles, HelpCircle, Search as SearchIcon, Star, BookMarked, HandHeart, Crown, ShoppingBag, Gift, Gem } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -130,6 +130,7 @@ const Header = () => {
                   <MenuItem path="/church-community" icon={<Church className="h-5 w-5" />} label="Comunidade da Igreja" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
                   <MenuItem path="/sobre-o-projeto" icon={<HandHeart className="h-5 w-5" />} label="Sobre o Projeto" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
                   <MenuItem path="/loja" icon={<ShoppingBag className="h-5 w-5" />} label="Kingdom Store" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
+                  <MenuItem path="/achados" icon={<Gem className="h-5 w-5" />} label="Achados da Aliança" currentPath={currentPath} onClick={handleNavClick} iconColor="text-fuchsia-500" />
                   <MenuItem path="/presentes" icon={<Gift className="h-5 w-5" />} label="Presentes" currentPath={currentPath} onClick={handleNavClick} iconColor="text-rose-500" />
 
                   <MenuSection title="Conta" />
@@ -277,6 +278,7 @@ const Header = () => {
                     <MenuItem path="/church-community" icon={<Church className="h-5 w-5" />} label="Comunidade da Igreja" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
                     <MenuItem path="/sobre-o-projeto" icon={<HandHeart className="h-5 w-5" />} label="Sobre o Projeto" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
                     <MenuItem path="/loja" icon={<ShoppingBag className="h-5 w-5" />} label="Kingdom Store" currentPath={currentPath} onClick={handleNavClick} iconColor="text-amber-500" />
+                    <MenuItem path="/achados" icon={<Gem className="h-5 w-5" />} label="Achados da Aliança" currentPath={currentPath} onClick={handleNavClick} iconColor="text-fuchsia-500" />
                     <MenuItem path="/presentes" icon={<Gift className="h-5 w-5" />} label="Presentes" currentPath={currentPath} onClick={handleNavClick} iconColor="text-rose-500" />
 
                     <MenuSection title="Ferramentas" />
