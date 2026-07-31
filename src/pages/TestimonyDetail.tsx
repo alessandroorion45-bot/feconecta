@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, MessageCircle, Sparkles, Share2, Volume2, Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useModeration } from "@/contexts/ModerationContext";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ContentActionsMenu } from "@/components/ContentActionsMenu";
@@ -62,6 +63,7 @@ const TestimonyDetail = () => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [interactionLoading, setInteractionLoading] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+  const { check: moderate } = useModeration();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -281,6 +283,8 @@ const TestimonyDetail = () => {
       });
       return;
     }
+
+    if (!(await moderate(newComment, "comentário"))) return;
 
     const { error } = await supabase.from("testimony_comments").insert({
       testimony_id: testimony.id,

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import UserAvatar from "@/components/UserAvatar";
 import { useToast } from "@/hooks/use-toast";
+import { useModeration } from "@/contexts/ModerationContext";
 import WordOfWeekModal from "./WordOfWeekModal";
 import WeeklyChallengeCard from "./WeeklyChallengeCard";
 import {
@@ -65,6 +66,7 @@ interface CommunityMuralProps {
 
 const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) => {
   const { toast } = useToast();
+  const { check: moderate } = useModeration();
   const [posts, setPosts] = useState<MuralPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSql, setNeedsSql] = useState(false);
@@ -274,6 +276,7 @@ const CommunityMural = ({ communityId, userId, myRole }: CommunityMuralProps) =>
   const submitComment = async (postId: string) => {
     const content = newComment.trim();
     if (!content) return;
+    if (!(await moderate(content, "comentário"))) return;
     const { error } = await sb.from("community_post_comments").insert({
       post_id: postId, user_id: userId, content,
     });

@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useModeration } from '@/contexts/ModerationContext';
 import { useGamification } from '@/hooks/useGamification';
 import UserAvatar from '@/components/UserAvatar';
 import { formatDistanceToNow } from 'date-fns';
@@ -53,6 +54,7 @@ type SortOption = 'recent' | 'likes' | 'relevant';
 export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseCommentsProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { check: moderate } = useModeration();
   const { awardXP } = useGamification(user?.id);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -208,6 +210,8 @@ export const VerseComments = ({ book, chapter, verse, onCountChange }: VerseComm
       });
       return;
     }
+
+    if (!(await moderate(text, "comentário"))) return;
 
     setLoading(true);
 

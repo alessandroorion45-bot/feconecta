@@ -10,6 +10,7 @@ import { MessageCircle, ThumbsUp, CheckCircle2, Send, HelpCircle, ChevronLeft, T
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useModeration } from "@/contexts/ModerationContext";
 import { useGamification } from "@/hooks/useGamification";
 import { AvatarPro } from "@/components/AvatarPro";
 import BibleRefText from "@/components/BibleRefText";
@@ -61,6 +62,7 @@ const CATEGORIES = [
 const BibleQuestions = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { check: moderate } = useModeration();
   const { awardXP } = useGamification(user?.id);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,6 +197,8 @@ const BibleQuestions = () => {
       });
       return;
     }
+
+    if (!(await moderate(newAnswer, "resposta"))) return;
 
     setSubmitting(true);
 

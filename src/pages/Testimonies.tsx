@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { useGamification } from "@/hooks/useGamification";
 import { useAuth } from "@/contexts/AuthContext";
+import { useModeration } from "@/contexts/ModerationContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import UserAvatar from "@/components/UserAvatar";
@@ -55,6 +56,7 @@ const Testimonies = () => {
   const { user } = useAuth(); // Usar hook centralizado
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const { toast } = useToast();
+  const { check: moderate } = useModeration();
   const { trackActivity } = useActivityTracking();
   const { awardXP } = useGamification(user?.id);
   const [newTestimony, setNewTestimony] = useState({ title: "", content: "" });
@@ -348,6 +350,9 @@ const Testimonies = () => {
       return;
     }
 
+    // Escudo anti-ódio: título + conteúdo do testemunho
+    if (!(await moderate(`${newTestimony.title} ${newTestimony.content}`, "testemunho"))) return;
+
     setSubmittingTestimony(true);
 
     try {
@@ -622,6 +627,9 @@ const Testimonies = () => {
       });
       return;
     }
+
+    // Escudo anti-ódio no comentário
+    if (!(await moderate(newComment, "comentário"))) return;
 
     const { error } = await supabase.from("testimony_comments").insert({
       testimony_id: commentsOpen,

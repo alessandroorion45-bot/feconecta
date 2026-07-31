@@ -10,6 +10,7 @@ import { ptBR } from "date-fns/locale";
 import { ContentActionsMenu } from "@/components/ContentActionsMenu";
 import { containsExternalLink } from "@/lib/antiLink";
 import { useLinkBlock } from "@/components/anti-link/LinkBlockModal";
+import { useModeration } from "@/contexts/ModerationContext";
 
 interface FeedComment {
   id: string;
@@ -29,6 +30,7 @@ interface FeedCommentsProps {
 export const FeedComments = ({ postId, userId, onCountChange }: FeedCommentsProps) => {
   const { toast } = useToast();
   const { blockLink } = useLinkBlock();
+  const { check: moderate } = useModeration();
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
@@ -86,6 +88,8 @@ export const FeedComments = ({ postId, userId, onCountChange }: FeedCommentsProp
       blockLink(content, "comentario");
       return;
     }
+
+    if (!(await moderate(content, "comentário"))) return;
 
     setSending(true);
 
