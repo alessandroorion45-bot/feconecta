@@ -79,6 +79,7 @@ const AdminStoreStats = lazy(() => import("./pages/admin/StoreStats"));
 const AdminVerseBackgrounds = lazy(() => import("./pages/admin/VerseBackgrounds"));
 const AdminSystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 const AdminSecurity = lazy(() => import("./pages/admin/Security"));
+const AdminContentViolations = lazy(() => import("./pages/admin/ContentViolations"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -155,6 +156,7 @@ const routes: RouteObject[] = [
   { path: "/admin/vigilancia", element: <ProtectedRoute><AdminRoute><AdminVigilancia /></AdminRoute></ProtectedRoute> },
   { path: "/admin/system", element: <ProtectedRoute><AdminRoute><AdminSystemHealth /></AdminRoute></ProtectedRoute> },
   { path: "/admin/security", element: <ProtectedRoute><AdminRoute><AdminSecurity /></AdminRoute></ProtectedRoute> },
+  { path: "/admin/content-violations", element: <ProtectedRoute><AdminRoute><AdminContentViolations /></AdminRoute></ProtectedRoute> },
 
   { path: "/user/:userId", element: <UserProfile /> },
   { path: "/friend/:friendId", element: <FriendDetails /> },

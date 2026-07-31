@@ -27,6 +27,7 @@ import {
   BarChart2,
   ImagePlus,
   ShieldCheck,
+  MessageSquareWarning,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -45,6 +46,7 @@ const navItems = [
   { path: "/admin/photos", icon: Image, label: "Fotos" },
   { path: "/admin/videos", icon: Video, label: "Vídeos" },
   { path: "/admin/reports", icon: Flag, label: "Denúncias" },
+  { path: "/admin/content-violations", icon: MessageSquareWarning, label: "Violações de Conteúdo" },
   { path: "/admin/link-violations", icon: Link2Off, label: "Violações de Link" },
   { path: "/admin/vigilancia", icon: Eye, label: "Olho da Vigilância" },
   { path: "/admin/notifications", icon: Bell, label: "Notificações" },
