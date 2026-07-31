@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Bell, Flag, Ban, UserPlus } from "lucide-react";
+import { Bell, Flag, Ban, UserPlus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AdminNotification {
   id: string;
-  type: "report" | "ban" | "signup";
+  type: "report" | "ban" | "signup" | "moderation";
   title: string;
   description: string;
   createdAt: string;
@@ -69,6 +69,18 @@ export function AdminNotificationBell() {
           path: '/admin/users',
         }, false);
       })
+      // Infração de conteúdo (linguagem imprópria/ódio) — alerta em tempo real.
+      // A RLS de notifications só entrega ao admin as próprias linhas.
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'type=eq.moderation_alert' }, (payload) => {
+        pushNotification({
+          id: `mod-${payload.new.id}`,
+          type: 'moderation',
+          title: '⚠️ Infração de conteúdo',
+          description: payload.new.content || 'Um usuário usou linguagem imprópria',
+          createdAt: payload.new.created_at,
+          path: '/admin/content-violations',
+        }, true);
+      })
       .subscribe();
 
     return () => {
@@ -84,6 +96,7 @@ export function AdminNotificationBell() {
   const getIcon = (type: AdminNotification["type"]) => {
     if (type === 'report') return Flag;
     if (type === 'ban') return Ban;
+    if (type === 'moderation') return AlertTriangle;
     return UserPlus;
   };
 
@@ -107,7 +120,7 @@ export function AdminNotificationBell() {
         <div className="max-h-80 overflow-y-auto">
           {notifications.length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground text-center">
-              Nenhuma notificação ainda. Novas denúncias, banimentos e cadastros aparecem aqui ao vivo.
+              Nenhuma notificação ainda. Novas denúncias, infrações, banimentos e cadastros aparecem aqui ao vivo.
             </p>
           ) : (
             notifications.map((item) => {
