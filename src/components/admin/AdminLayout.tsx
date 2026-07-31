@@ -28,6 +28,7 @@ import {
   ImagePlus,
   ShieldCheck,
   MessageSquareWarning,
+  Handshake,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -42,6 +43,7 @@ const navItems = [
   { path: "/admin/badges", icon: Award, label: "Selos Kingdom" },
   { path: "/admin/store", icon: ShoppingBag, label: "Kingdom Store" },
   { path: "/admin/store-stats", icon: BarChart2, label: "Estatísticas da Loja" },
+  { path: "/admin/affiliate-products", icon: Handshake, label: "Recomendados" },
   { path: "/admin/verse-backgrounds", icon: ImagePlus, label: "Fundos de Versículo" },
   { path: "/admin/photos", icon: Image, label: "Fotos" },
   { path: "/admin/videos", icon: Video, label: "Vídeos" },
