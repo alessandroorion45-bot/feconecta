@@ -104,7 +104,10 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex flex-col">
+    // Fundo azul-marinho leve — SÓ na página inicial (visitante deslogado).
+    // Não usa o token global bg-gradient-hero de propósito (ele é compartilhado
+    // por Bíblia, Estudos, etc.). Versão clara + escura própria aqui.
+    <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,hsl(214_46%_95%)_0%,hsl(216_52%_86%)_50%,hsl(219_48%_91%)_100%)] dark:bg-[linear-gradient(180deg,hsl(220_40%_8%)_0%,hsl(218_44%_11%)_50%,hsl(222_40%_10%)_100%)]">
       <SEO
         path="/"
         title="Início"
