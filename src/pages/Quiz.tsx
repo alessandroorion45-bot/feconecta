@@ -410,51 +410,62 @@ const Quiz = () => {
                         key={d.key}
                         type="button"
                         onClick={() => setSelectedDifficulty(d.key)}
-                        className={`group relative text-left rounded-2xl p-[1.5px] transition-all duration-300 ${active ? "scale-[1.03]" : "hover:-translate-y-1"}`}
-                        style={{
-                          background: active
-                            ? `linear-gradient(135deg, rgba(${d.glow},0.9), rgba(${d.glow},0.4))`
-                            : "transparent",
-                        }}
+                        className={`group relative text-left rounded-3xl transition-all duration-300 focus:outline-none ${active ? "scale-[1.03]" : "hover:-translate-y-1.5"}`}
                       >
                         {/* glow por trás quando selecionado */}
                         {active && (
                           <span
-                            className="absolute -inset-2 rounded-3xl blur-xl -z-10"
-                            style={{ background: `radial-gradient(circle, rgba(${d.glow},0.45), transparent 70%)` }}
+                            className="absolute -inset-2 rounded-[28px] blur-xl -z-10"
+                            style={{ background: `radial-gradient(circle, rgba(${d.glow},0.40), transparent 70%)` }}
                             aria-hidden
                           />
                         )}
                         <div
-                          className={`relative h-full rounded-2xl bg-card p-5 text-center overflow-hidden border transition-colors ${
-                            active ? "border-transparent" : "border-border/70 group-hover:border-primary/30 shadow-sm group-hover:shadow-xl"
-                          }`}
+                          className="relative h-full rounded-3xl p-6 text-center overflow-hidden transition-all duration-300"
+                          style={{
+                            background: `linear-gradient(160deg, rgba(${d.glow},0.10), rgba(${d.glow},0.02) 62%), hsl(var(--card))`,
+                            border: active ? `2px solid rgb(${d.glow})` : "1px solid hsl(var(--border) / 0.7)",
+                            boxShadow: active
+                              ? `0 18px 42px -14px rgba(${d.glow},0.55)`
+                              : "0 4px 16px -10px rgba(15,23,42,0.18)",
+                          }}
                         >
+                          {/* halo suave atrás do ícone */}
+                          <span
+                            className="pointer-events-none absolute left-1/2 top-4 h-28 w-28 -translate-x-1/2 rounded-full blur-2xl transition-opacity duration-300"
+                            style={{ background: `radial-gradient(circle, rgba(${d.glow},0.35), transparent 70%)`, opacity: active ? 0.9 : 0 }}
+                            aria-hidden
+                          />
+
                           {/* check de selecionado */}
                           {active && (
                             <span
-                              className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full text-white shadow"
+                              className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full text-white shadow-lg ring-2 ring-white/70"
                               style={{ background: `rgb(${d.glow})` }}
                             >
-                              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                              <Check className="h-4 w-4" strokeWidth={3} />
                             </span>
                           )}
-                          {/* faixa de brilho no topo */}
-                          <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${d.grad} ${active ? "opacity-100" : "opacity-0 group-hover:opacity-60"} transition-opacity`} />
 
                           <div
-                            className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${d.grad} flex items-center justify-center mx-auto mb-3 transition-transform duration-300 group-hover:scale-110`}
-                            style={{ boxShadow: `0 8px 24px -6px rgba(${d.glow},0.6)` }}
+                            className={`relative w-[72px] h-[72px] rounded-[20px] bg-gradient-to-br ${d.grad} flex items-center justify-center mx-auto mb-4 ring-1 ring-white/40 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 ${active ? "scale-105" : ""}`}
+                            style={{ boxShadow: `0 10px 28px -6px rgba(${d.glow},0.6)` }}
                           >
-                            <d.icon className="h-7 w-7 text-white" />
+                            <span className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-white/40 blur-md" aria-hidden />
+                            <d.icon className="relative h-8 w-8 text-white" strokeWidth={2.2} />
                           </div>
-                          <h3 className="text-lg font-bold flex items-center justify-center gap-1.5">
-                            <span className="text-sm">{d.emoji}</span> {d.label}
+
+                          <h3
+                            className="text-lg font-extrabold tracking-tight transition-colors"
+                            style={{ color: active ? `rgb(${d.glow})` : undefined }}
+                          >
+                            {d.label}
                           </h3>
-                          <p className="text-xs text-muted-foreground mt-1 mb-3">{d.desc}</p>
+                          <p className="text-xs text-muted-foreground mt-1 mb-4">{d.desc}</p>
+
                           <span
-                            className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-white"
-                            style={{ background: `linear-gradient(135deg, rgb(${d.glow}), rgba(${d.glow},0.7))` }}
+                            className="inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-sm"
+                            style={{ background: `linear-gradient(135deg, rgb(${d.glow}), rgba(${d.glow},0.65))` }}
                           >
                             +{d.pts} pts / acerto
                           </span>
