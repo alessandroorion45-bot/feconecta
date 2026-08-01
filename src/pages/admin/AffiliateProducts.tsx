@@ -132,7 +132,13 @@ export default function AffiliateProducts() {
       descricao: (data as any).descricao || f.descricao,
       cta_text: (data as any).cta || f.cta_text,
     }));
-    toast({ title: "✨ Apresentação gerada", description: "Revise e ajuste antes de publicar." });
+    const bySystem = (data as any).source === "template";
+    toast({
+      title: bySystem ? "✍️ Apresentação montada pelo sistema" : "✨ Apresentação gerada pela IA",
+      description: bySystem
+        ? "A IA não está ligada ainda — montei a partir do que você escreveu. Revise e ajuste."
+        : "Revise e ajuste antes de publicar.",
+    });
   };
 
   const handleSave = async () => {

@@ -7,6 +7,42 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/**
+ * Plano B (sem IA): gera uma apresentação magnética a partir do que o admin
+ * digitou. Usa a frase de recomendação pra personalizar. Nunca falha.
+ */
+function buildTemplate(nome: string, reason: string, categoria: string) {
+  const n = (nome || "").trim().replace(/\s+/g, " ");
+  const r = (reason || "").trim();
+  const cat = (categoria || "Recomendados").toLowerCase();
+
+  const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+  // Headline: usa a 1ª ideia da frase do admin, ou um modelo por categoria.
+  let headline: string;
+  if (r) {
+    const first = r.split(/[.;\n]/)[0].trim();
+    headline = cap(first.split(/\s+/).slice(0, 8).join(" "));
+  } else {
+    const byCat: Record<string, string> = {
+      livros: "Uma leitura que edifica a alma",
+      devocionais: "Um tempo diário mais perto de Deus",
+      cursos: "Aprenda no seu ritmo, com propósito",
+      "acessórios": "Praticidade e beleza pro seu dia",
+      presentes: "Um presente cheio de significado",
+    };
+    headline = byCat[cat] || "Um achado especial, separado com carinho";
+  }
+
+  // Descrição: gancho + valor (frase do admin) + linha acolhedora e honesta.
+  const hook = n ? `${n} é uma escolha que separamos com carinho pra você.` : "Uma escolha que separamos com carinho pra você.";
+  const value = r ? ` ${cap(r)}${/[.!?]$/.test(r) ? "" : "."}` : "";
+  const warm = " Uma boa descoberta pra abençoar o seu dia a dia — e, ao conferir por aqui, você ainda ajuda a manter a nossa missão viva.";
+  const descricao = (hook + value + warm).slice(0, 500);
+
+  return { headline: headline.slice(0, 120), descricao, cta: "Ver oferta" };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -49,7 +85,24 @@ serve(async (req) => {
       });
     }
 
-    // 3) Rate limit (reusa a mesma proteção da geração de imagem)
+    const { nome, reason, categoria } = await req.json();
+    if (!nome || String(nome).trim().length === 0) {
+      return new Response(JSON.stringify({ error: "Informe o nome do produto." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const ok = (payload: Record<string, unknown>) =>
+      new Response(JSON.stringify(payload), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const fallback = () => ok({ ...buildTemplate(nome, reason, categoria), source: "template" });
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    // Sem chave de IA → plano B (nunca trava o admin)
+    if (!LOVABLE_API_KEY) return fallback();
+
+    // 3) Rate limit (só quando vai chamar IA de verdade)
     const { data: allowed } = await authClient.rpc("check_ai_rate_limit", {
       p_user_id: uid,
       p_action: "generate-affiliate-copy",
@@ -62,17 +115,6 @@ serve(async (req) => {
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
-    const { nome, reason, categoria } = await req.json();
-    if (!nome || String(nome).trim().length === 0) {
-      return new Response(JSON.stringify({ error: "Informe o nome do produto." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const systemPrompt = `Você é um redator de uma comunidade cristã acolhedora (app "Aliança Kingdom").
 Escreve apresentações curtas e honestas de produtos recomendados (links de parceiro/afiliado).
@@ -90,42 +132,32 @@ Regras:
 Categoria: ${categoria || "Recomendados"}
 Por que o app recomenda: ${reason || "(não informado — crie algo honesto e acolhedor a partir do nome)"}`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+    } catch (e) {
+      console.error("AI gateway fetch failed:", e);
+      return fallback();
+    }
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Muitas gerações agora. Tente daqui a pouco." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error("AI gateway error:", response.status, await response.text());
+      // 429/402 e afins → não trava: usa o plano B
+      return fallback();
     }
 
     const data = await response.json();
     let text: string = data.choices?.[0]?.message?.content ?? "";
-    // Limpa cercas de código, se vierem
     text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
 
     let parsed: { headline?: string; descricao?: string; cta?: string } = {};
@@ -134,18 +166,15 @@ Por que o app recomenda: ${reason || "(não informado — crie algo honesto e ac
       const end = text.lastIndexOf("}");
       parsed = JSON.parse(start >= 0 && end >= 0 ? text.slice(start, end + 1) : text);
     } catch {
-      // Fallback: usa o texto cru como descrição
-      parsed = { headline: nome, descricao: text.slice(0, 300), cta: "Ver oferta" };
+      return fallback();
     }
 
-    return new Response(
-      JSON.stringify({
-        headline: (parsed.headline || nome).toString().slice(0, 120),
-        descricao: (parsed.descricao || "").toString().slice(0, 600),
-        cta: (parsed.cta || "Ver oferta").toString().slice(0, 40),
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return ok({
+      headline: (parsed.headline || nome).toString().slice(0, 120),
+      descricao: (parsed.descricao || "").toString().slice(0, 600),
+      cta: (parsed.cta || "Ver oferta").toString().slice(0, 40),
+      source: "ai",
+    });
   } catch (error) {
     console.error("Error generating affiliate copy:", error);
     return new Response(
