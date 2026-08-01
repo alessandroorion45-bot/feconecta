@@ -194,7 +194,7 @@ const Index = () => {
           </motion.div>
 
           <motion.h1
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-7 bg-gradient-to-r from-amber-600 via-yellow-600 to-orange-600 bg-clip-text text-transparent leading-tight pt-1 pb-1 drop-shadow-lg"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-7 bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 dark:from-blue-300 dark:via-indigo-300 dark:to-blue-200 bg-clip-text text-transparent leading-tight pt-1 pb-1 drop-shadow-lg"
             initial={reduced ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
@@ -202,7 +202,7 @@ const Index = () => {
             Aliança Kingdom
           </motion.h1>
           <motion.p
-            className="text-lg sm:text-xl md:text-2xl text-amber-900 dark:text-amber-100 font-medium mb-3 px-2 leading-relaxed"
+            className="text-lg sm:text-xl md:text-2xl text-slate-700 dark:text-slate-200 font-medium mb-3 px-2 leading-relaxed"
             initial={reduced ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.28 }}
@@ -289,7 +289,7 @@ const Index = () => {
               {STAT_ROWS.map((row) => (
                 <div key={row.key} className="flex flex-col items-center gap-1 px-2 py-3 rounded-xl border border-secondary/20 bg-background/40 backdrop-blur-sm">
                   <span className="text-xl sm:text-2xl">{row.icon}</span>
-                  <span className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-amber-600 via-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                  <span className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 dark:from-blue-300 dark:via-indigo-300 dark:to-blue-200 bg-clip-text text-transparent">
                     <AnimatedStat value={stats[row.key]} reduced={reduced} />
                   </span>
                   <span className="text-[11px] sm:text-xs text-muted-foreground text-center leading-tight">{row.label}</span>
