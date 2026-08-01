@@ -132,12 +132,9 @@ export default function AffiliateProducts() {
       descricao: (data as any).descricao || f.descricao,
       cta_text: (data as any).cta || f.cta_text,
     }));
-    const bySystem = (data as any).source === "template";
     toast({
-      title: bySystem ? "✍️ Apresentação montada pelo sistema" : "✨ Apresentação gerada pela IA",
-      description: bySystem
-        ? "A IA não está ligada ainda — montei a partir do que você escreveu. Revise e ajuste."
-        : "Revise e ajuste antes de publicar.",
+      title: "✨ Apresentação montada",
+      description: "Montei a partir do que você escreveu. Revise e ajuste antes de publicar.",
     });
   };
 
@@ -331,7 +328,7 @@ export default function AffiliateProducts() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar Achado" : "Novo Achado"}</DialogTitle>
-            <DialogDescription>Preencha o essencial e deixe a IA montar a apresentação. Você revisa antes de publicar.</DialogDescription>
+            <DialogDescription>Preencha o essencial e deixe o sistema montar a apresentação. Você revisa antes de publicar.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -384,7 +381,7 @@ export default function AffiliateProducts() {
                 </span>
                 <Button size="sm" variant="outline" onClick={generateCopy} disabled={generating}>
                   {generating ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1.5" />}
-                  Gerar com IA
+                  Gerar apresentação
                 </Button>
               </div>
               <div className="space-y-2">
