@@ -34,11 +34,11 @@ function buildTemplate(nome: string, reason: string, categoria: string) {
     headline = byCat[cat] || "Um achado especial, separado com carinho";
   }
 
-  // Descrição: gancho + valor (frase do admin) + linha acolhedora e honesta.
-  const hook = n ? `${n} é uma escolha que separamos com carinho pra você.` : "Uma escolha que separamos com carinho pra você.";
-  const value = r ? ` ${cap(r)}${/[.!?]$/.test(r) ? "" : "."}` : "";
-  const warm = " Uma boa descoberta pra abençoar o seu dia a dia — e, ao conferir por aqui, você ainda ajuda a manter a nossa missão viva.";
-  const descricao = (hook + value + warm).slice(0, 500);
+  // Descrição: gancho curto + valor (frase do admin) + linha acolhedora.
+  // Não começa com o nome do produto (pra não repetir a headline/nome no card).
+  const value = r ? `${cap(r)}${/[.!?]$/.test(r) ? "" : "."} ` : "Uma escolha que separamos com carinho pra você. ";
+  const warm = "Ao conferir por aqui, você ainda ajuda a manter a nossa missão viva. 🕊️";
+  const descricao = (value + warm).slice(0, 400);
 
   return { headline: headline.slice(0, 120), descricao, cta: "Ver oferta" };
 }

@@ -84,14 +84,14 @@ export function TiltCard({ product }: { product: AffiliateProduct }) {
 
         <div className="flex flex-1 flex-col p-4">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-500">{product.categoria}</span>
-          <h3 className="mt-1 text-lg font-bold leading-snug text-foreground">
+          <h3 className="mt-1 text-lg font-bold leading-snug text-foreground line-clamp-2">
             {product.headline || product.nome}
           </h3>
           {product.headline && product.headline !== product.nome && (
-            <p className="text-xs text-muted-foreground">{product.nome}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1">{product.nome}</p>
           )}
           {product.descricao && (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{product.descricao}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-2">{product.descricao}</p>
           )}
 
           {/* Prova social só se for real (>0) */}

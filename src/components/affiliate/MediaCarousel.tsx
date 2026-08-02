@@ -58,13 +58,13 @@ export function MediaCarousel({
 
   return (
     <div
-      className={`relative ${ratio} ${rounded} w-full overflow-hidden bg-black/10`}
+      className={`relative ${ratio} ${rounded} w-full overflow-hidden bg-muted`}
       onMouseEnter={() => (hover.current = true)}
       onMouseLeave={() => (hover.current = false)}
     >
-      {/* Fundo desfocado da própria mídia — preenche sem cortar */}
+      {/* Fundo desfocado da própria mídia — preenche as bordas como um vidro fosco */}
       {cur.type === "image" ? (
-        <img src={cur.url} aria-hidden alt="" className="absolute inset-0 h-full w-full object-cover scale-125 blur-2xl opacity-50" />
+        <img src={cur.url} aria-hidden alt="" className="absolute inset-0 h-full w-full object-cover scale-[1.35] blur-3xl opacity-95" />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 to-slate-700/60" aria-hidden />
       )}
