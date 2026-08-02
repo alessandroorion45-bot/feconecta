@@ -40,7 +40,16 @@ function buildTemplate(nome: string, reason: string, categoria: string) {
   const warm = "Ao conferir por aqui, você ainda ajuda a manter a nossa missão viva. 🕊️";
   const descricao = (value + warm).slice(0, 400);
 
-  return { headline: headline.slice(0, 120), descricao, cta: "Ver oferta" };
+  // Destaques: até 3 etiquetas curtas tiradas da frase do admin
+  // (quebra por vírgula/ponto-e-vírgula/"e"), ideais pro card escaneável.
+  const destaques = r
+    .split(/[,;•\n]|\s+e\s+/i)
+    .map((p) => p.replace(/^[\s\-–—:]+|[\s.]+$/g, ""))
+    .filter((p) => p.length >= 3 && p.length <= 22)
+    .slice(0, 3)
+    .map(cap);
+
+  return { headline: headline.slice(0, 120), descricao, cta: "Ver oferta", destaques };
 }
 
 serve(async (req) => {

@@ -31,6 +31,7 @@ interface AffiliateRow {
   click_count: number;
   media: MediaItem[] | null;
   aspect: string | null;
+  destaques: string[] | null;
   created_at: string;
 }
 
@@ -48,6 +49,7 @@ const emptyForm = {
   status: "hidden" as AffiliateRow["status"],
   media: [] as MediaItem[],
   aspect: "9:16" as "9:16" | "16:9",
+  destaques: [] as string[],
 };
 
 export default function AffiliateProducts() {
@@ -104,6 +106,7 @@ export default function AffiliateProducts() {
       status: r.status,
       media,
       aspect: (r.aspect === "16:9" ? "16:9" : "9:16"),
+      destaques: r.destaques ?? [],
     });
     setVideoUrl("");
     setShowForm(true);
@@ -176,11 +179,14 @@ export default function AffiliateProducts() {
       toast({ title: "Não foi possível gerar agora", description: msg, variant: "destructive" });
       return;
     }
+    const sugeridos = ((data as any).destaques as string[] | undefined) ?? [];
     setForm((f) => ({
       ...f,
-      headline: (data as any).headline || f.headline,
+      headline: ((data as any).headline || f.headline || "").slice(0, 60),
       descricao: (data as any).descricao || f.descricao,
       cta_text: (data as any).cta || f.cta_text,
+      // só preenche os destaques se você ainda não escreveu os seus
+      destaques: f.destaques.length ? f.destaques : sugeridos.slice(0, 3),
     }));
     toast({
       title: "✨ Apresentação montada",
@@ -206,6 +212,7 @@ export default function AffiliateProducts() {
         image_url: firstImg,
         media: form.media,
         aspect: form.aspect,
+        destaques: form.destaques.filter((d) => d.trim()).slice(0, 3),
         categoria: form.categoria,
         headline: form.headline || null,
         descricao: form.descricao || null,
@@ -250,6 +257,7 @@ export default function AffiliateProducts() {
       image_url: r.image_url,
       media: r.media ?? [],
       aspect: r.aspect ?? "9:16",
+      destaques: r.destaques ?? [],
       categoria: r.categoria,
       headline: r.headline,
       descricao: r.descricao,
@@ -475,12 +483,73 @@ export default function AffiliateProducts() {
                   Gerar apresentação
                 </Button>
               </div>
-              <div className="space-y-2">
-                <Input value={form.headline} onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))} placeholder="Headline (chamativa, focada no benefício)" />
-                <Textarea rows={3} value={form.descricao} onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} placeholder="Descrição persuasiva (2-4 frases)" />
+              <div className="space-y-3">
+                {/* Headline com contador — é a estrela do card */}
+                <div>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <label className="text-xs font-medium">Headline (a frase que chama)</label>
+                    <span className={`text-[11px] ${form.headline.length > 48 ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
+                      {form.headline.length}/48
+                    </span>
+                  </div>
+                  <Input maxLength={60} value={form.headline}
+                    onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))}
+                    placeholder="Ex: Praticidade e beleza pro seu dia" />
+                  <p className="text-[11px] text-muted-foreground mt-1">Curta e focada no benefício. Acima de 48 caracteres começa a cortar no card.</p>
+                </div>
+
+                {/* Destaques — etiquetas escaneáveis (substituem o textão) */}
+                <div>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <label className="text-xs font-medium">Destaques (até 3 etiquetas)</label>
+                    <span className="text-[11px] text-muted-foreground">{form.destaques.length}/3</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-1.5">
+                    {form.destaques.map((d, k) => (
+                      <span key={k} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
+                        {d}
+                        <button type="button" className="text-red-500"
+                          onClick={() => setForm((f) => ({ ...f, destaques: f.destaques.filter((_, i) => i !== k) }))}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  {form.destaques.length < 3 && (
+                    <Input
+                      maxLength={22}
+                      placeholder="Digite um destaque curto e tecle Enter (ex: 3 tons de luz)"
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter") return;
+                        e.preventDefault();
+                        const v = (e.target as HTMLInputElement).value.trim();
+                        if (!v) return;
+                        setForm((f) => ({ ...f, destaques: [...f.destaques, v].slice(0, 3) }));
+                        (e.target as HTMLInputElement).value = "";
+                      }}
+                    />
+                  )}
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Máx. 22 caracteres cada. Aparecem no lugar do texto longo — bem mais fácil de ler.
+                  </p>
+                </div>
+
+                {/* Descrição (usada só se não houver destaques) */}
+                <div>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <label className="text-xs font-medium">Descrição (reserva — só aparece sem destaques)</label>
+                    <span className={`text-[11px] ${form.descricao.length > 120 ? "text-amber-600" : "text-muted-foreground"}`}>
+                      {form.descricao.length}/120
+                    </span>
+                  </div>
+                  <Textarea rows={2} value={form.descricao}
+                    onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
+                    placeholder="Frase curta de apoio" />
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
-                  <Input value={form.cta_text} onChange={(e) => setForm((f) => ({ ...f, cta_text: e.target.value }))} placeholder="Texto do botão (ex: Ver oferta)" />
-                  <Input value={form.badge_label} onChange={(e) => setForm((f) => ({ ...f, badge_label: e.target.value }))} placeholder="Selo de transparência" />
+                  <Input maxLength={22} value={form.cta_text} onChange={(e) => setForm((f) => ({ ...f, cta_text: e.target.value }))} placeholder="Texto do botão" />
+                  <Input maxLength={30} value={form.badge_label} onChange={(e) => setForm((f) => ({ ...f, badge_label: e.target.value }))} placeholder="Selo de transparência" />
                 </div>
               </div>
             </div>

@@ -17,10 +17,11 @@ export interface AffiliateProduct {
   click_count: number;
   media: MediaItem[];
   aspect: string;
+  destaques: string[] | null;
 }
 
 export const AFFILIATE_SELECT =
-  "id, nome, affiliate_url, image_url, categoria, headline, descricao, cta_text, badge_label, click_count, media, aspect";
+  "id, nome, affiliate_url, image_url, categoria, headline, descricao, cta_text, badge_label, click_count, media, aspect, destaques";
 
 /** Card com leve inclinação 3D seguindo o mouse (magnético, discreto). */
 export function TiltCard({ product }: { product: AffiliateProduct }) {
@@ -83,15 +84,29 @@ export function TiltCard({ product }: { product: AffiliateProduct }) {
         />
 
         <div className="flex flex-1 flex-col p-4">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-500">{product.categoria}</span>
-          <h3 className="mt-1 text-lg font-bold leading-snug text-foreground line-clamp-2">
+          {/* Categoria como pílula discreta */}
+          <span className="self-start rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
+            {product.categoria}
+          </span>
+
+          {/* A estrela do card */}
+          <h3 className="mt-2 text-[17px] font-bold leading-snug text-foreground line-clamp-2">
             {product.headline || product.nome}
           </h3>
-          {product.headline && product.headline !== product.nome && (
-            <p className="text-xs text-muted-foreground line-clamp-1">{product.nome}</p>
-          )}
-          {product.descricao && (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-2">{product.descricao}</p>
+
+          {/* Destaques escaneáveis (substituem o parágrafo longo) */}
+          {product.destaques?.length ? (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {product.destaques.slice(0, 3).map((d, k) => (
+                <span key={k} className="rounded-md bg-muted px-2 py-1 text-[11px] font-medium text-foreground/75">
+                  {d}
+                </span>
+              ))}
+            </div>
+          ) : (
+            product.descricao && (
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-2">{product.descricao}</p>
+            )
           )}
 
           {/* Prova social só se for real (>0) */}

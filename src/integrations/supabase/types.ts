@@ -351,6 +351,7 @@ export type Database = {
           created_by: string | null
           cta_text: string
           descricao: string | null
+          destaques: string[]
           headline: string | null
           id: string
           image_url: string | null
@@ -371,6 +372,7 @@ export type Database = {
           created_by?: string | null
           cta_text?: string
           descricao?: string | null
+          destaques?: string[]
           headline?: string | null
           id?: string
           image_url?: string | null
@@ -391,6 +393,7 @@ export type Database = {
           created_by?: string | null
           cta_text?: string
           descricao?: string | null
+          destaques?: string[]
           headline?: string | null
           id?: string
           image_url?: string | null
