@@ -10,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Handshake, Plus, Pencil, Eye, EyeOff, Archive, Loader2, Sparkles, ExternalLink, Upload, MousePointerClick,
-  Trash2, Copy, Search, ArchiveRestore,
+  Handshake, Plus, Pencil, Eye, EyeOff, Archive, Loader2, Sparkles, ExternalLink, MousePointerClick,
+  Trash2, Copy, Search, ArchiveRestore, ImagePlus, Film, X, GripVertical,
 } from "lucide-react";
+import { MediaCarousel, ytId, type MediaItem } from "@/components/affiliate/MediaCarousel";
 
 interface AffiliateRow {
   id: string;
@@ -28,6 +29,8 @@ interface AffiliateRow {
   status: "active" | "hidden" | "archived";
   ordem: number;
   click_count: number;
+  media: MediaItem[] | null;
+  aspect: string | null;
   created_at: string;
 }
 
@@ -37,13 +40,14 @@ const emptyForm = {
   nome: "",
   affiliate_url: "",
   recommend_reason: "",
-  image_url: "" as string | null,
   categoria: "Livros",
   headline: "",
   descricao: "",
   cta_text: "Ver oferta",
   badge_label: "Link de parceiro",
   status: "hidden" as AffiliateRow["status"],
+  media: [] as MediaItem[],
+  aspect: "9:16" as "9:16" | "16:9",
 };
 
 export default function AffiliateProducts() {
@@ -57,8 +61,8 @@ export default function AffiliateProducts() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,35 +80,81 @@ export default function AffiliateProducts() {
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm);
-    setImageFile(null);
-    setImagePreview(null);
+    setVideoUrl("");
     setShowForm(true);
   };
 
   const openEdit = (r: AffiliateRow) => {
     setEditingId(r.id);
+    // compat: se não tem media[] mas tem image_url antiga, converte
+    const media: MediaItem[] = r.media?.length
+      ? r.media
+      : r.image_url
+      ? [{ type: "image", url: r.image_url }]
+      : [];
     setForm({
       nome: r.nome,
       affiliate_url: r.affiliate_url,
       recommend_reason: r.recommend_reason || "",
-      image_url: r.image_url,
       categoria: r.categoria,
       headline: r.headline || "",
       descricao: r.descricao || "",
       cta_text: r.cta_text || "Ver oferta",
       badge_label: r.badge_label || "Link de parceiro",
       status: r.status,
+      media,
+      aspect: (r.aspect === "16:9" ? "16:9" : "9:16"),
     });
-    setImageFile(null);
-    setImagePreview(r.image_url);
+    setVideoUrl("");
     setShowForm(true);
   };
 
-  const handleImageChange = (file: File | null) => {
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+  // Sobe imagem(ns) pro storage e adiciona ao carrossel
+  const addImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingImg(true);
+    try {
+      const novos: MediaItem[] = [];
+      for (const file of Array.from(files)) {
+        const ext = file.name.split(".").pop();
+        const path = `affiliate/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const { error } = await supabase.storage.from("kingdom-badges").upload(path, file, { upsert: true });
+        if (error) throw error;
+        const url = supabase.storage.from("kingdom-badges").getPublicUrl(path).data.publicUrl;
+        novos.push({ type: "image", url });
+      }
+      setForm((f) => ({ ...f, media: [...f.media, ...novos] }));
+    } catch (e) {
+      toast({ title: "Erro ao enviar imagem", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setUploadingImg(false);
+    }
   };
+
+  const addImageUrl = (url: string) => {
+    const u = url.trim();
+    if (!u) return;
+    setForm((f) => ({ ...f, media: [...f.media, { type: "image", url: u }] }));
+  };
+
+  const addVideo = () => {
+    const u = videoUrl.trim();
+    if (!u) return;
+    setForm((f) => ({ ...f, media: [...f.media, { type: "video", url: u }] }));
+    setVideoUrl("");
+  };
+
+  const removeMedia = (idx: number) =>
+    setForm((f) => ({ ...f, media: f.media.filter((_, i) => i !== idx) }));
+
+  const moveMedia = (idx: number, dir: -1 | 1) =>
+    setForm((f) => {
+      const arr = [...f.media];
+      const j = idx + dir;
+      if (j < 0 || j >= arr.length) return f;
+      [arr[idx], arr[j]] = [arr[j], arr[idx]];
+      return { ...f, media: arr };
+    });
 
   const generateCopy = async () => {
     if (!form.nome.trim()) {
@@ -145,21 +195,17 @@ export default function AffiliateProducts() {
     }
     setSaving(true);
     try {
-      let image_url = form.image_url;
-      if (imageFile) {
-        const ext = imageFile.name.split(".").pop();
-        const path = `affiliate/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("kingdom-badges").upload(path, imageFile, { upsert: true });
-        if (upErr) throw upErr;
-        image_url = supabase.storage.from("kingdom-badges").getPublicUrl(path).data.publicUrl;
-      }
+      // image_url = 1ª imagem do carrossel (compat com a vitrine/teaser e o thumbnail)
+      const firstImg = form.media.find((m) => m.type === "image")?.url || null;
 
       const { data: userData } = await supabase.auth.getUser();
       const payload = {
         nome: form.nome.trim(),
         affiliate_url: form.affiliate_url.trim(),
         recommend_reason: form.recommend_reason || null,
-        image_url,
+        image_url: firstImg,
+        media: form.media,
+        aspect: form.aspect,
         categoria: form.categoria,
         headline: form.headline || null,
         descricao: form.descricao || null,
@@ -202,6 +248,8 @@ export default function AffiliateProducts() {
       affiliate_url: r.affiliate_url,
       recommend_reason: r.recommend_reason,
       image_url: r.image_url,
+      media: r.media ?? [],
+      aspect: r.aspect ?? "9:16",
       categoria: r.categoria,
       headline: r.headline,
       descricao: r.descricao,
@@ -359,18 +407,61 @@ export default function AffiliateProducts() {
                 placeholder="Ex: uma Bíblia linda com notas que aprofundam a leitura" />
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Imagem do produto</label>
-              <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-xl border border-dashed flex items-center justify-center overflow-hidden shrink-0 bg-muted/30">
-                  {imagePreview ? <img src={imagePreview} alt="" className="h-full w-full object-cover" /> : <Upload className="h-6 w-6 text-muted-foreground" />}
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e.target.files?.[0] || null)} />
-                  <Input value={form.image_url || ""} onChange={(e) => { setForm((f) => ({ ...f, image_url: e.target.value })); setImagePreview(e.target.value || null); }}
-                    placeholder="...ou cole a URL de uma imagem" className="text-xs" />
+            {/* Mídias (carrossel de imagens + vídeo) */}
+            <div className="rounded-lg border border-border/70 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <label className="text-sm font-medium">Mídias (imagens e vídeo)</label>
+                {/* Formato do card */}
+                <div className="inline-flex rounded-lg border border-border overflow-hidden text-xs">
+                  <button type="button" onClick={() => setForm((f) => ({ ...f, aspect: "9:16" }))}
+                    className={`px-3 py-1.5 ${form.aspect === "9:16" ? "bg-primary text-primary-foreground" : "bg-background"}`}>
+                    9:16 vertical
+                  </button>
+                  <button type="button" onClick={() => setForm((f) => ({ ...f, aspect: "16:9" }))}
+                    className={`px-3 py-1.5 ${form.aspect === "16:9" ? "bg-primary text-primary-foreground" : "bg-background"}`}>
+                    16:9 horizontal
+                  </button>
                 </div>
               </div>
+
+              {/* Prévia real do carrossel (do jeito que o usuário vai ver) */}
+              {form.media.length > 0 && (
+                <div className="mx-auto max-w-[220px] rounded-xl overflow-hidden border">
+                  <MediaCarousel media={form.media} aspect={form.aspect} />
+                </div>
+              )}
+
+              {/* Lista de mídias com reordenar/remover */}
+              {form.media.length > 0 && (
+                <div className="space-y-1.5">
+                  {form.media.map((m, idx) => (
+                    <div key={idx} className="flex items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5 text-xs">
+                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {m.type === "image" ? <ImagePlus className="h-4 w-4 text-sky-500 shrink-0" /> : <Film className="h-4 w-4 text-fuchsia-500 shrink-0" />}
+                      <span className="truncate flex-1">{m.type === "video" && ytId(m.url) ? "YouTube · " : ""}{m.url}</span>
+                      <button type="button" onClick={() => moveMedia(idx, -1)} disabled={idx === 0} className="px-1 disabled:opacity-30">↑</button>
+                      <button type="button" onClick={() => moveMedia(idx, 1)} disabled={idx === form.media.length - 1} className="px-1 disabled:opacity-30">↓</button>
+                      <button type="button" onClick={() => removeMedia(idx)} className="text-red-500 px-1"><X className="h-3.5 w-3.5" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Adicionar */}
+              <div className="grid sm:grid-cols-2 gap-2">
+                <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed h-10 text-sm cursor-pointer hover:bg-muted/40">
+                  {uploadingImg ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                  Adicionar imagem
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { addImages(e.target.files); e.target.value = ""; }} />
+                </label>
+                <div className="flex gap-1">
+                  <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="Link do vídeo (YouTube ou .mp4)" className="text-xs h-10" />
+                  <Button type="button" variant="outline" className="h-10 shrink-0" onClick={addVideo}><Film className="h-4 w-4" /></Button>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                A imagem/vídeo aparece <strong>inteira</strong> no card (sem corte), com fundo desfocado. Arraste com ↑↓ pra ordenar — a 1ª é a capa.
+              </p>
             </div>
 
             {/* Geração da apresentação */}

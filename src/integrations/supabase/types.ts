@@ -343,6 +343,7 @@ export type Database = {
       affiliate_products: {
         Row: {
           affiliate_url: string
+          aspect: string
           badge_label: string
           categoria: string
           click_count: number
@@ -353,6 +354,7 @@ export type Database = {
           headline: string | null
           id: string
           image_url: string | null
+          media: Json
           nome: string
           ordem: number
           recommend_reason: string | null
@@ -361,6 +363,7 @@ export type Database = {
         }
         Insert: {
           affiliate_url: string
+          aspect?: string
           badge_label?: string
           categoria?: string
           click_count?: number
@@ -371,6 +374,7 @@ export type Database = {
           headline?: string | null
           id?: string
           image_url?: string | null
+          media?: Json
           nome: string
           ordem?: number
           recommend_reason?: string | null
@@ -379,6 +383,7 @@ export type Database = {
         }
         Update: {
           affiliate_url?: string
+          aspect?: string
           badge_label?: string
           categoria?: string
           click_count?: number
@@ -389,6 +394,7 @@ export type Database = {
           headline?: string | null
           id?: string
           image_url?: string | null
+          media?: Json
           nome?: string
           ordem?: number
           recommend_reason?: string | null

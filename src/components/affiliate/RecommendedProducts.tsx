@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Handshake, ExternalLink, Eye, Info } from "lucide-react";
+import { MediaCarousel, type MediaItem } from "./MediaCarousel";
 
 export interface AffiliateProduct {
   id: string;
@@ -14,10 +15,12 @@ export interface AffiliateProduct {
   cta_text: string;
   badge_label: string;
   click_count: number;
+  media: MediaItem[];
+  aspect: string;
 }
 
 export const AFFILIATE_SELECT =
-  "id, nome, affiliate_url, image_url, categoria, headline, descricao, cta_text, badge_label, click_count";
+  "id, nome, affiliate_url, image_url, categoria, headline, descricao, cta_text, badge_label, click_count, media, aspect";
 
 /** Card com leve inclinação 3D seguindo o mouse (magnético, discreto). */
 export function TiltCard({ product }: { product: AffiliateProduct }) {
@@ -73,19 +76,11 @@ export function TiltCard({ product }: { product: AffiliateProduct }) {
           <Handshake className="h-3 w-3" /> {product.badge_label}
         </div>
 
-        {/* Imagem full-bleed */}
-        <div className="relative h-44 w-full overflow-hidden bg-gradient-to-br from-muted/40 to-muted/10">
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.nome}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-5xl">🎁</div>
-          )}
-        </div>
+        {/* Carrossel de mídias (imagens + vídeo), mostra tudo inteiro */}
+        <MediaCarousel
+          media={product.media?.length ? product.media : product.image_url ? [{ type: "image", url: product.image_url }] : []}
+          aspect={product.aspect || "9:16"}
+        />
 
         <div className="flex flex-1 flex-col p-4">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-500">{product.categoria}</span>
