@@ -29,7 +29,9 @@ export function MediaCarousel({
   const items = Array.isArray(media) ? media.filter((m) => m?.url) : [];
   const [i, setI] = useState(0);
   const hover = useRef(false);
-  const ratio = aspect === "16:9" ? "aspect-video" : "aspect-[9/16]";
+  // 9:16: no desktop a altura é limitada (o fundo desfocado preenche as
+  // laterais) pra o card não virar um "totem"; no mobile fica imersivo.
+  const ratio = aspect === "16:9" ? "aspect-video" : "aspect-[9/16] max-h-[420px] sm:max-h-[400px]";
 
   // Autoplay suave entre as mídias (pausa no hover). Não avança em cima de vídeo.
   useEffect(() => {
