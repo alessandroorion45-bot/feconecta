@@ -29,9 +29,11 @@ export function MediaCarousel({
   const items = Array.isArray(media) ? media.filter((m) => m?.url) : [];
   const [i, setI] = useState(0);
   const hover = useRef(false);
-  // 9:16: no desktop a altura é limitada (o fundo desfocado preenche as
-  // laterais) pra o card não virar um "totem"; no mobile fica imersivo.
-  const ratio = aspect === "16:9" ? "aspect-video" : "aspect-[9/16] max-h-[420px] sm:max-h-[400px]";
+  // Vídeo precisa de proporção fixa (iframe não tem tamanho próprio).
+  // Imagem NÃO usa proporção fixa: o quadro fica com a altura exata da foto,
+  // então nunca sobra faixa vazia em cima/embaixo (queixa do usuário).
+  const videoRatio = aspect === "16:9" ? "aspect-video" : "aspect-[9/16]";
+  const imgCap = aspect === "16:9" ? "max-h-[300px]" : "max-h-[60vh] sm:max-h-[380px]";
 
   // Autoplay suave entre as mídias (pausa no hover). Não avança em cima de vídeo.
   useEffect(() => {
@@ -48,7 +50,7 @@ export function MediaCarousel({
 
   if (items.length === 0) {
     return (
-      <div className={`${ratio} ${rounded} w-full flex items-center justify-center bg-gradient-to-br from-muted/40 to-muted/10 text-6xl`}>
+      <div className={`aspect-square ${rounded} w-full flex items-center justify-center bg-gradient-to-br from-muted/40 to-muted/10 text-6xl`}>
         🎁
       </div>
     );
@@ -56,37 +58,45 @@ export function MediaCarousel({
 
   const idx = Math.min(i, items.length - 1);
   const cur = items[idx];
+  const isImg = cur.type === "image";
   const go = (d: number) => setI((p) => (p + d + items.length) % items.length);
 
   return (
     <div
-      className={`relative ${ratio} ${rounded} w-full overflow-hidden bg-muted`}
+      className={`relative ${rounded} w-full overflow-hidden bg-muted flex items-center justify-center ${isImg ? "" : videoRatio}`}
       onMouseEnter={() => (hover.current = true)}
       onMouseLeave={() => (hover.current = false)}
     >
-      {/* Fundo desfocado da própria mídia — preenche as bordas como um vidro fosco */}
-      {cur.type === "image" ? (
+      {/* Fundo desfocado da própria mídia — preenche só as laterais, se sobrar */}
+      {isImg ? (
         <img src={cur.url} aria-hidden alt="" className="absolute inset-0 h-full w-full object-cover scale-[1.35] blur-3xl opacity-95" />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 to-slate-700/60" aria-hidden />
       )}
 
-      {/* Mídia principal — INTEIRA (object-contain) */}
-      <div className="relative z-[1] h-full w-full flex items-center justify-center">
-        {cur.type === "image" ? (
-          <img src={cur.url} alt="" loading="lazy" className="max-h-full max-w-full object-contain" />
-        ) : ytId(cur.url) ? (
-          <iframe
-            src={`https://www.youtube.com/embed/${ytId(cur.url)}`}
-            className="h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            title="Vídeo do produto"
-          />
-        ) : (
-          <video src={cur.url} controls playsInline className="max-h-full max-w-full object-contain" />
-        )}
-      </div>
+      {/* Mídia principal — a IMAGEM define a altura do quadro (sem faixa vazia) */}
+      {isImg ? (
+        <img
+          src={cur.url}
+          alt=""
+          loading="lazy"
+          className={`relative z-[1] block w-auto max-w-full ${imgCap} object-contain`}
+        />
+      ) : (
+        <div className="relative z-[1] h-full w-full flex items-center justify-center">
+          {ytId(cur.url) ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${ytId(cur.url)}`}
+              className="h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Vídeo do produto"
+            />
+          ) : (
+            <video src={cur.url} controls playsInline className="max-h-full max-w-full object-contain" />
+          )}
+        </div>
+      )}
 
       {/* Selo de vídeo (quando não é iframe) */}
       {cur.type === "video" && !ytId(cur.url) && (
