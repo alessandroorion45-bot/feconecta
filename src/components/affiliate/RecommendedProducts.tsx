@@ -43,16 +43,16 @@ export function TiltCard({ product }: { product: AffiliateProduct }) {
     my.set(0);
   };
 
-  const openLink = async () => {
-    // Abre JÁ em nova aba (gesto do usuário) pra não perder o rastreio de afiliado.
-    const win = window.open(product.affiliate_url, "_blank", "noopener,noreferrer");
-    if (!win) window.location.href = product.affiliate_url; // fallback se bloqueou popup
-    try {
-      const { data } = await supabase.rpc("track_affiliate_click", { p_id: product.id });
-      if (typeof data === "number") setClicks(data);
-    } catch {
-      /* rastreio é best-effort; nunca bloqueia a ida ao parceiro */
-    }
+  // Rastreio best-effort. NÃO intercepta a navegação: o CTA é um <a target="_blank">
+  // de verdade, então o navegador sempre abre em nova aba (sem risco de pop-up
+  // bloqueado mandar o usuário pra fora da plataforma) e o link de afiliado
+  // chega intacto ao parceiro.
+  const trackClick = () => {
+    supabase
+      .rpc("track_affiliate_click", { p_id: product.id })
+      .then(({ data }) => {
+        if (typeof data === "number") setClicks(data);
+      });
   };
 
   return (
@@ -101,8 +101,11 @@ export function TiltCard({ product }: { product: AffiliateProduct }) {
             </p>
           )}
 
-          <button
-            onClick={openLink}
+          <a
+            href={product.affiliate_url}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            onClick={trackClick}
             className="relative mt-4 inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-transform active:scale-95"
           >
             {/* Pulso sutil e contínuo (não irritante) */}
@@ -110,7 +113,7 @@ export function TiltCard({ product }: { product: AffiliateProduct }) {
             <span className="relative z-10 flex items-center gap-2">
               {product.cta_text} <ExternalLink className="h-4 w-4" />
             </span>
-          </button>
+          </a>
         </div>
       </div>
     </motion.div>
