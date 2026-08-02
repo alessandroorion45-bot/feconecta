@@ -22,7 +22,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { playUnlockChime } from "@/lib/badgeSound";
 import { giftAnimationFor } from "@/lib/giftPresentation";
 import GiftRevealAnimation from "@/components/gifts/GiftRevealAnimation";
-import RecommendedProducts from "@/components/affiliate/RecommendedProducts";
 import {
   ShoppingBag, Heart, Gift, Search, ArrowLeft, Clock, Copy, Check, PartyPopper, Sparkles, Loader2, CheckCircle2, X,
 } from "lucide-react";
@@ -451,9 +450,8 @@ const KingdomStore = () => {
           </p>
         </div>
 
-        {/* Recomendados (produtos de parceiro/afiliado) — espaço próprio,
-            separado dos itens da loja. Só aparece se houver ativos. */}
-        <RecommendedProducts />
+        {/* Os "Achados da Aliança" (produtos de parceiro) vivem na página
+            própria /achados — item de menu dedicado. Não duplicamos aqui. */}
 
         {/* Meta do mês */}
         {meta?.ativa && meta.mensal > 0 && (
