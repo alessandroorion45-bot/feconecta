@@ -187,17 +187,19 @@ const Feed = () => {
                 embaixo (alvo de toque confortável, sem sobra estranha).
                 A partir de sm volta tudo pra mesma linha, Publicar à direita. */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              {/* No celular os dois dividem a largura, então a borda direita
+                  do "Vídeo" encosta na do "Publicar" logo abaixo. */}
               <div className="flex gap-2">
-                <label htmlFor="media-upload" className="shrink-0">
-                  <Button variant="outline" size="sm" asChild>
+                <label htmlFor="media-upload" className="flex-1 sm:flex-none">
+                  <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
                     <span className="cursor-pointer">
                       <ImageIcon className="h-4 w-4 mr-2" />
                       Foto
                     </span>
                   </Button>
                 </label>
-                <label htmlFor="video-upload" className="shrink-0">
-                  <Button variant="outline" size="sm" asChild>
+                <label htmlFor="video-upload" className="flex-1 sm:flex-none">
+                  <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
                     <span className="cursor-pointer">
                       <Video className="h-4 w-4 mr-2" />
                       Vídeo
