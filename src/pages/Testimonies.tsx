@@ -14,6 +14,7 @@ import { useModeration } from "@/contexts/ModerationContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import UserAvatar from "@/components/UserAvatar";
+import FramedAvatar from "@/components/FramedAvatar";
 import { ContentActionsMenu } from "@/components/ContentActionsMenu";
 
 import AudioRecorder from "@/components/AudioRecorder";
@@ -1059,7 +1060,8 @@ const Testimonies = () => {
                 <div className="space-y-4 pr-4">
                   {comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3">
-                      <UserAvatar
+                      <FramedAvatar
+                        userId={comment.user_id}
                         src={comment.profiles?.avatar_url}
                         fallback={comment.profiles?.full_name || "U"}
                         size="xs"

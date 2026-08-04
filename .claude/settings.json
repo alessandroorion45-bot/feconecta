@@ -4,7 +4,9 @@
       "Bash(curl -sI https://www.aliancakingdom.com.br/)",
       "Bash(curl -sI \"https://www.aliancakingdom.com.br/assets/index-NAOEXISTE123.js\")",
       "Bash(curl -s \"https://www.aliancakingdom.com.br/assets/index-NAOEXISTE123.js\")",
-      "Bash(curl -s \"https://www.aliancakingdom.com.br/assets/index-CS3ZovkE.js\")"
+      "Bash(curl -s \"https://www.aliancakingdom.com.br/assets/index-CS3ZovkE.js\")",
+      "Bash(supabase storage *)",
+      "Bash(python -c ' *)"
     ]
   }
 }

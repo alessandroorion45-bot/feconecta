@@ -17,6 +17,7 @@ import SeloPremiumModal, { SeloPremiumBadge } from "@/components/kingdom-badges/
 import GiftStorePreviewModal from "@/components/gifts/GiftStorePreviewModal";
 import { BACKGROUND_STYLES, EFFECT_STYLES } from "@/lib/cosmetics";
 import AnimatedCosmeticFrame from "@/components/AnimatedCosmeticFrame";
+import { clearFrameCache } from "@/components/FramedAvatar";
 import { getTheme } from "@/lib/themes";
 import { useTheme } from "@/contexts/ThemeContext";
 import { playUnlockChime } from "@/lib/badgeSound";
@@ -376,13 +377,15 @@ const KingdomStore = () => {
       toast({ title: "Erro ao equipar", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "✨ Equipado!", description: "Já está visível no seu perfil." });
+    clearFrameCache(user.id); // some do cache pra aparecer já no feed/comentários
+    toast({ title: "✨ Equipado!", description: "Já aparece no seu perfil, no feed e nos comentários." });
     loadAll();
   };
 
   const unequipCosmetic = async (cosmeticKey: string) => {
     if (!user) return;
     await supabase.from("user_cosmetics").update({ equipped: false }).eq("user_id", user.id).eq("cosmetic_key", cosmeticKey);
+    clearFrameCache(user.id);
     loadAll();
   };
 

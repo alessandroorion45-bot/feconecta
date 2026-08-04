@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import UserAvatar from "@/components/UserAvatar";
+import FramedAvatar from "@/components/FramedAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Reply } from "lucide-react";
@@ -130,7 +131,8 @@ export const FeedComments = ({ postId, userId, onCountChange }: FeedCommentsProp
   const CommentRow = ({ comment, isReply }: { comment: FeedComment; isReply?: boolean }) => (
     <div className={isReply ? "ml-8" : ""}>
       <div className="flex gap-2 p-2 rounded-lg bg-muted/50">
-        <UserAvatar
+        <FramedAvatar
+          userId={comment.user_id}
           src={comment.profile?.avatar_url || undefined}
           fallback={comment.profile?.full_name || "U"}
           size="xs"

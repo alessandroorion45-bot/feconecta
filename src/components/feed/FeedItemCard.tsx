@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import UserAvatar from "@/components/UserAvatar";
+import FramedAvatar from "@/components/FramedAvatar";
 import ImageLightbox from "@/components/ImageLightbox";
 import { FeedReactionPicker } from "./FeedReactionPicker";
 import { FeedComments } from "./FeedComments";
@@ -184,7 +185,8 @@ export const FeedItemCard = ({ item, userId, isFriend, onPatch }: FeedItemCardPr
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-start gap-3 min-w-0">
             {item.user_id && item.profile ? (
-              <UserAvatar
+              <FramedAvatar
+                userId={item.user_id}
                 src={item.profile.avatar_url || undefined}
                 fallback={displayName}
                 size="md"

@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostAuthorBadges } from "@/components/PostAuthorBadges";
 import UserAvatar from "@/components/UserAvatar";
+import FramedAvatar from "@/components/FramedAvatar";
 import { PrayerAudioRecorder } from "@/components/PrayerAudioRecorder";
 import PrayerGroups from "@/components/PrayerGroups";
 import AnsweredPrayerModal from "@/components/AnsweredPrayerModal";
@@ -935,7 +936,8 @@ const Prayers = () => {
                               <div className="space-y-2 max-h-60 overflow-y-auto">
                                 {prayerComments.map((comment) => (
                                   <div key={comment.id} className="flex gap-2 p-2 rounded-lg bg-muted/50">
-                                    <UserAvatar
+                                    <FramedAvatar
+                                      userId={comment.user_id}
                                       src={comment.profiles?.avatar_url}
                                       fallback={comment.profiles?.full_name || "U"}
                                       size="xs"
