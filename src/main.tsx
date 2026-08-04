@@ -38,6 +38,20 @@ if ("serviceWorker" in navigator) {
     window.location.reload();
   });
   if (navigator.serviceWorker.controller) sessionStorage.setItem("sw-controlled", "1");
+
+  // Alguns usuários ficavam presos numa versão antiga por dias: no celular o
+  // app instalado quase nunca faz uma navegação nova, e é só nela que o
+  // navegador reconsulta o service worker. Sem consulta, nunca descobre que
+  // saiu deploy. Aqui forçamos a checagem quando o app volta ao foco e a cada
+  // 15 min — achando versão nova, ela assume e o listener acima recarrega.
+  navigator.serviceWorker.ready.then((reg) => {
+    const check = () => {
+      if (document.visibilityState === "visible") reg.update().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    setInterval(check, 15 * 60 * 1000);
+  }).catch(() => {});
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

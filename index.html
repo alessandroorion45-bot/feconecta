@@ -148,5 +148,50 @@
          o carregamento — só é lido no checkout, bem depois. -->
     <script src="https://www.mercadopago.com/v2/security.js" view="checkout" async></script>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Salva-vidas contra TELA BRANCA no mobile.
+         Se o app não montar em 9s (chunk que não baixou, cache do PWA
+         corrompido/evictado pelo sistema, script que quebrou antes do React
+         subir), limpa service worker + caches e recarrega UMA vez. Sem isso o
+         usuário fica olhando pra tela em branco sem saída. A flag em
+         sessionStorage impede laço de recarregamento. -->
+    <script>
+      (function () {
+        var KEY = 'boot-recovery-at';
+        var t = setTimeout(function () {
+          var root = document.getElementById('root');
+          var mounted = root && root.querySelector('*');
+          if (mounted) return;                       // app subiu: nada a fazer
+          var last = Number(sessionStorage.getItem(KEY) || 0);
+          if (Date.now() - last < 60000) return;     // já tentou há pouco: não insiste
+          sessionStorage.setItem(KEY, String(Date.now()));
+
+          var done = function () { location.reload(); };
+          try {
+            var jobs = [];
+            if (window.caches && caches.keys) {
+              jobs.push(caches.keys().then(function (ks) {
+                return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+              }));
+            }
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+              jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+                return Promise.all(rs.map(function (r) { return r.unregister(); }));
+              }));
+            }
+            Promise.all(jobs).then(done, done);
+          } catch (e) { done(); }
+        }, 9000);
+
+        // App montou antes do prazo → cancela o salva-vidas.
+        var obs = new MutationObserver(function () {
+          var root = document.getElementById('root');
+          if (root && root.querySelector('*')) { clearTimeout(t); obs.disconnect(); }
+        });
+        if (document.getElementById('root')) {
+          obs.observe(document.getElementById('root'), { childList: true, subtree: true });
+        }
+      })();
+    </script>
   </body>
 </html>
