@@ -2,10 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
+import { useAdminActions } from "@/hooks/useAdminActions";
+import { useToast } from "@/hooks/use-toast";
 import {
   Users, MessageSquare, HandHeart, BookOpen, Flag, Activity,
-  UserPlus, EyeOff, RefreshCw, Radio,
+  UserPlus, EyeOff, RefreshCw, Radio, AlertTriangle, Clock, Ban, Loader2,
 } from "lucide-react";
 
 // ---- tipos ----
@@ -47,6 +50,10 @@ const snip = (t: string | null, n = 90) => {
  * é pra proteger contra abuso, não pra bisbilhotar a intimidade.
  */
 export const CommunityWatch = () => {
+  const { toast } = useToast();
+  const { warnUser, suspendUser, banUser } = useAdminActions();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [punished, setPunished] = useState<Record<string, string>>({});
   const [health, setHealth] = useState({ membros: 0, posts: 0, testemunhos: 0, oracoes: 0, denuncias: 0 });
   const [items, setItems] = useState<Item[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileLite>>({});
@@ -95,12 +102,53 @@ export const CommunityWatch = () => {
       const map: Record<string, ProfileLite> = {};
       (profs || []).forEach((p: ProfileLite) => { map[p.id] = p; });
       setProfiles(map);
+
+      // quem já está suspenso/banido (pra marcar no mural)
+      const { data: st } = await supabase.rpc("get_users_punishment_status", { p_ids: ids });
+      const pmap: Record<string, string> = {};
+      (st as { user_id: string; punishment_type: string }[] | null)?.forEach((s) => {
+        pmap[s.user_id] = s.punishment_type;
+      });
+      setPunished(pmap);
     }
 
     setItems(merged);
     if (!firstLoad.current) { setPulse(true); setTimeout(() => setPulse(false), 700); }
     firstLoad.current = false;
   }, []);
+
+  /**
+   * Punir direto do mural: o admin vê a infração e age ali mesmo, sem ter
+   * que procurar a pessoa em outra tela. Suspensão/expulsão pedem confirmação
+   * (a expulsão permanente é decisão manual do dono, nunca automática).
+   */
+  const punir = async (item: Item, name: string, kind: "warn" | "suspend" | "ban") => {
+    if (!item.userId) return;
+    const motivo =
+      item.kind === "member"
+        ? "Conduta inadequada na comunidade — revisado pelo Olho da Vigilância"
+        : `Conteúdo impróprio (${KIND[item.kind].label}): "${snip(item.text, 60)}"`;
+
+    if (kind === "suspend" && !window.confirm(`Suspender ${name} por 7 dias?\n\nMotivo: ${motivo}`)) return;
+    if (kind === "ban" && !window.confirm(`EXPULSAR ${name} PERMANENTEMENTE?\n\nEsta ação bane a conta.\nMotivo: ${motivo}`)) return;
+
+    setBusy(item.id + kind);
+    const ok =
+      kind === "warn" ? await warnUser(item.userId, motivo)
+      : kind === "suspend" ? await suspendUser(item.userId, motivo, 7)
+      : await banUser(item.userId, motivo);
+    setBusy(null);
+
+    if (ok) {
+      setPunished((p) => ({ ...p, [item.userId!]: kind === "ban" ? "ban" : kind === "suspend" ? "suspension" : "warning" }));
+      toast({
+        title: kind === "warn" ? "⚠️ Advertência enviada" : kind === "suspend" ? "⏳ Suspenso por 7 dias" : "🚫 Expulso permanentemente",
+        description: name,
+      });
+    } else {
+      toast({ title: "Não foi possível aplicar", description: "Tente novamente.", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     load();
@@ -146,7 +194,7 @@ export const CommunityWatch = () => {
               const prof = it.userId ? profiles[it.userId] : undefined;
               const name = prof?.full_name || prof?.username || "Alguém";
               return (
-                <div key={it.id} className="flex items-start gap-3 py-2 px-2 rounded-lg hover:bg-accent/5 transition-colors">
+                <div key={it.id} className="group flex items-start gap-3 py-2 px-2 rounded-lg hover:bg-accent/5 transition-colors">
                   <div className={`flex h-8 w-8 items-center justify-center rounded-full ${K.bg} shrink-0 mt-0.5`}>
                     <K.icon className={`h-4 w-4 ${K.color}`} />
                   </div>
@@ -156,8 +204,31 @@ export const CommunityWatch = () => {
                       <span className="text-muted-foreground">{it.kind === "member" ? it.text : `${K.label}:`}</span>{" "}
                       {it.kind !== "member" && <span className="text-foreground/80">"{it.text}"</span>}
                       {it.hidden && <Badge variant="destructive" className="ml-2 text-[10px] gap-1"><EyeOff className="h-2.5 w-2.5" />oculto</Badge>}
+                      {punished[it.userId || ""] === "ban" && <Badge variant="destructive" className="ml-2 text-[10px] gap-1"><Ban className="h-2.5 w-2.5" />banido</Badge>}
+                      {punished[it.userId || ""] === "suspension" && <Badge className="ml-2 text-[10px] gap-1 bg-orange-500"><Clock className="h-2.5 w-2.5" />suspenso</Badge>}
                     </p>
                     <p className="text-[11px] text-muted-foreground">{AGO(it.createdAt)}</p>
+
+                    {/* Punir na hora — aparece ao passar o mouse (sempre visível no toque) */}
+                    {it.userId && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-sm:opacity-100 transition-opacity">
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px] text-amber-600 hover:bg-amber-500/10"
+                          disabled={!!busy} onClick={() => punir(it, name, "warn")}>
+                          {busy === it.id + "warn" ? <Loader2 className="h-3 w-3 animate-spin" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
+                          Advertir
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px] text-orange-600 hover:bg-orange-500/10"
+                          disabled={!!busy} onClick={() => punir(it, name, "suspend")}>
+                          {busy === it.id + "suspend" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Clock className="h-3 w-3 mr-1" />}
+                          Suspender 7d
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px] text-red-600 hover:bg-red-500/10"
+                          disabled={!!busy} onClick={() => punir(it, name, "ban")}>
+                          {busy === it.id + "ban" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Ban className="h-3 w-3 mr-1" />}
+                          Expulsar
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   {prof && <UserAvatar src={prof.avatar_url || undefined} fallback={name} className="h-7 w-7 shrink-0" />}
                 </div>
