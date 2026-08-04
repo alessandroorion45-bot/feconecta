@@ -182,8 +182,11 @@ const Feed = () => {
                 </Button>
               </div>
             )}
-            <div className="flex gap-2">
-              <label htmlFor="media-upload">
+            {/* flex-wrap: em telas estreitas o "Publicar" descia pra fora do
+                card e ficava cortado pela borda. Agora ele quebra pra linha
+                de baixo e continua alinhado à direita. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <label htmlFor="media-upload" className="shrink-0">
                 <Button variant="outline" size="sm" asChild>
                   <span className="cursor-pointer">
                     <ImageIcon className="h-4 w-4 mr-2" />
@@ -191,7 +194,7 @@ const Feed = () => {
                   </span>
                 </Button>
               </label>
-              <label htmlFor="video-upload">
+              <label htmlFor="video-upload" className="shrink-0">
                 <Button variant="outline" size="sm" asChild>
                   <span className="cursor-pointer">
                     <Video className="h-4 w-4 mr-2" />
@@ -216,7 +219,7 @@ const Feed = () => {
               <Button
                 onClick={createPost}
                 disabled={uploading || (!newPost.trim() && !mediaFile)}
-                className="ml-auto"
+                className="ml-auto shrink-0"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 {uploading ? "Publicando..." : "Publicar"}
