@@ -78,6 +78,13 @@ interface FramedAvatarProps {
  * lugar nenhum enquanto usava o app. Este componente é o substituto direto
  * do UserAvatar em feed, comentários e listas.
  */
+/* O avatar da plataforma é um "quadrado arredondado" (AvatarPro usa
+ * borderRadius = max(8, largura * 0.22)), não um círculo. A moldura precisa do
+ * MESMO raio, senão fica desencaixada — foi o que aconteceu no feed. */
+const AVATAR_W: Record<NonNullable<FramedAvatarProps["size"]>, number> = {
+  xs: 28, sm: 36, md: 48, lg: 64, xl: 96,
+};
+
 export const FramedAvatar = ({ userId, src, fallback, size = "md", className, onClick }: FramedAvatarProps) => {
   const frameKey = useUserFrame(userId);
 
@@ -87,8 +94,14 @@ export const FramedAvatar = ({ userId, src, fallback, size = "md", className, on
 
   if (!frameKey) return avatar;
 
+  const w = AVATAR_W[size];
   return (
-    <AnimatedCosmeticFrame cosmeticKey={frameKey} rounded="rounded-full" className="shrink-0">
+    <AnimatedCosmeticFrame
+      cosmeticKey={frameKey}
+      radiusPx={Math.max(8, Math.round(w * 0.22))}
+      padPx={size === "xs" ? 2 : 3}
+      className="shrink-0"
+    >
       {avatar}
     </AnimatedCosmeticFrame>
   );
