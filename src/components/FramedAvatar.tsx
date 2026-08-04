@@ -92,16 +92,34 @@ export const FramedAvatar = ({ userId, src, fallback, size = "md", className, on
     <UserAvatar src={src || undefined} fallback={fallback} size={size} className={className} onClick={onClick} userId={userId} />
   );
 
-  if (!frameKey) return avatar;
-
   const w = AVATAR_W[size];
+  const radius = Math.max(8, Math.round(w * 0.22));
+  const pad = size === "xs" ? 2 : 3;
+
+  // Sem moldura comprada → mesmo anel dourado decorativo que o perfil usa,
+  // pra ficar consistente entre perfil e feed. Aqui é estático de propósito:
+  // o perfil mostra UM avatar (pode brilhar pulsando), o feed mostra dezenas —
+  // animar todos custaria FPS à toa.
+  if (!frameKey) {
+    return (
+      <div
+        className="relative shrink-0 overflow-hidden"
+        style={{
+          padding: pad,
+          borderRadius: radius + pad,
+          background: "linear-gradient(135deg, #fde68a, #d4930d 55%, #fde68a)",
+          boxShadow: "0 0 10px rgba(212,147,13,0.28)",
+        }}
+      >
+        <div className="relative overflow-hidden bg-card flex" style={{ borderRadius: radius }}>
+          {avatar}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AnimatedCosmeticFrame
-      cosmeticKey={frameKey}
-      radiusPx={Math.max(8, Math.round(w * 0.22))}
-      padPx={size === "xs" ? 2 : 3}
-      className="shrink-0"
-    >
+    <AnimatedCosmeticFrame cosmeticKey={frameKey} radiusPx={radius} padPx={pad} className="shrink-0">
       {avatar}
     </AnimatedCosmeticFrame>
   );
