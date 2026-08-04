@@ -182,26 +182,29 @@ const Feed = () => {
                 </Button>
               </div>
             )}
-            {/* flex-wrap: em telas estreitas o "Publicar" descia pra fora do
-                card e ficava cortado pela borda. Agora ele quebra pra linha
-                de baixo e continua alinhado à direita. */}
-            <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor="media-upload" className="shrink-0">
-                <Button variant="outline" size="sm" asChild>
-                  <span className="cursor-pointer">
-                    <ImageIcon className="h-4 w-4 mr-2" />
-                    Foto
-                  </span>
-                </Button>
-              </label>
-              <label htmlFor="video-upload" className="shrink-0">
-                <Button variant="outline" size="sm" asChild>
-                  <span className="cursor-pointer">
-                    <Video className="h-4 w-4 mr-2" />
-                    Vídeo
-                  </span>
-                </Button>
-              </label>
+            {/* No celular os três botões não cabem numa linha só: Foto/Vídeo
+                ficam lado a lado e o Publicar assume a largura inteira
+                embaixo (alvo de toque confortável, sem sobra estranha).
+                A partir de sm volta tudo pra mesma linha, Publicar à direita. */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex gap-2">
+                <label htmlFor="media-upload" className="shrink-0">
+                  <Button variant="outline" size="sm" asChild>
+                    <span className="cursor-pointer">
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                      Foto
+                    </span>
+                  </Button>
+                </label>
+                <label htmlFor="video-upload" className="shrink-0">
+                  <Button variant="outline" size="sm" asChild>
+                    <span className="cursor-pointer">
+                      <Video className="h-4 w-4 mr-2" />
+                      Vídeo
+                    </span>
+                  </Button>
+                </label>
+              </div>
               <input
                 id="media-upload"
                 type="file"
@@ -219,7 +222,7 @@ const Feed = () => {
               <Button
                 onClick={createPost}
                 disabled={uploading || (!newPost.trim() && !mediaFile)}
-                className="ml-auto shrink-0"
+                className="w-full sm:w-auto sm:ml-auto"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 {uploading ? "Publicando..." : "Publicar"}
