@@ -1,7 +1,6 @@
 {
   "rewrites": [
     {
-      "//": "SPA fallback — MAS nunca para /assets/*. Antes, um chunk antigo (de um deploy anterior) caía neste rewrite e recebia o index.html com status 200; o navegador tentava executar HTML como JavaScript, quebrava, e o app ficava em TELA BRANCA. Excluindo /assets, um arquivo inexistente vira 404 de verdade e o handler de vite:preloadError recarrega o app na versão nova.",
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
