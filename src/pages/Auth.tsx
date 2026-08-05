@@ -700,7 +700,7 @@ const Auth = () => {
       );
 
       const resetPromise = supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `${window.location.origin}/redefinir-senha`,
       });
 
       const { error } = await Promise.race([resetPromise, timeoutPromise]) as { error: any };

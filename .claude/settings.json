@@ -22,7 +22,8 @@
       "Bash(sed -n '/const RARITY_COLOR/,/};/p' src/pages/Ranking.tsx)",
       "Bash(python \"C:/Users/aless/AppData/Local/Temp/claude/e--feconecta/1cc144ba-ce2f-47b8-ad4c-38e59e88eecb/scratchpad/fix_badges.py\")",
       "Bash(python \"C:/Users/aless/AppData/Local/Temp/claude/e--feconecta/1cc144ba-ce2f-47b8-ad4c-38e59e88eecb/scratchpad/audit_contrast.py\")",
-      "Bash(python \"C:/Users/aless/AppData/Local/Temp/claude/e--feconecta/1cc144ba-ce2f-47b8-ad4c-38e59e88eecb/scratchpad/fix_contrast.py\")"
+      "Bash(python \"C:/Users/aless/AppData/Local/Temp/claude/e--feconecta/1cc144ba-ce2f-47b8-ad4c-38e59e88eecb/scratchpad/fix_contrast.py\")",
+      "Bash(curl -s -o /dev/null -w \"/redefinir-senha -> HTTP %{http_code}\\\\n\" https://www.aliancakingdom.com.br/redefinir-senha)"
     ]
   }
 }
