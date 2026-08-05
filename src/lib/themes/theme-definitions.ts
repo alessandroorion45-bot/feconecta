@@ -30,7 +30,7 @@ export const defaultThemeTokens: ThemeDesignTokens = {
   // Text
   text: '#1f2937',
   textSecondary: '#6b7280',
-  textMuted: '#9ca3af',
+  textMuted: '#6b7280',
   textOnPrimary: '#ffffff',
   textOnAccent: '#ffffff',
 
@@ -629,7 +629,7 @@ export const diamantePromessaThemeTokens: ThemeDesignTokens = {
   // Text
   text: '#0c4a6e',
   textSecondary: '#075985',
-  textMuted: '#0ea5e9',
+  textMuted: '#0369a1',
   textOnPrimary: '#ffffff',
   textOnAccent: '#0c4a6e',
 
@@ -691,7 +691,7 @@ export const classicoThemeTokens: ThemeDesignTokens = {
 
   text: '#1e293b',
   textSecondary: '#475569',
-  textMuted: '#94a3b8',
+  textMuted: '#64748b',
   textOnPrimary: '#ffffff',
   textOnAccent: '#ffffff',
 
