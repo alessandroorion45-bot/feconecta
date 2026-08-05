@@ -34,7 +34,13 @@
       "Bash(rm -f ./_make_og.js)",
       "Bash(cp \"C:/Users/aless/AppData/Local/Temp/claude/e--feconecta/1cc144ba-ce2f-47b8-ad4c-38e59e88eecb/scratchpad/make_og.js\" ./_make_og.cjs)",
       "Bash(node ./_make_og.cjs)",
-      "Bash(rm -f ./_make_og.cjs)"
+      "Bash(rm -f ./_make_og.cjs)",
+      "Bash(curl -s -A \"WhatsApp/2.23\" https://www.aliancakingdom.com.br/)",
+      "Bash(curl -s -o /dev/null -w \"og-alianca.png -> HTTP %{http_code} | %{content_type} | %{size_download} bytes\\\\n\" https://www.aliancakingdom.com.br/og-alianca.png)",
+      "Bash(curl -s https://www.aliancakingdom.com.br/sitemap.xml)",
+      "Bash(curl -s -o /dev/null -w \"sem www -> HTTP %{http_code} -> %{redirect_url}\\\\n\" https://aliancakingdom.com.br/)",
+      "Bash(curl -s -o /dev/null -w \"com www -> HTTP %{http_code}\\\\n\" https://www.aliancakingdom.com.br/)",
+      "Bash(curl -s https://www.aliancakingdom.com.br/robots.txt)"
     ]
   }
 }

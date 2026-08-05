@@ -3,7 +3,7 @@
  * fixas em index.html, public/robots.txt e public/sitemap.xml (não
  * são gerados a partir desta constante, é uma SPA sem build step de SEO).
  */
-export const SITE_URL = "https://aliancakingdom.com.br";
+export const SITE_URL = "https://www.aliancakingdom.com.br";
 export const SITE_NAME = "Aliança Kingdom";
 export const SITE_DESCRIPTION =
   "Aliança Kingdom é uma plataforma cristã completa para igrejas, líderes, células, comunidades, estudos bíblicos, pedidos de oração, eventos, discipulado, evangelismo e comunhão.";

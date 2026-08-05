@@ -18,4 +18,4 @@ Disallow: /favorites
 Disallow: /themes
 Disallow: /favorite-verses
 
-Sitemap: https://aliancakingdom.com.br/sitemap.xml
+Sitemap: https://www.aliancakingdom.com.br/sitemap.xml
