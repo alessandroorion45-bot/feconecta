@@ -7,7 +7,7 @@ export const SITE_URL = "https://aliancakingdom.com.br";
 export const SITE_NAME = "Aliança Kingdom";
 export const SITE_DESCRIPTION =
   "Aliança Kingdom é uma plataforma cristã completa para igrejas, líderes, células, comunidades, estudos bíblicos, pedidos de oração, eventos, discipulado, evangelismo e comunhão.";
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/alianca-logo.png`;
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-alianca.png`; // 1200x630, 56 KB — formato que o WhatsApp/Facebook exigem
 export const TWITTER_HANDLE = "@AliancaKingdom";
 
 export function buildTitle(pageTitle?: string): string {

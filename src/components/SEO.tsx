@@ -29,6 +29,11 @@ const SEO = ({ title, description = SITE_DESCRIPTION, path, image = DEFAULT_OG_I
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={image} />
+      {/* Dimensões declaradas: o WhatsApp desenha a prévia sem precisar
+          baixar a imagem antes — some com o card "cinza" de link. */}
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={fullTitle} />
       <meta property="og:url" content={canonical} />
       <meta property="og:locale" content="pt_BR" />
 
