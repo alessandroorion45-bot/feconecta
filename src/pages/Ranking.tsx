@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Crown, Star, Medal, Flame, Book, Target, HelpCircle, TrendingUp } from "lucide-react";
 import { UserBadge } from "@/components/UserBadge";
 import SEO from "@/components/SEO";
+import { RARITY_COLOR, mapUserBadges } from "@/lib/badgeColors";
 
 interface RankedUser {
   user_id: string;
@@ -29,13 +30,6 @@ interface RankedUser {
   }>;
 }
 
-const RARITY_COLOR: Record<string, string> = {
-  common: "#94a3b8",
-  rare: "#38bdf8",
-  epic: "#a855f7",
-  legendary: "#f59e0b",
-  mythic: "#f43f5e",
-};
 
 const Ranking = () => {
   const navigate = useNavigate();

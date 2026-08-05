@@ -10,6 +10,7 @@ import { ProfileSettingsSheet } from "@/components/ProfileSettingsSheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { pageCache, CACHE_TTL } from "@/lib/pageCache";
+import { RARITY_COLOR, mapUserBadges } from "@/lib/badgeColors";
 // import { ImageKitUploadTest } from "@/components/ImageKitUploadTest"; // Desabilitado temporariamente
 
 // Lazy load heavy components to improve initial page load
@@ -24,21 +25,7 @@ interface Badge {
 }
 
 // Classes Tailwind (o UserBadge aplica isso como className de gradiente)
-const RARITY_COLOR: Record<string, string> = {
-  common: "from-gray-400 to-gray-500",
-  uncommon: "from-emerald-400 to-emerald-600",
-  rare: "from-sky-400 to-blue-600",
-  epic: "from-purple-400 to-purple-600",
-  legendary: "from-amber-400 to-amber-600",
-  exclusive: "from-rose-400 to-rose-600",
-};
 
-const mapUserBadges = (rows: any[] | null | undefined): Badge[] =>
-  (rows || []).map((row) => ({
-    badge_name: row.badges?.name || "",
-    badge_icon: row.badges?.icon || "🏅",
-    badge_color: RARITY_COLOR[row.badges?.rarity] || RARITY_COLOR.common,
-  }));
 
 interface ProfileData {
   username: string;

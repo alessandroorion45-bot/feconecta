@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import SEO from "@/components/SEO";
 import { ProfilePublicView } from "@/components/ProfilePublicView";
+import { RARITY_COLOR, mapUserBadges } from "@/lib/badgeColors";
 
 interface Profile {
   id: string;
@@ -41,20 +42,7 @@ interface Badge {
   badge_color: string;
 }
 
-const RARITY_COLOR: Record<string, string> = {
-  common: "#94a3b8",
-  rare: "#38bdf8",
-  epic: "#a855f7",
-  legendary: "#f59e0b",
-  mythic: "#f43f5e",
-};
 
-const mapUserBadges = (rows: any[] | null | undefined): Badge[] =>
-  (rows || []).map((row) => ({
-    badge_name: row.badges?.name || "",
-    badge_icon: row.badges?.icon || "🏅",
-    badge_color: RARITY_COLOR[row.badges?.rarity] || RARITY_COLOR.common,
-  }));
 
 interface FaithPost {
   id: string;

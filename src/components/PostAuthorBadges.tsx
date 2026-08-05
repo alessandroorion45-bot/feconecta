@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AvatarPro } from "@/components/AvatarPro";
 import { UserBadge } from "@/components/UserBadge";
 import { supabase } from "@/integrations/supabase/client";
+import { RARITY_COLOR, mapUserBadges } from "@/lib/badgeColors";
 
 interface Badge {
   badge_name: string;
@@ -9,13 +10,6 @@ interface Badge {
   badge_color: string;
 }
 
-const RARITY_COLOR: Record<string, string> = {
-  common: "#94a3b8",
-  rare: "#38bdf8",
-  epic: "#a855f7",
-  legendary: "#f59e0b",
-  mythic: "#f43f5e",
-};
 
 interface PostAuthorBadgesProps {
   userId: string;

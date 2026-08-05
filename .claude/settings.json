@@ -13,7 +13,14 @@
       "Bash(sed -n '/interface ProfileData/,/^}/p' src/components/ProfilePublicView.tsx)",
       "Bash(sed -n '/^interface Badge/,/^}/p' src/components/ProfilePublicView.tsx)",
       "Bash(python)",
-      "Bash(python \"C:/Users/aless/AppData/Local/Temp/claude/e--feconecta/1cc144ba-ce2f-47b8-ad4c-38e59e88eecb/scratchpad/refactor_userprofile.py\")"
+      "Bash(python \"C:/Users/aless/AppData/Local/Temp/claude/e--feconecta/1cc144ba-ce2f-47b8-ad4c-38e59e88eecb/scratchpad/refactor_userprofile.py\")",
+      "Skill(browser-automation)",
+      "Skill(browser-automation:*)",
+      "Bash(node \"C:/Users/aless/.claude/skills/browser-automation/browser.mjs\" \"https://www.aliancakingdom.com.br/profile/6644c5e3-4886-4181-967f-b519cfed8538\" --timeout 45000)",
+      "Bash(node \"C:/Users/aless/.claude/skills/browser-automation/browser.mjs\" \"https://www.aliancakingdom.com.br/profile/6644c5e3-4886-4181-967f-b519cfed8538\" --timeout 45000 --eval \"new Promise\\(r=>setTimeout\\(\\(\\)=>r\\({chars:document.body.innerText.length, txt:document.body.innerText.slice\\(0,300\\)}\\),6000\\)\\)\")",
+      "Bash(sed -n '/const RARITY_COLOR/,/};/p' src/components/PostAuthorBadges.tsx)",
+      "Bash(sed -n '/const RARITY_COLOR/,/};/p' src/pages/Ranking.tsx)",
+      "Bash(python \"C:/Users/aless/AppData/Local/Temp/claude/e--feconecta/1cc144ba-ce2f-47b8-ad4c-38e59e88eecb/scratchpad/fix_badges.py\")"
     ]
   }
 }
