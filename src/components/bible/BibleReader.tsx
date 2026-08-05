@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Book, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, BookOpenCheck } from 'lucide-react'
+import { Book, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, BookOpenCheck, Download, WifiOff } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useGamification } from '@/hooks/useGamification'
 import { useAuth } from '@/contexts/AuthContext'
@@ -28,7 +28,7 @@ export function BibleReader({ initialBook, initialChapter }: BibleReaderProps = 
   const { toast } = useToast()
   const { user } = useAuth()
   const { awardXP } = useGamification(user?.id)
-  const { livros, loading, error } = useBiblia()
+  const { livros, loading, error, offline, disponivelOffline } = useBiblia()
   const [livroIndex, setLivroIndex] = useState(0)
   const [capituloIndex, setCapituloIndex] = useState(0)
   const pendingChapterRef = useRef<number | null>(null)
@@ -255,9 +255,29 @@ export function BibleReader({ initialBook, initialChapter }: BibleReaderProps = 
         <Card className="shadow-divine">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Book className="h-5 w-5 text-primary" />
                 Navegação
+                {/* Tranquiliza o leitor: a Palavra já está no aparelho e
+                    continua abrindo sem internet. */}
+                {disponivelOffline && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300"
+                    title="A Bíblia está salva neste aparelho — você pode ler mesmo sem internet."
+                  >
+                    <Download className="h-3 w-3" />
+                    Disponível offline
+                  </span>
+                )}
+                {offline && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+                    title="Sem conexão agora — você está lendo a cópia salva no aparelho."
+                  >
+                    <WifiOff className="h-3 w-3" />
+                    Lendo sem internet
+                  </span>
+                )}
               </div>
               <Popover>
                 <PopoverTrigger asChild>

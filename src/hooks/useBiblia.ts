@@ -76,6 +76,8 @@ export function useBiblia() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [offline, setOffline] = useState(false)
+  /** true quando a Bíblia já está gravada no aparelho (dá pra ler sem internet) */
+  const [disponivelOffline, setDisponivelOffline] = useState(false)
 
   useEffect(() => {
     let cancelado = false
@@ -91,6 +93,7 @@ export function useBiblia() {
         if (!cancelado) {
           setLivros(guardada.data)
           setLoading(false)
+          setDisponivelOffline(true)
         }
         // Está fresca? nada a fazer.
         if (Date.now() - guardada.timestamp < CACHE_TTL) return
@@ -117,7 +120,8 @@ export function useBiblia() {
         // Gravação isolada: se o disco recusar, a leitura NÃO pode quebrar.
         // (era o bug — localStorage.setItem estourava a cota e o app exibia
         // "erro ao carregar a Bíblia" mesmo com os versículos já carregados.)
-        await salvarBibliaOffline(nova)
+        const gravou = await salvarBibliaOffline(nova)
+        if (!cancelado && gravou) setDisponivelOffline(true)
       } catch (err) {
         console.error('❌ Erro ao carregar Bíblia:', err)
         if (!cancelado) {
@@ -135,5 +139,5 @@ export function useBiblia() {
     return () => { cancelado = true }
   }, [])
 
-  return { livros, loading, error, offline }
+  return { livros, loading, error, offline, disponivelOffline }
 }
