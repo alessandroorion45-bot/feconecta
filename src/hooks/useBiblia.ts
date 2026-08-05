@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { lerBibliaOffline, salvarBibliaOffline } from '@/lib/offlineBible'
 
 // Cliente Supabase sem tipagem (temporário até regenerar types.ts)
 const supabase = createClient(
@@ -13,137 +14,126 @@ export interface Livro {
   chapters: string[][]
 }
 
-const CACHE_KEY = 'biblia_supabase_cache_v1';
-const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 dias
+const LEGACY_CACHE_KEY = 'biblia_supabase_cache_v1'; // localStorage antigo
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 dias — só decide QUANDO atualizar
 
-interface CachedData {
-  data: Livro[];
-  timestamp: number;
+/** Baixa a Bíblia inteira do Supabase (paginado: PostgREST devolve ~1000/vez). */
+async function baixarBiblia(): Promise<Livro[]> {
+  const { data: books, error: booksError } = await supabase
+    .from('bible_books')
+    .select('id, abbrev, name')
+    .order('id', { ascending: true })
+
+  if (booksError) throw booksError
+  if (!books || books.length === 0) throw new Error('Nenhum livro encontrado no banco de dados')
+
+  const bookIds = books.map(b => b.id)
+  const PAGE_SIZE = 1000
+  const allVerses: { book_id: number; chapter: number; verse: number; text: string }[] = []
+
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data: page, error: versesError } = await supabase
+      .from('bible_verses')
+      .select('book_id, chapter, verse, text')
+      .in('book_id', bookIds)
+      .order('book_id', { ascending: true })
+      .order('chapter', { ascending: true })
+      .order('verse', { ascending: true })
+      .range(offset, offset + PAGE_SIZE - 1)
+
+    if (versesError) throw versesError
+    if (!page || page.length === 0) break
+    allVerses.push(...page)
+    if (page.length < PAGE_SIZE) break
+  }
+
+  const versesByBook = new Map<number, typeof allVerses>()
+  allVerses.forEach(v => {
+    if (!versesByBook.has(v.book_id)) versesByBook.set(v.book_id, [])
+    versesByBook.get(v.book_id)!.push(v)
+  })
+
+  return books.map(book => {
+    const verses = versesByBook.get(book.id) || []
+    const chaptersMap = new Map<number, string[]>()
+    verses.forEach(v => {
+      if (!chaptersMap.has(v.chapter)) chaptersMap.set(v.chapter, [])
+      chaptersMap.get(v.chapter)!.push(v.text)
+    })
+    return { abbrev: book.abbrev, book: book.name, chapters: Array.from(chaptersMap.values()) }
+  })
 }
 
+/**
+ * Bíblia com leitura OFFLINE.
+ *
+ * Ordem: cópia local primeiro (abre na hora, mesmo sem internet) e só então,
+ * se estiver velha, atualiza em segundo plano. Se a rede falhar, a cópia local
+ * continua valendo — a Palavra não pode depender de sinal.
+ */
 export function useBiblia() {
   const [livros, setLivros] = useState<Livro[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [offline, setOffline] = useState(false)
 
   useEffect(() => {
+    let cancelado = false
+
     async function loadBiblia() {
+      // O cache antigo em localStorage ocupava ~4 MB da cota (e no celular
+      // costumava nem caber). Agora usamos IndexedDB — libera o espaço.
+      try { localStorage.removeItem(LEGACY_CACHE_KEY) } catch { /* ignore */ }
+
+      const guardada = await lerBibliaOffline<Livro[]>()
+
+      if (guardada?.data?.length) {
+        if (!cancelado) {
+          setLivros(guardada.data)
+          setLoading(false)
+        }
+        // Está fresca? nada a fazer.
+        if (Date.now() - guardada.timestamp < CACHE_TTL) return
+
+        // Está velha: atualiza em segundo plano, sem tirar a Bíblia da tela se
+        // a rede falhar (o usuário segue lendo o que já tem).
+        try {
+          const nova = await baixarBiblia()
+          await salvarBibliaOffline(nova)
+          if (!cancelado) setLivros(nova)
+        } catch {
+          if (!cancelado) setOffline(true)
+        }
+        return
+      }
+
+      // Primeira vez (nada guardado): precisa da rede uma vez só.
       try {
-        // ✅ OTIMIZAÇÃO: Tentar cache primeiro
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          try {
-            const { data, timestamp }: CachedData = JSON.parse(cached);
-
-            if (Date.now() - timestamp < CACHE_TTL && data.length > 0) {
-              console.log('📖 Bíblia carregada do cache! (instantâneo)');
-              setLivros(data);
-              setLoading(false);
-              return; // ✅ Retorna IMEDIATAMENTE!
-            }
-          } catch (e) {
-            console.warn('Cache inválido, recarregando...');
-          }
+        const nova = await baixarBiblia()
+        if (!cancelado) {
+          setLivros(nova)
+          setLoading(false)
         }
-
-        console.log('🔄 Iniciando carregamento da Bíblia do Supabase...')
-
-        // Buscar todos os livros ordenados por ID (ordem bíblica)
-        const { data: books, error: booksError } = await supabase
-          .from('bible_books')
-          .select('id, abbrev, name')
-          .order('id', { ascending: true })
-
-        console.log('📚 Livros retornados:', books?.length, 'livros')
-
-        if (booksError) {
-          console.error('❌ Erro ao buscar livros:', booksError)
-          throw booksError
-        }
-        if (!books || books.length === 0) {
-          throw new Error('Nenhum livro encontrado no banco de dados')
-        }
-
-        // ✅ Buscar TODOS os versículos, paginando (Supabase/PostgREST limita
-        // a ~1000 linhas por requisição — a Bíblia inteira tem >30 mil versículos)
-        console.log('📖 Buscando todos os versículos (paginado)...')
-        const bookIds = books.map(b => b.id)
-        const PAGE_SIZE = 1000
-        const allVerses: { book_id: number; chapter: number; verse: number; text: string }[] = []
-
-        for (let offset = 0; ; offset += PAGE_SIZE) {
-          const { data: page, error: versesError } = await supabase
-            .from('bible_verses')
-            .select('book_id, chapter, verse, text')
-            .in('book_id', bookIds)
-            .order('book_id', { ascending: true })
-            .order('chapter', { ascending: true })
-            .order('verse', { ascending: true })
-            .range(offset, offset + PAGE_SIZE - 1)
-
-          if (versesError) {
-            console.error('❌ Erro ao buscar versículos:', versesError)
-            throw versesError
-          }
-
-          if (!page || page.length === 0) break
-          allVerses.push(...page)
-          if (page.length < PAGE_SIZE) break
-        }
-
-        console.log(`✅ ${allVerses.length} versículos carregados!`)
-
-        // Organizar versículos por livro
-        const versesByBook = new Map<number, typeof allVerses>()
-        allVerses?.forEach(v => {
-          if (!versesByBook.has(v.book_id)) {
-            versesByBook.set(v.book_id, [])
-          }
-          versesByBook.get(v.book_id)!.push(v)
-        })
-
-        // Construir livros completos
-        const livrosCompletos: Livro[] = books.map(book => {
-          const verses = versesByBook.get(book.id) || []
-
-          // Organizar versículos por capítulo
-          const chaptersMap = new Map<number, string[]>()
-          verses.forEach(v => {
-            if (!chaptersMap.has(v.chapter)) {
-              chaptersMap.set(v.chapter, [])
-            }
-            chaptersMap.get(v.chapter)!.push(v.text)
-          })
-
-          // Converter Map para array de arrays (chapters)
-          const chapters: string[][] = Array.from(chaptersMap.values())
-
-          return {
-            abbrev: book.abbrev,
-            book: book.name,
-            chapters
-          }
-        })
-
-        console.log('✅ Bíblia carregada com sucesso! Total de livros:', livrosCompletos.length)
-
-        // ✅ OTIMIZAÇÃO: Salvar no cache
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-          data: livrosCompletos,
-          timestamp: Date.now()
-        }));
-
-        setLivros(livrosCompletos)
-        setLoading(false)
+        // Gravação isolada: se o disco recusar, a leitura NÃO pode quebrar.
+        // (era o bug — localStorage.setItem estourava a cota e o app exibia
+        // "erro ao carregar a Bíblia" mesmo com os versículos já carregados.)
+        await salvarBibliaOffline(nova)
       } catch (err) {
         console.error('❌ Erro ao carregar Bíblia:', err)
-        setError('Erro ao carregar a Bíblia do banco de dados. Tente novamente.')
-        setLoading(false)
+        if (!cancelado) {
+          setError(
+            navigator.onLine
+              ? 'Não foi possível carregar a Bíblia agora. Tente novamente.'
+              : 'Você está sem internet e a Bíblia ainda não foi baixada. Conecte-se uma vez para poder ler offline depois.'
+          )
+          setLoading(false)
+        }
       }
     }
 
     loadBiblia()
+    return () => { cancelado = true }
   }, [])
 
-  return { livros, loading, error }
+  return { livros, loading, error, offline }
 }
