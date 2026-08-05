@@ -194,33 +194,42 @@ const CommunityList = ({ userId, searchQuery, onSelectCommunity, refreshTrigger 
       {/* Spotlight magnético que segue o cursor */}
       <div className="card-spotlight" aria-hidden />
 
-      {/* Capa */}
-      <div className="relative h-28 overflow-hidden">
+      {/* Capa — a imagem aparece INTEIRA (object-contain). O que sobra nas
+          laterais é preenchido por uma cópia desfocada dela mesma, então nada
+          é cortado e o card não fica com faixa vazia. */}
+      <div className="relative h-32 overflow-hidden bg-[#140a2b]">
         {community.banner_url || community.cover_image_url ? (
-          <img
-            src={community.banner_url || community.cover_image_url!}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
+          <>
+            <img
+              src={community.banner_url || community.cover_image_url!}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70"
+            />
+            <img
+              src={community.banner_url || community.cover_image_url!}
+              alt=""
+              loading="lazy"
+              className="relative z-[1] mx-auto h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            />
+          </>
         ) : (
           <div className="card-aurora card-stars absolute inset-0 overflow-hidden bg-gradient-to-br from-primary via-purple-600 to-indigo-700 transition-transform duration-500 group-hover:scale-110">
             <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-25 select-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.4)]">⛪</span>
           </div>
         )}
-        {/* Overlay escuro tingido de roxo Kingdom — dá personalidade e
-            contraste, sem o degradê branco que desbotava a capa */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0620]/85 via-[#1a0f35]/45 to-primary/10" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20 mix-blend-overlay" />
+        {/* Véu só nas pontas: escurece o topo (onde ficam as etiquetas) e a
+            base, deixando o miolo da capa visível. */}
+        <div className="absolute inset-0 z-[2] pointer-events-none bg-gradient-to-b from-[#0d0620]/70 via-transparent to-[#0d0620]/55" />
 
         {/* Membros — glass premium */}
-        <Badge className="absolute top-2.5 right-2.5 gap-1.5 bg-white/10 text-white backdrop-blur-md shadow-lg border border-white/15 font-medium">
+        <Badge className="absolute z-[3] top-2.5 right-2.5 gap-1.5 bg-white/10 text-white backdrop-blur-md shadow-lg border border-white/15 font-medium">
           <Users className="h-3 w-3 text-sky-300" />
           {community.member_count} {community.member_count === 1 ? "irmão em Cristo" : "irmãos em Cristo"}
         </Badge>
 
         {community.member_role === "admin" && (
-          <Badge className="absolute top-2.5 left-2.5 gap-1 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 backdrop-blur-sm shadow-lg border-0 font-semibold">
+          <Badge className="absolute z-[3] top-2.5 left-2.5 gap-1 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 backdrop-blur-sm shadow-lg border-0 font-semibold">
             <Crown className="h-3 w-3" />
             Sua igreja
           </Badge>
