@@ -14,6 +14,20 @@ const ORDER_STATUS_MAP: Record<string, string> = {
   cancelled: "cancelled",
 };
 
+// Detalhes que significam "o dinheiro NAO esta na conta ainda" (PIX agendado,
+// analise antifraude, captura pendente). Nao pode contar como doacao recebida.
+const NAO_CREDITADO = new Set([
+  "pending", "pending_capture", "pending_review_manual",
+  "pending_waiting_transfer", "pending_waiting_payment", "in_process", "authorized",
+]);
+
+function apenasSeCreditado(base: string, detalhe?: string | null): string {
+  if (base !== "approved") return base;
+  const d = (detalhe || "").toLowerCase();
+  if (d && NAO_CREDITADO.has(d)) return "pending";
+  return "approved";
+}
+
 // Chamada de polling (a cada poucos segundos) — timeout mais curto, uma
 // falha aqui só significa "tenta de novo no próximo ciclo", nada crítico.
 const MP_TIMEOUT_MS = 8000;
@@ -78,7 +92,10 @@ serve(async (req) => {
           );
           if (orderResponse.ok) {
             const order = await orderResponse.json();
-            const freshStatus = ORDER_STATUS_MAP[order.status] ?? "pending";
+            const freshStatus = apenasSeCreditado(
+              ORDER_STATUS_MAP[order.status] ?? "pending",
+              order.status_detail ?? order.transactions?.payments?.[0]?.status_detail,
+            );
             if (freshStatus !== status) {
               status = freshStatus;
               const paymentInOrder = order.transactions?.payments?.[0];

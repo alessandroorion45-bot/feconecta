@@ -26,6 +26,27 @@ const ORDER_STATUS_MAP: Record<string, string> = {
   cancelled: "cancelled",
 };
 
+// Detalhes que significam "o dinheiro NAO esta na conta ainda". PIX agendado no
+// banco do pagador, analise antifraude e captura pendente caem aqui: mesmo que
+// o status principal pareca avancado, o produto NAO pode ser entregue.
+const NAO_CREDITADO = new Set([
+  "pending",
+  "pending_capture",
+  "pending_review_manual",
+  "pending_waiting_transfer",
+  "pending_waiting_payment",
+  "in_process",
+  "authorized",
+]);
+
+/** So devolve "approved" quando o pagamento esta de fato creditado. */
+function apenasSeCreditado(base: string, detalhe?: string | null): string {
+  if (base !== "approved") return base;
+  const d = (detalhe || "").toLowerCase();
+  if (d && NAO_CREDITADO.has(d)) return "pending";
+  return "approved";
+}
+
 // O Mercado Pago reenvia o webhook se não receber 200 rápido — um timeout
 // curto aqui evita ficar preso numa reconsulta lenta enquanto ainda dá
 // tempo de responder 200 e deixar o MP tentar de novo depois se precisar.
@@ -106,11 +127,17 @@ serve(async (req) => {
 
     if (isOrder) {
       const paymentInOrder = resource.transactions?.payments?.[0];
-      mappedStatus = ORDER_STATUS_MAP[resource.status] ?? "pending";
+      mappedStatus = apenasSeCreditado(
+        ORDER_STATUS_MAP[resource.status] ?? "pending",
+        resource.status_detail ?? paymentInOrder?.status_detail,
+      );
       mpPaymentId = paymentInOrder?.id ? String(paymentInOrder.id) : null;
       mpPaymentMethodId = paymentInOrder?.payment_method?.id ?? null;
     } else {
-      mappedStatus = PAYMENT_STATUS_MAP[resource.status] ?? "pending";
+      mappedStatus = apenasSeCreditado(
+        PAYMENT_STATUS_MAP[resource.status] ?? "pending",
+        resource.status_detail,
+      );
       mpPaymentId = String(resource.id);
       mpPaymentMethodId = resource.payment_method_id ?? null;
     }

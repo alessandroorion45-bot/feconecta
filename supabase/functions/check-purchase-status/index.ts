@@ -14,6 +14,32 @@ const ORDER_STATUS_MAP: Record<string, string> = {
   cancelled: "cancelled",
 };
 
+// Detalhes que significam "o dinheiro NÃO está na conta ainda". PIX agendado no
+// banco do pagador, análise antifraude e captura pendente caem aqui: mesmo que
+// o status principal pareça avançado, o produto NÃO pode ser entregue.
+const NAO_CREDITADO = new Set([
+  "pending",
+  "pending_capture",
+  "pending_review_manual",
+  "pending_waiting_transfer",
+  "pending_waiting_payment",
+  "in_process",
+  "authorized",
+]);
+
+/**
+ * Converte a resposta do Mercado Pago em status interno.
+ * Só devolve "approved" quando o pagamento está de fato creditado — nunca
+ * entrega produto contra promessa de pagamento.
+ */
+function statusDoPedido(order: { status?: string; status_detail?: string }): string {
+  const base = ORDER_STATUS_MAP[order?.status || ""] ?? "pending";
+  if (base !== "approved") return base;
+  const detalhe = (order?.status_detail || "").toLowerCase();
+  if (detalhe && NAO_CREDITADO.has(detalhe)) return "pending";
+  return "approved";
+}
+
 // Chamada de polling (a cada poucos segundos) — timeout mais curto, uma
 // falha aqui só significa "tenta de novo no próximo ciclo", nada crítico.
 const MP_TIMEOUT_MS = 8000;
@@ -78,7 +104,7 @@ serve(async (req) => {
           );
           if (orderResponse.ok) {
             const order = await orderResponse.json();
-            const fresh = ORDER_STATUS_MAP[order.status] ?? "pending";
+            const fresh = statusDoPedido(order);
             if (fresh !== status) {
               status = fresh;
               await serviceClient
